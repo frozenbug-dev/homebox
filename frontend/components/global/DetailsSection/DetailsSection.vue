@@ -88,8 +88,9 @@
 </script>
 
 <style>
-  /* Use :deep to target elements inside the markdown container */
-  :deep(.markdown-container) {
+  /* This block is unscoped, so a plain selector reaches the rendered markdown.
+     (:deep() only works in <style scoped>; here it made browsers drop the rule.) */
+  .markdown-container {
     /* General container styles */
     width: 100%;
     overflow-wrap: break-word;
