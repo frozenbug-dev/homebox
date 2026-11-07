@@ -1472,6 +1472,37 @@
         }
     },
     "shell": {
+        "places_page": {
+            "filter_placeholder": "Filter places…",
+            "hide_empty": "Hide empty",
+            "new_place": "New place",
+            "add_inside": "Add place inside",
+            "new_place_placeholder": "Name of the new place",
+            "add_hint": "↵ add · esc cancel",
+            "move_items_here": "Move items here",
+            "rename": "Rename",
+            "print_label": "Print label",
+            "open_details": "Open full page",
+            "summary_items": "{n, plural, one {# item} other {# items}}",
+            "summary_units": "{n, plural, one {# unit} other {# units}}",
+            "summary_places": "{n, plural, =0 {no sub-places} one {# sub-place} other {# sub-places}}",
+            "add_item_placeholder": "Add an item to {name}…",
+            "drag_hint": "Drag rows onto a place in the tree to move them there, or select rows and press M.",
+            "tree_hint": "→ ← open and close · A add inside · drag a place onto another to nest it",
+            "moved_items": "Moved {n, plural, one {# item} other {# items}} to {name}",
+            "moved_place": "Moved {name} into {target}",
+            "moved_to_top": "Moved {name} to the top level",
+            "drop_top_level": "Drop here to move it to the top level",
+            "created_place": "Added {name}",
+            "created_item": "Added {name}",
+            "failed_move": "Couldn't move that here",
+            "failed_create": "Couldn't add that",
+            "no_places": "No places yet. Add one to start organising.",
+            "no_match": "No places match",
+            "all_places": "All places",
+            "expand": "Expand",
+            "collapse": "Collapse"
+        },
         "item_page": {
             "properties": "Properties",
             "place": "Place",
@@ -1609,7 +1640,8 @@
             "item_print": "Print this item's label",
             "item_duplicate": "Duplicate this item",
             "place_add_inside": "Add a place inside the selected one",
-            "place_move_items_here": "Move items into this place"
+            "place_move_items_here": "Move items into this place",
+            "place_rename": "Rename this place"
         }
     }
 }

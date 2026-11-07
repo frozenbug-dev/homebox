@@ -297,7 +297,12 @@
             {{ t("shell.palette.move_into", { place: moveInto.name }) }}
           </span>
         </div>
-        <CommandInput v-model="query" :placeholder="placeholder" class="h-12 text-base" />
+        <CommandInput
+          v-model="query"
+          :placeholder="placeholder"
+          class="h-12 text-base"
+          @keydown.esc.prevent="closeDialog(DialogID.CommandPalette)"
+        />
         <CommandList class="max-h-[min(60dvh,420px)] border-t border-border p-1.5">
           <CommandEmpty class="py-8 text-center text-sm text-muted-foreground">
             {{ t("shell.palette.no_results") }}
@@ -399,7 +404,7 @@
               :key="place.id"
               :value="`place-${place.id}`"
               class="gap-3"
-              @select="run(go(`/location/${place.id}`))"
+              @select="run(go(`/locations?place=${place.id}`))"
             >
               <MapPin class="size-4 text-muted-foreground" aria-hidden="true" />
               <span class="truncate">{{ place.name }}</span>

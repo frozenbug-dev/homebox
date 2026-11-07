@@ -8,6 +8,7 @@
   import PlaceCell from "./PlaceCell.vue";
   import type { EntitySummary } from "~/lib/api/types/data-contracts";
   import { SHORTCUTS } from "~/lib/shortcuts";
+  import { vDragSource, type DragData } from "~/lib/dnd";
   import { valueUpdater } from "~/lib/utils";
   import ShortcutHint from "~/components/App/ShortcutHint.vue";
   import Currency from "~/components/global/Currency.vue";
@@ -28,6 +29,8 @@
     isLoading: boolean;
     columns: Record<ItemColumn, boolean>;
     filtered: boolean;
+    /** Rows can be dragged onto drop targets (e.g. places in the places tree). */
+    draggableRows?: boolean;
   }>();
   const emit = defineEmits<{ loadMore: []; clearFilters: [] }>();
 
@@ -76,6 +79,13 @@
 
   const tableRows = computed(() => table.getRowModel().rows);
   const selectedItems = computed(() => table.getSelectedRowModel().rows.map(r => r.original));
+
+  /** Dragging a selected row drags the whole selection; any other row drags just itself. */
+  function dragData(index: number): DragData {
+    const row = tableRows.value[index]!;
+    const ids = row.getIsSelected() ? selectedItems.value.map(i => i.id) : [row.original.id];
+    return { kind: "items", ids };
+  }
   const show = (c: ItemColumn) => props.columns[c];
 
   // Column widths drive one CSS grid shared by the header and every row.
@@ -246,6 +256,7 @@
       <div
         v-for="vRow in virtualRows"
         :key="tableRows[vRow.index]!.id"
+        v-drag-source="draggableRows ? () => dragData(vRow.index) : null"
         role="row"
         :aria-rowindex="vRow.index + 1"
         :aria-selected="tableRows[vRow.index]!.getIsSelected()"

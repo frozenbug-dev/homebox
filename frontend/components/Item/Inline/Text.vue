@@ -22,6 +22,10 @@
     v => (draft.value = v)
   );
 
+  const root = useTemplateRef<InstanceType<typeof EditableRoot>>("root");
+  /** Switch to editing from outside, e.g. a keyboard shortcut. */
+  defineExpose({ edit: () => root.value?.edit() });
+
   function submit(v: string | null | undefined) {
     const next = (v ?? "").trim();
     if (next !== props.value) emit("save", next);
@@ -30,6 +34,7 @@
 
 <template>
   <EditableRoot
+    ref="root"
     v-model="draft"
     :placeholder="placeholder ?? '—'"
     submit-mode="both"

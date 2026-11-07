@@ -100,10 +100,10 @@
             <SidebarMenu class="gap-0.5">
               <SidebarMenuItem v-for="place in topPlaces" :key="place.id">
                 <SidebarMenuLink
-                  :href="`/location/${place.id}`"
+                  :href="`/locations?place=${place.id}`"
                   :class="{
                     'bg-sidebar-accent font-medium text-sidebar-accent-foreground':
-                      route.path === `/location/${place.id}`,
+                      route.path === '/locations' && route.query.place === place.id,
                   }"
                 >
                   <MapPin class="text-muted-foreground" />
