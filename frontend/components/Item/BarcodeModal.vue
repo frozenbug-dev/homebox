@@ -44,18 +44,18 @@
           <TableHeader>
             <TableRow>
               <TableHead
-                v-for="h in headers"
-                :key="h.value"
+                v-for="header in headers"
+                :key="header.value"
                 class="text-no-transform bg-secondary text-sm text-secondary-foreground hover:bg-secondary/90"
               >
                 <div
                   class="flex items-center gap-1"
                   :class="{
-                    'justify-center': h.align === 'center',
+                    'justify-center': header.align === 'center',
                   }"
                 >
-                  <template v-if="typeof h === 'string'">{{ h }}</template>
-                  <template v-else>{{ $t(h.text) }}</template>
+                  <template v-if="typeof header === 'string'">{{ header }}</template>
+                  <template v-else>{{ $t(header.text) }}</template>
                 </div>
               </TableHead>
             </TableRow>
@@ -63,36 +63,40 @@
 
           <TableBody>
             <TableRow
-              v-for="(p, index) in products"
+              v-for="(product, index) in products"
               :key="index"
               class="cursor-pointer"
               :class="{ selected: selectedRow === index }"
               @click="selectProduct(index)"
             >
               <TableCell
-                v-for="h in headers"
-                :key="h.value"
+                v-for="header in headers"
+                :key="header.value"
                 :class="{
-                  'text-center': h.align === 'center',
+                  'text-center': header.align === 'center',
                 }"
               >
-                <template v-if="h.type === 'name'">
+                <template v-if="header.type === 'name'">
                   <div class="flex items-center space-x-4">
-                    <img :src="p.imageBase64" class="w-16 rounded object-fill shadow-sm" alt="Product's photo" />
+                    <img :src="product.imageBase64" class="w-16 rounded object-fill shadow-sm" alt="Product's photo" />
                     <span class="text-sm font-medium">
-                      {{ p.item.name }}
+                      {{ product.item.name }}
                     </span>
                   </div>
                 </template>
-                <template v-else-if="h.type === 'url'">
-                  <NuxtLink class="underline" :to="'https://' + extractValue(p, h.value)" target="_blank">{{
-                    extractValue(p, h.value)
-                  }}</NuxtLink>
+                <template v-else-if="header.type === 'url'">
+                  <a
+                    class="underline"
+                    :href="'https://' + extractValue(product, header.value)"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    {{ extractValue(product, header.value) }}
+                  </a>
                 </template>
-
-                <slot v-else :name="cell(h)">
-                  {{ extractValue(p, h.value) }}
-                </slot>
+                <template v-else>
+                  {{ extractValue(product, header.value) }}
+                </template>
               </TableCell>
             </TableRow>
           </TableBody>
@@ -237,10 +241,6 @@
       current = current[part];
     }
     return current;
-  }
-
-  function cell(h: BarcodeTableHeader) {
-    return `cell-${h.value.replace(".", "_")}`;
   }
 
   function selectProduct(index: number) {
