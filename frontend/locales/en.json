@@ -1472,6 +1472,16 @@
         }
     },
     "shell": {
+        "home": {
+            "welcome": "Welcome back, {name}",
+            "view_all": "View all",
+            "worth_a_minute": "Worth a minute",
+            "all_caught_up": "All caught up. Nothing needs attention.",
+            "chore_overdue": "{n, plural, one {# maintenance task is overdue} other {# maintenance tasks are overdue}}",
+            "chore_upcoming": "{n, plural, one {# maintenance task due this month} other {# maintenance tasks due this month}}",
+            "chore_photo": "{n, plural, one {# item has no photo} other {# items have no photo}}",
+            "chore_empty_places": "{n, plural, one {# place is empty} other {# places are empty}}"
+        },
         "places_page": {
             "filter_placeholder": "Filter places…",
             "hide_empty": "Hide empty",
