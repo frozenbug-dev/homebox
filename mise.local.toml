@@ -1,0 +1,17 @@
+# Personal mise config (gitignored). The Taskfile remains the source of truth.
+[tools]
+go = "1.27"
+node = "lts"
+pnpm = "10.28.0"
+task = "3"
+"go:github.com/swaggo/swag/cmd/swag" = "1.16.6"
+"go:github.com/pressly/goose/v3/cmd/goose" = "3.8.0"
+
+[env]
+_.file = { path = ".env.local", redact = false }
+
+[tasks]
+up = "task services:up"
+down = "task services:down"
+api = "task go:run:postgresql"
+ui = "task ui:dev"
