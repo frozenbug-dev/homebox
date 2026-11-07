@@ -30,7 +30,8 @@ export enum DialogID {
   ItemTableSettings = "item-table-settings",
   PrintLabelTemplate = "print-label-template",
   ProductImport = "product-import",
-  QuickMenu = "quick-menu",
+  CommandPalette = "command-palette",
+  Shortcuts = "shortcuts",
   Scanner = "scanner",
   PageQRCode = "page-qr-code",
   UpdateTag = "update-tag",
@@ -86,6 +87,8 @@ export type DialogParamsMap = {
   [DialogID.UpdateLabelTemplate]: {
     templateId: string;
   };
+  /** Without params it is the global ⌘K palette; with moveInto it picks items to move into that place. */
+  [DialogID.CommandPalette]?: { moveInto?: { id: string; name: string } };
 };
 
 /**
@@ -97,6 +100,7 @@ export type DialogResultMap = {
   [DialogID.ItemChangeDetails]?: boolean;
   [DialogID.WipeInventory]?: { wipeTags: boolean; wipeLocations: boolean; wipeMaintenance: boolean };
   [DialogID.CreateGroupInvite]?: GroupInvitation;
+  [DialogID.CommandPalette]?: { moved: number };
 };
 
 /** Helpers to split IDs by requirement */

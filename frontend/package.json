@@ -42,6 +42,8 @@
     "vue-tsc": "3.3.14"
   },
   "dependencies": {
+    "@atlaskit/pragmatic-drag-and-drop": "^4.0.0",
+    "@atlaskit/pragmatic-drag-and-drop-hitbox": "^3.0.0",
     "@fontsource-variable/geist": "^5.3.0",
     "@fontsource-variable/geist-mono": "^5.3.0",
     "@lucide/vue": "^1.70.0",
@@ -57,7 +59,10 @@
     "@pinia/nuxt": "^1.0.3",
     "@tailwindcss/typography": "^0.5.20",
     "@tailwindcss/vite": "^4.3.5",
+    "@tanstack/vue-hotkeys": "^0.21.1",
+    "@tanstack/vue-query": "^5.107.1",
     "@tanstack/vue-table": "^8.21.3",
+    "@tanstack/vue-virtual": "^3.13.52",
     "@vuepic/vue-datepicker": "^14.0.0",
     "@vueuse/core": "^15.0.0",
     "@vueuse/nuxt": "^15.0.0",
