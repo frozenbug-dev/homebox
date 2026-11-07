@@ -3,8 +3,8 @@
  * This module sets up browser-based tracing that connects to backend traces.
  */
 
-import { WebTracerProvider, BatchSpanProcessor } from "@opentelemetry/sdk-trace-web";
-import type { SpanExporter, ReadableSpan } from "@opentelemetry/sdk-trace-web";
+import { TracerProvider, BatchSpanProcessor } from "@opentelemetry/sdk-trace";
+import type { SpanExporter, ReadableSpan } from "@opentelemetry/sdk-trace";
 import { ZoneContextManager } from "@opentelemetry/context-zone";
 import { registerInstrumentations } from "@opentelemetry/instrumentation";
 import { FetchInstrumentation } from "@opentelemetry/instrumentation-fetch";
@@ -12,7 +12,12 @@ import { resourceFromAttributes } from "@opentelemetry/resources";
 import { ATTR_SERVICE_NAME, ATTR_SERVICE_VERSION } from "@opentelemetry/semantic-conventions";
 import type { Span, Attributes } from "@opentelemetry/api";
 import { trace, context, propagation, SpanKind, SpanStatusCode } from "@opentelemetry/api";
-import { ExportResultCode } from "@opentelemetry/core";
+import {
+  CompositePropagator,
+  ExportResultCode,
+  W3CBaggagePropagator,
+  W3CTraceContextPropagator,
+} from "@opentelemetry/core";
 import type { ExportResult } from "@opentelemetry/core";
 
 // Types for the telemetry configuration
@@ -39,7 +44,7 @@ const defaultConfig: OTelConfig = {
 };
 
 // Global provider instance
-let provider: WebTracerProvider | null = null;
+let provider: TracerProvider | null = null;
 let isInitialized = false;
 
 /**
@@ -181,18 +186,25 @@ export function initializeOTel(config: Partial<OTelConfig> = {}): void {
   const exporter: SpanExporter = new BackendProxyExporter("/api/v1/telemetry", finalConfig.debug);
 
   // Use batch processor for better performance
-  const batchProcessor = new BatchSpanProcessor(exporter);
+  const batchProcessor = new BatchSpanProcessor({ exporter });
 
   // Create the trace provider with span processor
-  provider = new WebTracerProvider({
+  provider = new TracerProvider({
     resource,
     spanProcessors: [batchProcessor],
   });
 
-  // Register the provider globally
-  provider.register({
-    contextManager: new ZoneContextManager(),
-  });
+  // Register globally. sdk-trace v3 has no provider.register(), so do what
+  // WebTracerProvider.register() did: provider, zone context manager, and the
+  // default W3C trace-context + baggage propagators (FetchInstrumentation
+  // relies on these to send `traceparent` to the backend).
+  trace.setGlobalTracerProvider(provider);
+  context.setGlobalContextManager(new ZoneContextManager().enable());
+  propagation.setGlobalPropagator(
+    new CompositePropagator({
+      propagators: [new W3CTraceContextPropagator(), new W3CBaggagePropagator()],
+    })
+  );
 
   // Register auto-instrumentations
   registerInstrumentations({
