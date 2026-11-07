@@ -85,13 +85,45 @@ tasks:
       HBOX_DATABASE_HOST: localhost
       HBOX_DATABASE_PORT: 5432
       HBOX_DATABASE_SSL_MODE: disable
-    desc: Starts the backend api server with postgresql (depends on generate task)
+      # Mailpit from docker-compose.dev.yml (UI: http://localhost:8025).
+      # Host must stay "localhost": net/smtp refuses PLAIN auth over
+      # plaintext to any other host.
+      HBOX_MAILER_HOST: localhost
+      HBOX_MAILER_PORT: 1025
+      HBOX_MAILER_USERNAME: homebox
+      HBOX_MAILER_PASSWORD: homebox
+      HBOX_MAILER_FROM: homebox@localhost
+      # Base URL for links in emails (points at the `task ui:dev` server).
+      # Without it, password-reset emails are silently skipped.
+      HBOX_OPTIONS_HOSTNAME: http://localhost:3000
+    desc: Starts the backend api server with postgresql + mailpit (run `task services:up` first; depends on generate task)
     dir: backend
     deps:
       - generate
     cmds:
       - go run ./app/api/ {{ .CLI_ARGS }}
     silent: false
+
+  services:up:
+    desc: Starts local dev services (postgres, mailpit) from docker-compose.dev.yml
+    cmds:
+      - docker compose -f docker-compose.dev.yml up -d --wait {{ .CLI_ARGS }}
+
+  services:down:
+    desc: Stops local dev services (keeps data)
+    cmds:
+      - docker compose -f docker-compose.dev.yml down
+
+  services:reset:
+    desc: Stops local dev services and deletes their data volumes
+    prompt: This deletes the local dev postgres data. Continue?
+    cmds:
+      - docker compose -f docker-compose.dev.yml down -v
+
+  services:logs:
+    desc: Follows logs of local dev services (pass a service name after --)
+    cmds:
+      - docker compose -f docker-compose.dev.yml logs -f {{ .CLI_ARGS }}
 
   go:ci:
     env:

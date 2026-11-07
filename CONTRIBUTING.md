@@ -59,6 +59,20 @@ If you're using `taskfile` you can run `task --list-all` for a list of all comma
 
 If you're using the taskfile, you can use the `task setup` command to run the required setup commands. Otherwise, you can review the commands required in the `Taskfile.yml` file.
 
+### Local Services
+
+SQLite works out of the box with `task go:run`. To develop against Postgres and capture outgoing email, start the supporting containers from `docker-compose.dev.yml` (requires Docker):
+
+```sh
+task services:up          # postgres (localhost:5432) + mailpit
+task go:run:postgresql    # API wired to both
+```
+
+- **Postgres**: `homebox` / `homebox`, database `homebox`.
+- **Mailpit**: catches invite and password-reset emails. Web UI at <http://localhost:8025>.
+
+`task services:down` stops them (data is kept), `task services:reset` also deletes the database volume, and `task services:logs` follows their logs. For custom combinations, see `.env.local.example`.
+
 ### API Development Notes
 
 start command `task go:run`
