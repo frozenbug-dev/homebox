@@ -11,10 +11,9 @@
       v-for="theme in themes"
       :key="theme.value"
       :class="'theme-' + theme.value"
-      class="overflow-hidden rounded-lg border outline-2 outline-offset-2"
+      class="overflow-hidden rounded-lg border"
       :data-theme="theme.value"
       :data-set-theme="theme.value"
-      data-act-class="outline"
       @click="setTheme(theme.value)"
     >
       <div :data-theme="theme.value" class="w-full cursor-pointer bg-background-accent text-foreground">

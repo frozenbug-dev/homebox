@@ -77,7 +77,7 @@
     <div class="flex items-center gap-2">
       <span
         :style="swatchStyle"
-        class="inline-block cursor-pointer rounded-full border ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+        class="inline-block cursor-pointer rounded-full border ring-offset-background focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:outline-hidden"
         :aria-label="`${t('components.color_selector.color')}: ${modelValue || t('components.color_selector.no_color_selected')}`"
         role="button"
         tabindex="0"
@@ -118,7 +118,7 @@
     <div class="col-span-3 mt-2 flex items-center gap-2">
       <span
         :style="swatchStyle"
-        class="inline-block cursor-pointer rounded-full border ring-offset-background focus:outline-none focus:outline-primary focus:ring-2 focus:ring-ring focus:ring-offset-2"
+        class="inline-block cursor-pointer rounded-full border ring-offset-background focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:outline-hidden focus:outline-primary"
         :aria-label="`${t('components.color_selector.color')}: ${modelValue || t('components.color_selector.no_color_selected')}`"
         role="button"
         tabindex="0"

@@ -7,7 +7,7 @@
       </Button>
     </PopoverTrigger>
     <PopoverContent class="z-40 p-0">
-      <div class="p-4 shadow-sm">
+      <div class="p-4 shadow-xs">
         <Input v-model="search" type="text" :placeholder="$t('components.search.filter.search_placeholder')" />
       </div>
       <div class="max-h-72 divide-y overflow-y-auto">

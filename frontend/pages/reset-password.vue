@@ -66,7 +66,7 @@
       x
     </div>
 
-    <Card class="md:w-[460px]">
+    <Card class="md:w-115">
       <CardHeader>
         <CardTitle class="flex items-center gap-2">
           <MdiLockReset class="size-6" />

@@ -26,7 +26,7 @@
           </span>
         </Button>
       </PopoverTrigger>
-      <PopoverContent class="w-[--reka-popper-anchor-width] p-0">
+      <PopoverContent class="w-(--reka-popper-anchor-width) p-0">
         <Command :ignore-filter="true">
           <CommandInput
             v-model="search"
@@ -42,7 +42,7 @@
                 :value="location.id"
                 @select="selectLocation(location as unknown as EntitySummary)"
               >
-                <Check :class="cn('mr-2 h-4 w-4', value?.id === location.id ? 'opacity-100' : 'opacity-0')" />
+                <Check :class="cn('mr-2 size-4', value?.id === location.id ? 'opacity-100' : 'opacity-0')" />
                 <div>
                   <div class="flex w-full">
                     {{ location.name }}

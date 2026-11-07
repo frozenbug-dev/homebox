@@ -276,7 +276,7 @@
             </div>
             <div v-if="template.defaultDescription" class="flex justify-between">
               <dt class="text-muted-foreground">{{ $t("components.template.form.item_description") }}</dt>
-              <dd class="max-w-[200px] truncate">{{ template.defaultDescription }}</dd>
+              <dd class="max-w-50 truncate">{{ template.defaultDescription }}</dd>
             </div>
             <div class="flex justify-between">
               <dt class="text-muted-foreground">{{ $t("global.quantity") }}</dt>

@@ -261,7 +261,7 @@
           </p>
         </div>
         <TooltipProvider :delay-duration="0">
-          <div class="z-10 ml-auto mt-6 flex items-center gap-4 sm:mt-0">
+          <div class="z-10 mt-6 ml-auto flex items-center gap-4 sm:mt-0">
             <Tooltip>
               <TooltipTrigger as-child>
                 <a href="https://github.com/sysadminsmedia/homebox" target="_blank" rel="noopener noreferrer">
@@ -306,7 +306,7 @@
         <div>
           <Transition name="slide-fade">
             <form v-if="registerForm" id="register-form" name="register" method="post" @submit.prevent="registerUser">
-              <Card class="md:w-[500px]">
+              <Card class="md:w-125">
                 <CardHeader>
                   <CardTitle class="flex items-center gap-2">
                     <MdiAccount class="mr-1 size-7" />
@@ -333,7 +333,7 @@
                     :required="true"
                     data-testid="name-input"
                   />
-                  <div v-if="!(groupToken == '')" class="pb-1 pt-4 text-center">
+                  <div v-if="!(groupToken == '')" class="pt-4 pb-1 text-center">
                     <p>{{ $t("index.joining_group") }}</p>
                     <button type="button" class="text-xs underline" @click="groupToken = ''">
                       {{ $t("index.dont_join_group") }}
@@ -366,7 +366,7 @@
               </Card>
             </form>
             <form v-else id="login-form" name="login" method="post" @submit.prevent="login">
-              <Card class="md:w-[500px]">
+              <Card class="md:w-125">
                 <CardHeader>
                   <CardTitle class="flex items-center gap-2">
                     <MdiAccount class="mr-1 size-7" />
@@ -402,7 +402,7 @@
                     :required="true"
                   />
                   <div class="flex items-center justify-between">
-                    <div class="max-w-[140px]">
+                    <div class="max-w-35">
                       <FormCheckbox v-model="remember" :label="$t('index.remember_me')" />
                     </div>
                     <NuxtLink to="/forgot-password" class="text-sm hover:underline">
@@ -453,7 +453,7 @@
             >
               <div class="relative mx-2">
                 <div
-                  class="absolute inset-0 flex items-center justify-center transition-transform duration-300 group-hover:rotate-[360deg]"
+                  class="absolute inset-0 flex items-center justify-center transition-transform duration-300 group-hover:rotate-360"
                 >
                   <MdiAccountPlus v-if="!registerForm" class="size-5 group-hover:hidden" />
                   <MdiLogin v-else class="size-5 group-hover:hidden" />

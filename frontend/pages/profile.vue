@@ -256,7 +256,7 @@
             :required="true"
             class="mb-2"
           />
-          <div class="mb-2 max-w-[260px]">
+          <div class="mb-2 max-w-65">
             <FormCheckbox v-model="apiKeyForm.setExpiration" :label="$t('profile.api_key_set_expiration')" />
           </div>
           <p v-if="!apiKeyForm.setExpiration" class="mb-2 text-sm text-muted-foreground">

@@ -82,11 +82,11 @@
 
 <template>
   <section
-    class="flex min-w-0 flex-1 flex-col gap-2 2xl:min-w-[360px]"
+    class="flex min-w-0 flex-1 flex-col gap-2 2xl:min-w-90"
     :aria-label="$t('components.label_template.editor.preview.print_preview')"
   >
     <div class="flex flex-wrap items-center justify-between gap-2">
-      <span class="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+      <span class="text-[11px] font-semibold tracking-wide text-muted-foreground uppercase">
         {{ $t("components.label_template.editor.preview.print_preview") }}
       </span>
       <div class="w-56 max-w-full">
@@ -111,7 +111,7 @@
     </div>
 
     <div
-      class="flex w-full max-w-[520px] items-center justify-center overflow-hidden rounded border bg-white shadow"
+      class="flex w-full max-w-130 items-center justify-center overflow-hidden rounded border bg-white shadow-sm"
       :style="{ aspectRatio }"
     >
       <p v-if="!selectedItem" class="px-6 text-center text-xs text-muted-foreground">
@@ -130,7 +130,7 @@
       <img v-else-if="previewUrl" :src="previewUrl" alt="" class="size-full object-contain" />
     </div>
 
-    <p v-if="selectedItem" class="max-w-[520px] text-xs leading-relaxed text-muted-foreground">
+    <p v-if="selectedItem" class="max-w-130 text-xs leading-relaxed text-muted-foreground">
       {{ $t("components.label_template.editor.preview.render_hint", { dpi: props.dpi }) }}
     </p>
   </section>

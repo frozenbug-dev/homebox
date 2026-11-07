@@ -74,7 +74,7 @@
 <template>
   <Dialog :dialog-id="DialogID.ItemImage">
     <DialogContent
-      class="max-h-[90svh] w-auto max-w-[min(calc(100vw_-_1rem),32rem)] border-transparent bg-transparent p-0 md:max-w-lg"
+      class="max-h-[90svh] w-auto max-w-[min(calc(100vw-1rem),32rem)] border-transparent bg-transparent p-0 md:max-w-lg"
       disable-close
     >
       <picture>
@@ -82,18 +82,18 @@
         <img
           :src="image.thumbnailSrc"
           alt="attachment image"
-          class="min-w-64 max-w-[min(calc(100vw_-_1rem),32rem)] md:w-auto md:max-w-lg"
+          class="max-w-[min(calc(100vw-1rem),32rem)] min-w-64 md:w-auto md:max-w-lg"
         />
       </picture>
-      <Button variant="destructive" size="icon" class="absolute right-[84px] top-1" @click="deleteAttachment">
+      <Button variant="destructive" size="icon" class="absolute top-1 right-21" @click="deleteAttachment">
         <MdiDelete />
       </Button>
-      <a :class="buttonVariants({ size: 'icon' })" :href="image.originalSrc" download class="absolute right-11 top-1">
+      <a :class="buttonVariants({ size: 'icon' })" :href="image.originalSrc" download class="absolute top-1 right-11">
         <MdiDownload />
       </a>
       <Button
         size="icon"
-        class="absolute right-1 top-1"
+        class="absolute top-1 right-1"
         @click="
           closeDialog(DialogID.ItemImage);
           image.originalSrc = '';

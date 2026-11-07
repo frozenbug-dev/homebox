@@ -41,9 +41,9 @@
         @refresh="$emit('refresh')"
       />
 
-      <span v-if="selectedCount > 0" class="absolute -right-1 -top-1 flex size-4">
+      <span v-if="selectedCount > 0" class="absolute -top-1 -right-1 flex size-4">
         <span
-          class="pointer-events-none relative flex size-4 items-center justify-center whitespace-nowrap rounded-full bg-primary p-1 text-xs text-primary-foreground"
+          class="pointer-events-none relative flex size-4 items-center justify-center rounded-full bg-primary p-1 text-xs whitespace-nowrap text-primary-foreground"
         >
           {{ String(selectedCount) }}
         </span>

@@ -34,7 +34,7 @@
           <DropdownMenu>
             <DropdownMenuTrigger as-child>
               <SidebarMenuButton
-                class="flex justify-center bg-primary text-primary-foreground drop-shadow-md hover:bg-primary/90 active:bg-primary/90 active:text-primary-foreground group-data-[collapsible=icon]:justify-start"
+                class="flex justify-center bg-primary text-primary-foreground drop-shadow-md group-data-[collapsible=icon]:justify-start hover:bg-primary/90 active:bg-primary/90 active:text-primary-foreground"
                 :tooltip="$t('global.create')"
                 hotkey="Shortcut: Ctrl+`"
               >
@@ -44,7 +44,7 @@
                 </span>
               </SidebarMenuButton>
             </DropdownMenuTrigger>
-            <DropdownMenuContent class="z-40 min-w-[var(--reka-dropdown-menu-trigger-width)]">
+            <DropdownMenuContent class="z-40 min-w-(--reka-dropdown-menu-trigger-width)">
               <DropdownMenuItem
                 v-for="btn in dropdown"
                 :key="btn.id"
@@ -155,7 +155,7 @@
 
         <SidebarFooter>
           <SidebarMenuButton
-            class="flex justify-center group-data-[collapsible=icon]:justify-start group-data-[collapsible=icon]:bg-destructive group-data-[collapsible=icon]:text-destructive-foreground group-data-[collapsible=icon]:shadow-sm group-data-[collapsible=icon]:hover:bg-destructive/90"
+            class="flex justify-center group-data-[collapsible=icon]:justify-start group-data-[collapsible=icon]:bg-destructive group-data-[collapsible=icon]:text-destructive-foreground group-data-[collapsible=icon]:shadow-xs hover:group-data-[collapsible=icon]:bg-destructive/90"
             :tooltip="$t('global.sign_out')"
             data-testid="logout-button"
             @click="logout"
@@ -173,11 +173,11 @@
         <div class="relative flex h-full flex-col justify-center">
           <div v-if="preferences.displayLegacyHeader">
             <AppHeaderDecor class="-mt-10 hidden lg:block" />
-            <SidebarTrigger class="absolute left-2 top-2 hidden lg:flex" variant="default" />
+            <SidebarTrigger class="absolute top-2 left-2 hidden lg:flex" variant="default" />
           </div>
           <!-- IMPORTANT: if you change the height of this div, alter the top value in the item edit page-->
           <div
-            class="sticky top-0 z-20 flex h-[var(--header-height-mobile)] translate-y-[-0.5px] flex-col bg-secondary p-2 shadow-md sm:h-[var(--header-height)] sm:flex-row"
+            class="sticky top-0 z-20 flex h-(--header-height-mobile) translate-y-[-0.5px] flex-col bg-secondary p-2 shadow-md sm:h-(--header-height) sm:flex-row"
             :class="{
               'lg:hidden': preferences.displayLegacyHeader,
             }"

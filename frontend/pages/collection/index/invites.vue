@@ -159,7 +159,7 @@
       </div>
 
       <div v-else class="scroll-bg overflow-x-auto rounded-md border bg-card">
-        <Table class="min-w-[640px]">
+        <Table class="min-w-160">
           <TableHeader>
             <TableRow>
               <TableHead>{{ $t("collection.invite_token") }}</TableHead>
@@ -171,7 +171,7 @@
           <TableBody>
             <TableRow v-for="inv in allInvites" :key="inv.id || inv.token">
               <TableCell>
-                <span class="break-all font-mono text-xs">
+                <span class="font-mono text-xs break-all">
                   <template v-if="inv.token">
                     {{ inv.token }}
                   </template>

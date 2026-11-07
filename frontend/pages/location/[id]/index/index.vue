@@ -231,7 +231,7 @@
           <button
             v-for="(photo, i) in photos"
             :key="i"
-            class="group relative aspect-1 h-32 overflow-hidden rounded-lg border bg-muted"
+            class="group relative h-32 overflow-hidden rounded-lg border bg-muted"
             @click="openImageDialog(photo, location.id)"
           >
             <img
@@ -282,7 +282,7 @@
                 <TagChip v-for="tag in location.tags" :key="tag.id" :tag="tag" size="sm" />
               </div>
             </div>
-            <div class="ml-auto mt-2 flex flex-wrap items-center justify-between gap-2">
+            <div class="mt-2 ml-auto flex flex-wrap items-center justify-between gap-2">
               <LabelTemplatePrintButton :id="location.id" type="location" variant="outline" />
               <PageQRCode />
               <Button class="w-9 md:w-auto" @click="openCreateItem">

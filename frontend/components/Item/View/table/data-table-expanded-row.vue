@@ -33,7 +33,7 @@
     </div>
     <div class="flex min-w-0 flex-1 flex-col gap-2">
       <h2 class="truncate text-xl font-bold">{{ item.name }}</h2>
-      <Badge class="w-min text-nowrap bg-secondary text-secondary-foreground hover:bg-secondary/70 hover:underline">
+      <Badge class="w-min bg-secondary text-nowrap text-secondary-foreground hover:bg-secondary/70 hover:underline">
         <NuxtLink v-if="item.parent" :to="`/location/${item.parent.id}`">
           {{ item.parent.name }}
         </NuxtLink>
@@ -41,7 +41,7 @@
       <div class="flex flex-wrap gap-2">
         <TagChip v-for="tag in itemTags" :key="tag.id" :tag="tag" size="sm" :ancestors="tag.ancestors" />
       </div>
-      <p class="whitespace-pre-line break-words text-sm text-muted-foreground">
+      <p class="text-sm wrap-break-word whitespace-pre-line text-muted-foreground">
         {{ item.description || $t("components.item.no_description") }}
       </p>
     </div>

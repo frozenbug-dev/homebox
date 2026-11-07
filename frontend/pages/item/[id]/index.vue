@@ -683,13 +683,13 @@
                   </BreadcrumbItem>
                 </BreadcrumbList>
               </Breadcrumb>
-              <h1 class="text-wrap pb-1 text-2xl">
+              <h1 class="pb-1 text-2xl text-wrap">
                 {{ item ? item.name : "" }}
               </h1>
               <div class="flex flex-wrap gap-2 pb-1">
                 <TagChip v-for="tag in itemTags" :key="tag.id" :tag="tag" size="sm" :ancestors="tag.ancestors" />
               </div>
-              <div class="flex flex-wrap gap-1 text-wrap text-xs">
+              <div class="flex flex-wrap gap-1 text-xs text-wrap">
                 <div>
                   {{ $t("items.created_at") }}
                   <DateTime :date="item?.createdAt" />
@@ -701,7 +701,7 @@
                 </div>
               </div>
             </div>
-            <div class="ml-auto mt-2 flex flex-wrap items-center justify-between gap-2">
+            <div class="mt-2 ml-auto flex flex-wrap items-center justify-between gap-2">
               <LabelTemplatePrintButton :id="item.id" type="item" />
               <PageQRCode />
               <Button class="w-9 md:w-auto" :aria-label="$t('global.create_subitem')" @click="createSubitem">
@@ -741,7 +741,7 @@
         </div>
       </Card>
 
-      <div class="mb-6 mt-3 flex flex-wrap items-center justify-between">
+      <div class="mt-3 mb-6 flex flex-wrap items-center justify-between">
         <ButtonGroup>
           <Button
             v-for="tab in tabs"
@@ -800,9 +800,9 @@
         <template v-if="!hasNested">
           <BaseCard v-if="photos && photos.length > 0">
             <template #title> {{ $t("items.photos") }} </template>
-            <div class="scroll-bg container mx-auto flex max-h-[500px] flex-wrap gap-2 overflow-y-scroll border-t p-4">
+            <div class="scroll-bg container mx-auto flex max-h-125 flex-wrap gap-2 overflow-y-scroll border-t p-4">
               <button v-for="(img, i) in photos" :key="i" @click="openImageDialog(img, item.id)">
-                <img class="max-h-[200px] rounded" :src="img.thumbnailSrc" :alt="$t('items.photo')" loading="lazy" />
+                <img class="max-h-50 rounded" :src="img.thumbnailSrc" :alt="$t('items.photo')" loading="lazy" />
               </button>
             </div>
           </BaseCard>

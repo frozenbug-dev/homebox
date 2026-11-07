@@ -12,7 +12,7 @@
         <TooltipTrigger as-child>
           <button
             type="button"
-            class="absolute right-3 top-6 mb-3 ml-1 mt-auto inline-flex justify-center p-1"
+            class="absolute top-6 right-3 mt-auto mb-3 ml-1 inline-flex justify-center p-1"
             @click="toggle()"
           >
             <MdiEye name="mdi-eye" class="size-5" />

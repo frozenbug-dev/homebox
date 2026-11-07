@@ -101,7 +101,7 @@
       </div>
 
       <div v-else class="scroll-bg overflow-x-auto rounded-md border bg-card">
-        <Table class="min-w-[480px]">
+        <Table class="min-w-120">
           <TableHeader>
             <TableRow>
               <TableHead>{{ $t("collection.members.name") }}</TableHead>

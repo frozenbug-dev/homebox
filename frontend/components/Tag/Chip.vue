@@ -31,7 +31,7 @@
 
 <template>
   <NuxtLink
-    class="group/tag-chip flex gap-2 rounded-full border shadow transition duration-300 hover:bg-accent/50"
+    class="group/tag-chip flex gap-2 rounded-full border shadow-sm transition duration-300 hover:bg-accent/50"
     :class="{
       'p-4 py-1 text-base': size === 'lg',
       'p-3 py-1 text-sm': size !== 'sm' && size !== 'lg',

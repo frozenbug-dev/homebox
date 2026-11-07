@@ -373,7 +373,7 @@
         <TooltipProvider :delay-duration="0">
           <Tooltip>
             <TooltipTrigger as-child>
-              <Label class="flex cursor-pointer items-center gap-2 backdrop-blur-sm">
+              <Label class="flex cursor-pointer items-center gap-2 backdrop-blur-xs">
                 <Switch v-model="preferences.editorAdvancedView" />
                 {{ $t("items.advanced") }}
               </Label>
@@ -405,7 +405,7 @@
 
           <div class="border-t sm:p-0">
             <div v-for="field in mainFields" :key="field.ref" class="grid grid-cols-1 sm:divide-y">
-              <div class="border-b px-4 pb-4 pt-2 sm:px-6">
+              <div class="border-b px-4 pt-2 pb-4 sm:px-6">
                 <FormTextArea
                   v-if="field.type === 'textarea'"
                   v-model="item[field.ref]"
@@ -478,7 +478,7 @@
 
         <Card ref="attDropZone" class="overflow-visible shadow-xl">
           <div class="px-4 py-5 sm:px-6">
-            <h3 class="text-lg font-medium leading-6">{{ $t("items.attachments") }}</h3>
+            <h3 class="text-lg leading-6 font-medium">{{ $t("items.attachments") }}</h3>
             <p class="text-xs">{{ $t("items.changes_persisted_immediately") }}</p>
           </div>
           <div class="border-t p-4">
@@ -501,7 +501,7 @@
               <li
                 v-for="attachment in item.attachments"
                 :key="attachment.id"
-                class="grid grid-cols-6 justify-between py-3 pl-3 pr-4 text-sm"
+                class="grid grid-cols-6 justify-between py-3 pr-4 pl-3 text-sm"
               >
                 <p class="col-span-4 my-auto">
                   {{ attachment.title }}

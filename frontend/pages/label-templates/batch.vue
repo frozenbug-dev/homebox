@@ -364,7 +364,7 @@
 
     <div class="grid gap-4 lg:grid-cols-[minmax(0,1fr)_400px]">
       <!-- Left: pick what to print -->
-      <section class="flex min-h-[420px] flex-col rounded-lg border bg-card">
+      <section class="flex min-h-105 flex-col rounded-lg border bg-card">
         <div class="flex flex-col gap-3 border-b p-4">
           <div class="flex flex-wrap items-center gap-2">
             <Input v-model="query" :placeholder="$t('global.search')" class="min-w-48 flex-1" />
@@ -508,7 +508,7 @@
               v-else-if="previewUrl"
               :src="previewUrl"
               alt=""
-              class="max-h-64 max-w-full rounded-sm bg-white shadow"
+              class="max-h-64 max-w-full rounded-sm bg-white shadow-sm"
             />
             <div v-else class="flex h-32 items-center justify-center text-center text-sm text-muted-foreground">
               {{ $t("pages.label_templates.batch.preview_hint") }}
@@ -578,7 +578,7 @@
 
     <!-- Footer -->
     <div
-      class="sticky bottom-0 mt-4 flex flex-wrap items-center justify-between gap-3 rounded-lg border bg-card px-4 py-3 shadow-sm"
+      class="sticky bottom-0 mt-4 flex flex-wrap items-center justify-between gap-3 rounded-lg border bg-card px-4 py-3 shadow-xs"
     >
       <span class="text-sm text-muted-foreground">
         <template v-if="selectedIds.length">{{ summary }}</template>

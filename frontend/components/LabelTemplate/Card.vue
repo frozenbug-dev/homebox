@@ -130,7 +130,7 @@
       <img
         :src="previewUrl"
         :alt="$t('components.label_template.card.thumbnail_alt', { name: template.name })"
-        class="max-h-full rounded-sm bg-white shadow"
+        class="max-h-full rounded-sm bg-white shadow-sm"
         :style="thumbStyle"
         loading="lazy"
       />

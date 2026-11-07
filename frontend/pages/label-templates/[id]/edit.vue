@@ -504,7 +504,7 @@
               class="flex min-w-0 shrink-0 flex-col gap-2"
               :aria-label="$t('components.label_template.editor.design')"
             >
-              <span class="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+              <span class="text-[11px] font-semibold tracking-wide text-muted-foreground uppercase">
                 {{ $t("components.label_template.editor.design") }}
               </span>
               <!-- One canvas instance: toggling the rulers must not recreate it and lose the undo history -->

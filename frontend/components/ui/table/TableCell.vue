@@ -24,7 +24,7 @@
       <div
         :class="
           cn(
-            'flex size-full min-h-0 min-w-0 items-center [&:has([role=checkbox])]:pr-0',
+            'flex size-full min-h-0 min-w-0 items-center has-[[role=checkbox]]:pr-0',
             props.compact ? 'justify-center p-0' : 'p-4'
           )
         "

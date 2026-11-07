@@ -2,7 +2,7 @@
   <Card class="overflow-hidden shadow-xl">
     <CardHeader v-if="$slots.title" class="px-4 py-5 sm:px-6">
       <component :is="collapsable ? 'button' : 'div'" v-on="collapsable ? { click: toggle } : {}">
-        <h3 class="flex items-center text-lg font-medium leading-6">
+        <h3 class="flex items-center text-lg leading-6 font-medium">
           <slot name="title" />
           <template v-if="collapsable">
             <span class="ml-2 transition-transform" :class="{ 'rotate-180': collapsed }">
@@ -22,7 +22,7 @@
     </CardHeader>
     <CardContent
       :class="{
-        'max-h-[9000px]': collapsable && !collapsed,
+        'max-h-2250': collapsable && !collapsed,
         'max-h-0 overflow-hidden': collapsed,
       }"
       class="p-0 transition-[max-height] duration-200"

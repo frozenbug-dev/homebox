@@ -4,7 +4,7 @@
       <div class="mt-8 w-full">
         <img
           :src="photo.fileBase64"
-          class="w-full rounded object-fill shadow-sm"
+          class="w-full rounded object-fill shadow-xs"
           :alt="$t('components.entity.create_modal.uploaded')"
         />
       </div>

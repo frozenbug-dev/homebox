@@ -29,7 +29,7 @@
       </Button>
     </PopoverTrigger>
     <PopoverContent
-      :class="[sidebar.state.value === 'collapsed' ? 'min-w-48 p-0' : 'w-[--reka-popper-anchor-width] p-0']"
+      :class="[sidebar.state.value === 'collapsed' ? 'min-w-48 p-0' : 'w-(--reka-popper-anchor-width) p-0']"
     >
       <Command :ignore-filter="true">
         <CommandGroup>
@@ -77,7 +77,7 @@
               @select="selectCollection(collection)"
             >
               <Check
-                :class="cn('mr-2 h-4 w-4', selectedCollection?.id === collection.id ? 'opacity-100' : 'opacity-0')"
+                :class="cn('mr-2 size-4', selectedCollection?.id === collection.id ? 'opacity-100' : 'opacity-0')"
               />
               <div class="flex w-full items-center justify-between gap-2">
                 {{ collection.name }}

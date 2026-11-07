@@ -1,3 +1,4 @@
+import tailwindcss from "@tailwindcss/vite";
 import { defineNuxtConfig } from "nuxt/config";
 
 // https://v3.nuxtjs.org/api/configuration/nuxt.config
@@ -12,15 +13,7 @@ export default defineNuxtConfig({
     transpile: ["vue-i18n"],
   },
 
-  modules: [
-    "@nuxtjs/tailwindcss",
-    "@pinia/nuxt",
-    "@vueuse/nuxt",
-    "@vite-pwa/nuxt",
-    "unplugin-icons/nuxt",
-    "shadcn-nuxt",
-    "@nuxt/eslint",
-  ],
+  modules: ["@pinia/nuxt", "@vueuse/nuxt", "@vite-pwa/nuxt", "unplugin-icons/nuxt", "shadcn-nuxt", "@nuxt/eslint"],
 
   eslint: {
     config: {},
@@ -109,11 +102,8 @@ export default defineNuxtConfig({
       ],
     },
   },
-  postcss: {
-    plugins: {
-      tailwindcss: {},
-      autoprefixer: {},
-    },
+  vite: {
+    plugins: [tailwindcss()],
   },
 
   compatibilityDate: "2024-11-29",

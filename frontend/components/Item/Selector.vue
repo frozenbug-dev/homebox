@@ -27,7 +27,7 @@
           </span>
         </Button>
       </PopoverTrigger>
-      <PopoverContent class="w-[--reka-popper-anchor-width] p-0">
+      <PopoverContent class="w-(--reka-popper-anchor-width) p-0">
         <Command :ignore-filter="true">
           <CommandInput v-model="search" :placeholder="localizedSearchPlaceholder" :display-value="_ => ''" />
           <CommandEmpty>
@@ -49,7 +49,7 @@
                 :style="{ height: itemHeightPx + 'px' }"
                 @select="select(entry.item)"
               >
-                <Check :class="cn('mr-2 h-4 w-4', isSelected(entry.item) ? 'opacity-100' : 'opacity-0')" />
+                <Check :class="cn('mr-2 size-4', isSelected(entry.item) ? 'opacity-100' : 'opacity-0')" />
                 <slot name="display" v-bind="{ item: entry.item }">
                   {{ displayValue(entry.item) }}
                 </slot>

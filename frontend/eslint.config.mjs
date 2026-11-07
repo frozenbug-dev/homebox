@@ -10,10 +10,17 @@ const gitignorePath = fileURLToPath(new URL("../.gitignore", import.meta.url));
 
 export default withNuxt([
   includeIgnoreFile(gitignorePath, "Imported ../.gitignore patterns"),
-  ...tailwind.configs["flat/recommended"],
+  tailwind.configs.recommended,
   {
+    settings: {
+      tailwindcss: {
+        // v4 reads the theme from the CSS entry instead of a JS config
+        cssConfigPath: "./assets/css/main.css",
+      },
+    },
     plugins: {
       prettier,
+      tailwindcss: tailwind,
     },
     rules: {
       "vue/no-undef-components": [
@@ -42,7 +49,14 @@ export default withNuxt([
       "vue/no-v-html": 0,
       "vue/html-self-closing": 0,
 
-      "tailwindcss/no-custom-classname": "warn",
+      "tailwindcss/no-custom-classname": [
+        "warn",
+        {
+          // Plain CSS classes defined in assets/css/main.css. `inputs` is the
+          // plugin misreading the `...inputs` rest parameter of cn().
+          whitelist: ["homebox", "markdown", "scroll-bg", "text-no-transform", "inputs"],
+        },
+      ],
 
       "@typescript-eslint/no-unused-vars": [
         "error",

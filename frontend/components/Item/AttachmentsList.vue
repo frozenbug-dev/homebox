@@ -3,7 +3,7 @@
     <li
       v-for="attachment in attachments"
       :key="attachment.id"
-      class="flex items-center justify-between py-3 pl-3 pr-4 text-sm"
+      class="flex items-center justify-between py-3 pr-4 pl-3 text-sm"
     >
       <template v-if="isExternalURLAttachment(attachment)">
         <div class="flex w-0 flex-1 items-center">

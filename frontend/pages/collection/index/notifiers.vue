@@ -138,7 +138,7 @@
           <template v-if="notifier">
             <FormTextField v-model="notifier.name" :label="$t('global.name')" class="mb-2" />
             <FormTextField v-model="notifier.url" :label="$t('profile.url')" class="mb-2" />
-            <div class="max-w-[100px]">
+            <div class="max-w-25">
               <FormCheckbox v-model="notifier.isActive" :label="$t('profile.enabled')" />
             </div>
           </template>

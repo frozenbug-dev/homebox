@@ -296,7 +296,7 @@
               </div>
             </div>
           </div>
-          <div class="ml-auto mt-2 flex flex-wrap items-center justify-between gap-3">
+          <div class="mt-2 ml-auto flex flex-wrap items-center justify-between gap-3">
             <PageQRCode />
             <Button @click="openUpdate">
               <MdiPencil />

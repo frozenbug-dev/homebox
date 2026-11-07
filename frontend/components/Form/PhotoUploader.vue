@@ -12,7 +12,7 @@
         <Input
           id="photo-uploader"
           ref="fileInput"
-          class="absolute left-0 top-0 size-full cursor-pointer opacity-0"
+          class="absolute top-0 left-0 size-full cursor-pointer opacity-0"
           type="file"
           accept="image/png,image/jpeg,image/gif,image/avif,image/webp,android/force-camera-workaround"
           multiple

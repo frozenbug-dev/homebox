@@ -5,7 +5,7 @@
         <Button size="icon" variant="outline" class="relative" @click="copyText">
           <div
             :data-copied="copied"
-            class="group absolute inset-0 flex items-center justify-center transition-transform duration-300 data-[copied=true]:rotate-[360deg]"
+            class="group absolute inset-0 flex items-center justify-center transition-transform duration-300 data-[copied=true]:rotate-360"
           >
             <MdiContentCopy
               class="group-data-[copied=true]:hidden"

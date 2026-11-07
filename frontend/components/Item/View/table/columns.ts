@@ -27,14 +27,14 @@ export function makeColumns({
     const sortState = column.getIsSorted(); // 'asc' | 'desc' | false
     if (!sortState) {
       // show the neutral up/down icon when not sorted
-      return [t(key), h(ArrowUpDown, { class: cn(["ml-2 h-4 w-4 opacity-40", disableSort && "opacity-0"]) })];
+      return [t(key), h(ArrowUpDown, { class: cn(["ml-2 size-4 opacity-40", disableSort && "opacity-0"]) })];
     }
     // show a single arrow that points up for asc (rotate-180) and down for desc
     return [
       t(key),
       h(ArrowDown, {
         class: cn([
-          "ml-2 h-4 w-4 transition-transform opacity-100",
+          "ml-2 size-4 opacity-100 transition-transform",
           sortState === "asc" ? "rotate-180" : "",
           disableSort && "opacity-0",
         ]),

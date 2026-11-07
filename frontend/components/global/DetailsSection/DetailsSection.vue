@@ -37,14 +37,14 @@
             <template v-else-if="detail.type === 'markdown'">
               <ClientOnly>
                 <!-- eslint-disable-next-line tailwindcss/no-custom-classname -->
-                <div class="markdown-container w-full overflow-hidden break-words">
+                <div class="markdown-container w-full overflow-hidden wrap-break-word">
                   <Markdown :source="detail.text" />
                 </div>
               </ClientOnly>
             </template>
             <template v-else>
               <!-- Fixed version with improved overflow handling -->
-              <span class="flex w-full items-center break-words">
+              <span class="flex w-full items-center wrap-break-word">
                 <a
                   v-if="maybeUrl(detail.text.toString()).isUrl"
                   :href="maybeUrl(detail.text.toString()).url"

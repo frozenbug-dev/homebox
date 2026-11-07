@@ -939,7 +939,7 @@
 </script>
 
 <template>
-  <div ref="canvasContainerRef" class="min-h-[300px] overflow-auto rounded border bg-gray-100 p-4 dark:bg-zinc-800">
+  <div ref="canvasContainerRef" class="min-h-75 overflow-auto rounded border bg-gray-100 p-4 dark:bg-zinc-800">
     <!-- Rulers wrap the label itself so 0,0 lines up with its top-left corner and they scroll with it -->
     <LabelTemplateEditorRuler
       :visible="!!showRuler"
@@ -955,7 +955,7 @@
           here as well would let Vue reset the element, and with it the drawing,
           on the render that follows every zoom change.
         -->
-        <canvas ref="gridCanvasRef" class="pointer-events-none absolute left-0 top-0" :style="{ zIndex: 0 }" />
+        <canvas ref="gridCanvasRef" class="pointer-events-none absolute top-0 left-0" :style="{ zIndex: 0 }" />
         <!-- Fabric canvas (front, with transparent background area) -->
         <canvas ref="canvasRef" class="relative" :style="{ zIndex: 1 }" />
       </div>

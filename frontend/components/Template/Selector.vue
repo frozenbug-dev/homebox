@@ -29,7 +29,7 @@
               :value="template.id"
               @select="selectTemplate(template)"
             >
-              <Check :class="cn('mr-2 h-4 w-4', value?.id === template.id ? 'opacity-100' : 'opacity-0')" />
+              <Check :class="cn('mr-2 size-4', value?.id === template.id ? 'opacity-100' : 'opacity-0')" />
               <div class="flex w-full flex-col">
                 <div>{{ template.name }}</div>
                 <div v-if="template.description" class="mt-1 line-clamp-1 text-xs text-muted-foreground">
@@ -62,7 +62,7 @@
           <ChevronsUpDown class="ml-2 size-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent class="w-[--reka-popper-anchor-width] p-0">
+      <PopoverContent class="w-(--reka-popper-anchor-width) p-0">
         <Command :ignore-filter="true">
           <CommandInput
             v-model="search"
@@ -78,7 +78,7 @@
                 :value="template.id"
                 @select="selectTemplate(template)"
               >
-                <Check :class="cn('mr-2 h-4 w-4', value?.id === template.id ? 'opacity-100' : 'opacity-0')" />
+                <Check :class="cn('mr-2 size-4', value?.id === template.id ? 'opacity-100' : 'opacity-0')" />
                 <div class="flex w-full flex-col">
                   <div>{{ template.name }}</div>
                   <div v-if="template.description" class="mt-1 line-clamp-1 text-xs text-muted-foreground">
@@ -89,7 +89,7 @@
             </CommandGroup>
             <CommandSeparator />
             <CommandItem v-if="value" value="clear-selection" @select="clearSelection">
-              <X :class="cn('mr-2 h-4 w-4')" />
+              <X :class="cn('mr-2 size-4')" />
               <div class="flex w-full">
                 <span class="text-destructive">{{ $t("components.template.selector.clear") }}</span>
               </div>

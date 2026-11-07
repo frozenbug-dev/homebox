@@ -50,7 +50,7 @@
               <img
                 :src="api.labelTemplates.getPreviewUrl(tpl.id)"
                 alt=""
-                class="h-10 w-20 shrink-0 rounded-sm bg-white object-cover object-left shadow"
+                class="h-10 w-20 shrink-0 rounded-sm bg-white object-cover object-left shadow-sm"
                 loading="lazy"
               />
               <span class="flex min-w-0 flex-col">
@@ -76,7 +76,7 @@
               v-else-if="previewUrl"
               :src="previewUrl"
               alt=""
-              class="max-h-48 max-w-full rounded-sm bg-white shadow"
+              class="max-h-48 max-w-full rounded-sm bg-white shadow-sm"
             />
             <div v-else class="flex h-36 items-center justify-center text-sm text-muted-foreground">
               {{ $t("components.label_template.print_dialog.select_placeholder") }}

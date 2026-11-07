@@ -199,7 +199,7 @@
           <Button :disabled="loading" type="submit" class="group">
             <div class="relative mx-2">
               <div
-                class="absolute inset-0 flex items-center justify-center transition-transform duration-300 group-hover:rotate-[360deg]"
+                class="absolute inset-0 flex items-center justify-center transition-transform duration-300 group-hover:rotate-360"
               >
                 <MdiPackageVariant class="size-5 group-hover:hidden" />
                 <MdiPackageVariantClosed class="hidden size-5 group-hover:block" />

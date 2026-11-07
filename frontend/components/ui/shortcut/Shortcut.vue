@@ -19,7 +19,7 @@ const sizeClasses = computed(() => {
 <template>
   <kbd
     :class="[
-      'inline-flex items-center gap-0.5 rounded-md bg-background shadow-sm ring-1 ring-gray-200',
+      'inline-flex items-center gap-0.5 rounded-md bg-background shadow-xs ring-1 ring-gray-200',
       sizeClasses,
       className,
     ]"
