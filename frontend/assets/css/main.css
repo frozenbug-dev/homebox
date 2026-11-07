@@ -1,5 +1,8 @@
 @import "tailwindcss";
 @import "tw-animate-css";
+/* Self-hosted so a self-hosted instance makes no third-party font requests. */
+@import "@fontsource-variable/geist";
+@import "@fontsource-variable/geist-mono";
 @plugin "@tailwindcss/typography";
 
 /* Tailwind only scans these for class names (vite plugin, no JS config). */
@@ -20,6 +23,12 @@
  * (each theme-* class redefines them), so `inline` makes utilities reference
  * the live variable instead of a value resolved once at :root.
  */
+/* Fonts are static values, so they live outside `inline`. */
+@theme {
+  --font-sans: "Geist Variable", ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
+  --font-mono: "Geist Mono Variable", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
 @theme inline {
   --color-border: hsl(var(--border));
   --color-input: hsl(var(--input));
@@ -133,37 +142,44 @@
 }
 
 @layer base {
+  /*
+   * Default theme. Neutrals carry a faint sage tint so they sit with the
+   * primary; values are HSL channels like every other theme.
+   * Contrast (WCAG): foreground on background-accent 14.6:1, muted-foreground
+   * on white 6.3:1 and on background-accent 5.8:1, white on primary 5.6:1.
+   */
   :root,.homebox {
     --background: 0 0% 100%;
-    --background-accent: 0 0% 81%;
-    --foreground: 0 0% 20%;
-    --primary: 139 16% 43%;
-    --primary-foreground: 139 100% 89%;
+    --background-accent: 80 14% 96%;
+    --foreground: 140 9% 13%;
+    --primary: 139 19% 37%;
+    --primary-foreground: 0 0% 100%;
+    /* Charcoal; still drives the app header until the shell is restyled. */
     --secondary: 77 8% 17%;
     --secondary-foreground: 76 18% 83%;
-    --accent: 97 37% 93%;
-    --accent-foreground: 97 31% 19%;
-    --muted: 0 0% 90%;
-    --muted-foreground: 0 0% 20%;
+    --accent: 135 22% 93%;
+    --accent-foreground: 140 25% 23%;
+    --muted: 100 11% 94%;
+    --muted-foreground: 135 4% 37%;
     --card: 0 0% 100%;
-    --card-foreground: 0 0% 20%;
+    --card-foreground: 140 9% 13%;
     --popover: 0 0% 100%;
-    --popover-foreground: 0 0% 20%;
+    --popover-foreground: 140 9% 13%;
     --destructive: 0 91% 71%;
     --destructive-foreground: 0 100% 14%;
-    --input: 0 0% 81%;
-    --border: 0 0% 81%;
-    --ring: 139 16% 43%;
-    --sidebar-background: 0 0% 90%;
-    --sidebar-foreground: 0 0% 20%;
-    --sidebar-primary: 139 16% 43%;
-    --sidebar-primary-foreground: 139 100% 89%;
-    --sidebar-accent: 0 0% 81%;
-    --sidebar-accent-foreground: 0 0% 20%;
-    --sidebar-border: 0 0% 81%;
-    --sidebar-ring: 0 0% 81%;
+    --input: 103 9% 84%;
+    --border: 96 9% 90%;
+    --ring: 139 19% 37%;
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 140 9% 13%;
+    --sidebar-primary: 139 19% 37%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 135 22% 93%;
+    --sidebar-accent-foreground: 140 25% 23%;
+    --sidebar-border: 96 9% 90%;
+    --sidebar-ring: 139 19% 37%;
 
-    --radius: 0.5rem;
+    --radius: 0.75rem;
 }
 
   /*
