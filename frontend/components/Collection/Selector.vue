@@ -6,7 +6,7 @@
         role="combobox"
         :aria-expanded="open"
         :size="sidebar.state.value === 'collapsed' ? 'icon' : undefined"
-        :class="sidebar.state.value === 'collapsed' ? 'size-10' : 'w-full justify-between drop-shadow-md'"
+        :class="sidebar.state.value === 'collapsed' ? 'size-10' : 'h-10 w-full justify-between font-normal'"
         :aria-label="t('components.collection.selector.select_collection')"
         :title="t('components.collection.selector.select_collection')"
       >
@@ -14,7 +14,13 @@
           <MdiHomeGroup class="size-5" />
         </template>
         <template v-else>
-          <span class="flex items-center truncate">
+          <span class="flex items-center gap-2 truncate">
+            <span
+              class="flex size-5 shrink-0 items-center justify-center rounded-md bg-accent text-[11px] font-semibold text-accent-foreground"
+              aria-hidden="true"
+            >
+              {{ (selectedCollection?.name || "?").charAt(0).toUpperCase() }}
+            </span>
             <span class="truncate">
               {{
                 selectedCollection && selectedCollection.name

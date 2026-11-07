@@ -154,9 +154,8 @@
     --foreground: 140 9% 13%;
     --primary: 139 19% 37%;
     --primary-foreground: 0 0% 100%;
-    /* Charcoal; still drives the app header until the shell is restyled. */
-    --secondary: 77 8% 17%;
-    --secondary-foreground: 76 18% 83%;
+    --secondary: 100 11% 94%;
+    --secondary-foreground: 140 9% 13%;
     --accent: 135 22% 93%;
     --accent-foreground: 140 25% 23%;
     --muted: 100 11% 94%;
@@ -1192,8 +1191,8 @@
 }
 
 :root {
-  --header-height: 4rem;
-  --header-height-mobile: 7rem;
+  --header-height: 3.75rem;
+  --header-height-mobile: 6.25rem;
 }
 
 /* Non-scoped styles for regular text */

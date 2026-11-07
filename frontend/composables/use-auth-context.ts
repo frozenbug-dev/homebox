@@ -1,3 +1,4 @@
+import { shallowRef } from "vue";
 import type { CookieRef } from "nuxt/app";
 import type { PublicApi } from "~~/lib/api/public";
 import type { UserOut } from "~~/lib/api/types/data-contracts";
@@ -39,7 +40,17 @@ class AuthContext implements IAuthContext {
   private static readonly cookieTokenKey = "hb.auth.session";
   private static readonly cookieAttachmentTokenKey = "hb.auth.attachment_token";
 
-  user?: UserOut;
+  // Reactive so UI that reads the user (e.g. the sidebar account row) updates
+  // once the auth middleware has fetched it, even if it rendered first.
+  private _user = shallowRef<UserOut | undefined>(undefined);
+  get user(): UserOut | undefined {
+    return this._user.value;
+  }
+
+  set user(value: UserOut | undefined) {
+    this._user.value = value;
+  }
+
   private _token: CookieRef<string | null>;
   private _attachmentToken: CookieRef<string | null>;
 
