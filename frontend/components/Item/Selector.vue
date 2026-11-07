@@ -65,7 +65,7 @@
 
 <script setup lang="ts">
   import { computed, ref, watch } from "vue";
-  import { Check, ChevronsUpDown, X } from "lucide-vue-next";
+  import { Check, ChevronsUpDown, X } from "@lucide/vue";
   import fuzzysort from "fuzzysort";
   import { unrefElement, useElementSize, useScroll, useVModel } from "@vueuse/core";
   import { useI18n } from "vue-i18n";

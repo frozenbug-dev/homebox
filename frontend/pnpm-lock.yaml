@@ -8,6 +8,9 @@ importers:
 
   .:
     dependencies:
+      '@lucide/vue':
+        specifier: ^1.70.0
+        version: 1.70.0(vue@3.5.45(typescript@5.9.2))
       '@mdit/plugin-img-size':
         specifier: ^1.2.0
         version: 1.2.0(markdown-it@15.0.3)
@@ -89,9 +92,6 @@ importers:
       http-proxy:
         specifier: ^1.18.1
         version: 1.18.1
-      lucide-vue-next:
-        specifier: ^0.542.0
-        version: 0.542.0(vue@3.5.45(typescript@5.9.2))
       markdown-it:
         specifier: ^15.0.3
         version: 15.0.3
@@ -1393,6 +1393,11 @@ packages:
 
   '@keyv/serialize@1.1.1':
     resolution: {integrity: sha512-dXn3FZhPv0US+7dtJsIi2R+c7qWYiReoEh5zUntWCf4oSpMNib8FDhSoed6m3QyZdx5hK7iLFkYk3rNxwt8vTA==}
+
+  '@lucide/vue@1.70.0':
+    resolution: {integrity: sha512-kutUu3oEtfQnyaP6hh76ShG2dxa8PiL6uY3rk3DqclQe0Vd2FtPlnclezR0XMQtlFMPiEaCOXDSuhehFHW5ErQ==}
+    peerDependencies:
+      vue: '>=3.0.1'
 
   '@mapbox/node-pre-gyp@2.0.3':
     resolution: {integrity: sha512-uwPAhccfFJlsfCxMYTwOdVfOz3xqyj8xYL3zJj8f0pb30tLohnnFPhLuqp4/qoEz8sNxe4SESZedcBojRefIzg==}
@@ -4647,12 +4652,6 @@ packages:
   lru-cache@5.1.1:
     resolution: {integrity: sha512-KpNARQA3Iwv+jTA0utUVVbrh+Jlrr1Fv0e56GGzAFOXN7dk/FviaDW8LHmK52DlcH4WP2n6gI8vN1aesBFgo9w==}
 
-  lucide-vue-next@0.542.0:
-    resolution: {integrity: sha512-cJfyhFoneDgYTouHwUJEutXaCW5EQuRrBsvfELudWnMiwfqvcEtpZTFZLdZ5Nrqow+znzn+Iyhu3KeYIfa3mEg==}
-    deprecated: Package deprecated. Please use @lucide/vue instead.
-    peerDependencies:
-      vue: '>=3.0.1'
-
   magic-string-ast@1.0.3:
     resolution: {integrity: sha512-CvkkH1i81zl7mmb94DsRiFeG9V2fR2JeuK8yDgS8oiZSFa++wWLEgZ5ufEOyLHbvSbD1gTRKv9NdX69Rnvr9JA==}
     engines: {node: '>=20.19.0'}
@@ -7855,6 +7854,10 @@ snapshots:
       keyv: 5.6.0
 
   '@keyv/serialize@1.1.1': {}
+
+  '@lucide/vue@1.70.0(vue@3.5.45(typescript@5.9.2))':
+    dependencies:
+      vue: 3.5.45(typescript@5.9.2)
 
   '@mapbox/node-pre-gyp@2.0.3':
     dependencies:
@@ -11504,10 +11507,6 @@ snapshots:
   lru-cache@5.1.1:
     dependencies:
       yallist: 3.1.1
-
-  lucide-vue-next@0.542.0(vue@3.5.45(typescript@5.9.2)):
-    dependencies:
-      vue: 3.5.45(typescript@5.9.2)
 
   magic-string-ast@1.0.3:
     dependencies:

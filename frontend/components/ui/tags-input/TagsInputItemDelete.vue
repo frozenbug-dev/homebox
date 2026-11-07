@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { cn } from '@/lib/utils'
-import { X } from 'lucide-vue-next'
+import { X } from '@lucide/vue'
 import { TagsInputItemDelete, type TagsInputItemDeleteProps, useForwardProps } from 'reka-ui'
 import { computed, type HTMLAttributes } from 'vue'
 

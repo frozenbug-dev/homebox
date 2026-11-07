@@ -92,7 +92,7 @@
 </template>
 
 <script setup lang="ts">
-  import { Check, ChevronsUpDown, Plus, UserPlus, Settings } from "lucide-vue-next";
+  import { Check, ChevronsUpDown, Plus, UserPlus, Settings } from "@lucide/vue";
   import MdiHomeGroup from "~icons/mdi/home-group";
   import fuzzysort from "fuzzysort";
   import { Button } from "~/components/ui/button";

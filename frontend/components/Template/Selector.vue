@@ -102,7 +102,7 @@
 </template>
 
 <script setup lang="ts">
-  import { Check, ChevronsUpDown, X } from "lucide-vue-next";
+  import { Check, ChevronsUpDown, X } from "@lucide/vue";
   import fuzzysort from "fuzzysort";
   import { Button } from "~/components/ui/button";
   import {
