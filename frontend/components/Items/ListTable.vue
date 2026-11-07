@@ -4,7 +4,7 @@
   import { getCoreRowModel, useVueTable, type RowSelectionState, type VisibilityState } from "@tanstack/vue-table";
   import { useHotkey } from "@tanstack/vue-hotkeys";
   import { useQueryClient } from "@tanstack/vue-query";
-  import { Minus, Plus } from "@lucide/vue";
+  import { GripVertical, Minus, Plus } from "@lucide/vue";
   import PlaceCell from "./PlaceCell.vue";
   import type { EntitySummary } from "~/lib/api/types/data-contracts";
   import { SHORTCUTS } from "~/lib/shortcuts";
@@ -29,8 +29,10 @@
     isLoading: boolean;
     columns: Record<ItemColumn, boolean>;
     filtered: boolean;
-    /** Rows can be dragged onto drop targets (e.g. places in the places tree). */
+    /** Rows can be dragged onto drop targets (e.g. places in the places tree); shows a ⋮⋮ grip. */
     draggableRows?: boolean;
+    /** Leave out the column header row (compact lists). */
+    hideHeader?: boolean;
   }>();
   const emit = defineEmits<{ loadMore: []; clearFilters: [] }>();
 
@@ -169,13 +171,25 @@
     () => tableRows.value[focused.value]?.toggleSelected(),
     listMeta("shell.shortcuts.list_select")
   );
-  useHotkey(SHORTCUTS.selectionMove, () => bulkMove(), listMeta("shell.shortcuts.selection_move"));
-  useHotkey(SHORTCUTS.selectionTag, () => bulkTag(), listMeta("shell.shortcuts.selection_tag"));
-  useHotkey(SHORTCUTS.selectionPrint, () => bulkPrint(), listMeta("shell.shortcuts.selection_print"));
+  useHotkey(SHORTCUTS.selectionMove, () => bulkMove(), {
+    ...listMeta("shell.shortcuts.selection_move"),
+    enabled: () => target().length > 0,
+  });
+  useHotkey(SHORTCUTS.selectionTag, () => bulkTag(), {
+    ...listMeta("shell.shortcuts.selection_tag"),
+    enabled: () => target().length > 0,
+  });
+  useHotkey(SHORTCUTS.selectionPrint, () => bulkPrint(), {
+    ...listMeta("shell.shortcuts.selection_print"),
+    enabled: () => target().length > 0,
+  });
   useHotkey(SHORTCUTS.selectionClear, () => table.resetRowSelection(), {
     ...listMeta("shell.shortcuts.selection_clear"),
     enabled: () => selectedItems.value.length > 0,
   });
+
+  /** Whether M / T / P would act on something (a selection or the focused row). */
+  defineExpose({ hasTarget: computed(() => target().length > 0) });
 
   // ----- Actions -----
 
@@ -233,6 +247,7 @@
   <div role="grid" :aria-rowcount="total" class="text-sm">
     <!-- Header row: sticks below the panel header while the list scrolls. -->
     <div
+      v-if="!hideHeader"
       role="row"
       class="sticky top-(--header-height-mobile) z-10 grid h-9 items-center border-b border-border bg-background px-3 text-xs text-muted-foreground sm:top-(--header-height)"
       :style="{ gridTemplateColumns: gridTemplate }"
@@ -274,7 +289,13 @@
         @mouseenter="focused = vRow.index"
       >
         <span class="flex items-center" @click.stop>
+          <GripVertical
+            v-if="draggableRows && !selectedItems.length"
+            class="size-4 cursor-grab text-muted-foreground/50 group-hover:hidden"
+            aria-hidden="true"
+          />
           <Checkbox
+            :class="{ 'hidden group-hover:inline-flex': draggableRows && !selectedItems.length }"
             :model-value="tableRows[vRow.index]!.getIsSelected()"
             :aria-label="t('components.item.view.selectable.select_card')"
             @update:model-value="v => tableRows[vRow.index]!.toggleSelected(!!v)"
@@ -337,10 +358,13 @@
           />
         </span>
         <span v-if="show('added')" class="pl-3 text-xs text-muted-foreground">
-          <DateTime :date="tableRows[vRow.index]!.original.createdAt" datetime-type="date" />
+          <DateTime :date="tableRows[vRow.index]!.original.createdAt" format="long" datetime-type="date" />
         </span>
       </div>
     </div>
+
+    <!-- e.g. an "add item" row that ends the list -->
+    <slot v-if="!isLoading" name="append" />
 
     <div class="flex flex-col items-center gap-3 px-4 py-6 text-center text-sm text-muted-foreground">
       <template v-if="isLoading" />

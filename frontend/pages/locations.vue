@@ -4,7 +4,7 @@
   import { useHotkey } from "@tanstack/vue-hotkeys";
   import { useRouteQuery } from "@vueuse/router";
   import { monitorForElements } from "@atlaskit/pragmatic-drag-and-drop/element/adapter";
-  import { ArrowLeft, Ellipsis, ExternalLink, FolderInput, Pencil, Plus, Printer, Search } from "@lucide/vue";
+  import { ArrowLeft, Ellipsis, ExternalLink, Plus, Printer, Search } from "@lucide/vue";
   import { isDragData, vDropTarget, type DragData } from "~/lib/dnd";
   import { ancestors, filterTree, indexPlaces, subtreeIds } from "~/lib/place-tree";
   import { toEntityUpdate } from "~/lib/entity-update";
@@ -14,8 +14,6 @@
   import { useDialog } from "@/components/ui/dialog-provider";
   import { DialogID } from "@/components/ui/dialog-provider/utils";
   import { Button } from "@/components/ui/button";
-  import { Input } from "@/components/ui/input";
-  import { Switch } from "@/components/ui/switch";
   import {
     DropdownMenu,
     DropdownMenuContent,
@@ -27,6 +25,7 @@
   import ListTable, { type ItemColumn } from "~/components/Items/ListTable.vue";
   import InlineText from "~/components/Item/Inline/Text.vue";
   import ShortcutHint from "~/components/App/ShortcutHint.vue";
+  import AppHeaderActions from "~/components/App/HeaderActions.vue";
   import Currency from "~/components/global/Currency.vue";
 
   definePageMeta({ middleware: ["auth"] });
@@ -133,6 +132,10 @@
   /** Sum of quantities, which is what the tree and sidebar count. */
   const units = computed(() => (selectedId.value ? (counts.value.get(selectedId.value) ?? 0) : 0));
   const placeValue = computed(() => totals.value?.find(x => x.id === selectedId.value)?.total ?? 0);
+  /** Value per place for the tree's Value column. */
+  const values = computed(() => new Map((totals.value ?? []).map(x => [x.id, x.total])));
+
+  const openInItems = computed(() => ({ path: "/items", query: { places: placeAndBelow.value } }));
 
   const contentsQuery = computed(() => ({
     parentIds: placeAndBelow.value,
@@ -147,10 +150,10 @@
 
   const wide = useMediaQuery("(min-width: 768px)");
   const columns = computed<Record<ItemColumn, boolean>>(() => ({
-    asset: false,
+    asset: true,
     place: subPlaceCount.value > 0,
     tags: wide.value,
-    quantity: wide.value,
+    quantity: false,
     price: wide.value,
     added: false,
   }));
@@ -211,6 +214,10 @@
 
   function addInside() {
     if (selectedId.value) addingIn.value = selectedId.value;
+  }
+
+  function printAllLabels() {
+    openDialog(DialogID.PrintLabelTemplate, { params: { locationIds: [...index.value.byId.keys()] } });
   }
 
   function printLabel() {
@@ -317,6 +324,12 @@
     ...placesMeta("shell.shortcuts.place_move_items_here"),
     enabled: hasSelection,
   });
+  // The list's own P prints the hovered or selected rows; otherwise P prints this place's label.
+  const list = useTemplateRef<{ hasTarget: boolean }>("list");
+  useHotkey(SHORTCUTS.placePrint, printLabel, {
+    ...placesMeta("shell.shortcuts.place_print"),
+    enabled: () => hasSelection() && !list.value?.hasTarget,
+  });
   useHotkey(SHORTCUTS.placeRename, startRename, {
     ...placesMeta("shell.shortcuts.place_rename"),
     enabled: hasSelection,
@@ -324,39 +337,67 @@
 </script>
 
 <template>
-  <div
-    class="grid min-h-[calc(100svh-var(--header-height-mobile))] md:min-h-[calc(100svh-var(--header-height)-1rem)] md:grid-cols-[17rem_minmax(0,1fr)] xl:grid-cols-[19rem_minmax(0,1fr)]"
-  >
-    <!-- Places tree -->
+  <div class="grid flex-1 md:grid-cols-[21rem_minmax(0,1fr)] xl:grid-cols-[24rem_minmax(0,1fr)]">
+    <AppHeaderActions>
+      <Button variant="outline" size="sm" class="h-[30px] text-[13px] max-sm:hidden" @click="printAllLabels">
+        {{ t("shell.places_page.print_labels") }}
+      </Button>
+      <Button size="sm" class="h-[30px] text-[13px]" @click="addingIn = null">
+        <Plus class="sm:hidden" />
+        <span class="max-sm:sr-only">{{ t("shell.places_page.new_place") }}</span>
+        <ShortcutHint
+          :hotkey="SHORTCUTS.newPlace"
+          class="max-lg:hidden [&_kbd]:border-primary-foreground/20 [&_kbd]:bg-primary-foreground/15 [&_kbd]:text-primary-foreground"
+        />
+      </Button>
+    </AppHeaderActions>
+
+    <!-- All places -->
     <section
-      class="flex flex-col border-border md:sticky md:top-(--header-height) md:h-[calc(100svh-var(--header-height)-1rem)] md:border-r"
+      class="flex flex-col border-border/70 md:sticky md:top-(--header-height) md:h-[calc(100svh-var(--header-height)-1rem-2px-2rem)] md:border-r"
       :class="{ 'max-md:hidden': !!placeParam }"
       :aria-label="t('shell.places')"
     >
-      <div class="flex items-center gap-1.5 border-b border-border px-3 py-2">
-        <label class="relative flex flex-1 items-center">
-          <span class="sr-only">{{ t("shell.places_page.filter_placeholder") }}</span>
-          <Search class="pointer-events-none absolute left-2.5 size-3.5 text-muted-foreground" aria-hidden="true" />
-          <Input v-model="filter" :placeholder="t('shell.places_page.filter_placeholder')" class="h-7 pl-8 text-sm" />
+      <div class="flex h-10 shrink-0 items-center gap-2 border-b border-border/70 px-4">
+        <label class="flex flex-1 items-center gap-1.5 text-[13px] text-muted-foreground">
+          <Search class="size-3.5 shrink-0" aria-hidden="true" />
+          <input
+            v-model="filter"
+            :placeholder="t('shell.places_page.filter_placeholder')"
+            :aria-label="t('shell.places_page.filter_placeholder')"
+            class="min-w-0 flex-1 bg-transparent text-foreground outline-none placeholder:text-muted-foreground"
+          />
         </label>
-        <Button
-          variant="ghost"
-          size="icon"
-          class="size-7"
-          :aria-label="t('shell.places_page.new_place')"
-          @click="addingIn = null"
+        <button
+          type="button"
+          class="h-[26px] rounded-[7px] border px-2 text-xs transition-colors"
+          :class="
+            hideEmpty
+              ? 'border-primary/60 bg-primary/10 text-foreground'
+              : 'border-border bg-background text-foreground/80 hover:bg-muted'
+          "
+          :aria-pressed="hideEmpty"
+          @click="hideEmpty = !hideEmpty"
         >
-          <Plus class="size-4" />
-        </Button>
+          {{ t("shell.places_page.hide_empty") }}
+        </button>
+      </div>
+      <div
+        class="grid h-[30px] shrink-0 grid-cols-[minmax(0,1fr)_64px_84px] items-center border-b border-border/70 px-4 text-xs text-muted-foreground"
+      >
+        <span>{{ t("shell.places_page.col_place") }}</span>
+        <span class="text-right">{{ t("shell.places_page.col_items") }}</span>
+        <span class="text-right">{{ t("shell.places_page.col_value") }}</span>
       </div>
 
-      <div class="flex-1 overflow-y-auto p-2">
+      <div class="flex-1 overflow-y-auto">
         <PlacesTree
           v-if="tree"
           v-model:expanded="expanded"
           :tree="visibleTree"
           :index="index"
           :counts="counts"
+          :values="values"
           :selected-id="selectedId"
           :drop-active-id="dropActiveId"
           :adding-in="addingIn"
@@ -368,33 +409,39 @@
         <div
           v-if="canMoveToTop"
           v-drop-target="{ data: { kind: 'top-level' }, canDrop: source => source.kind === 'place' }"
-          class="mt-2 rounded-md border border-dashed border-border p-3 text-center text-xs text-muted-foreground"
+          class="m-3 rounded-md border border-dashed border-border p-3 text-center text-xs text-muted-foreground"
           :class="{ 'border-primary bg-primary/10 text-foreground': dropActiveId === 'top-level' }"
         >
           {{ t("shell.places_page.drop_top_level") }}
         </div>
         <p
           v-if="tree && visibleTree.length === 0 && addingIn === undefined"
-          class="px-2 py-6 text-center text-sm text-muted-foreground"
+          class="px-4 py-6 text-center text-sm text-muted-foreground"
         >
           {{ tree.length === 0 ? t("shell.places_page.no_places") : t("shell.places_page.no_match") }}
         </p>
       </div>
 
-      <div class="space-y-2 border-t border-border px-3 py-2.5">
-        <label class="flex items-center gap-2 text-xs text-muted-foreground">
-          <Switch v-model="hideEmpty" class="scale-90" />
-          {{ t("shell.places_page.hide_empty") }}
-        </label>
-        <p class="hidden text-[11px] leading-snug text-muted-foreground md:block">
-          {{ t("shell.places_page.tree_hint") }}
-        </p>
+      <div
+        class="hidden shrink-0 flex-wrap gap-x-3.5 gap-y-1 border-t border-border/70 px-4 py-2.5 text-xs text-muted-foreground md:flex"
+      >
+        <span class="inline-flex items-center gap-1">
+          <ShortcutHint hotkey="ArrowRight" /><ShortcutHint hotkey="ArrowLeft" />
+          {{ t("shell.places_page.hint_open_close") }}
+        </span>
+        <span class="inline-flex items-center gap-1">
+          <ShortcutHint :hotkey="SHORTCUTS.placeAddInside" />{{ t("shell.places_page.hint_add_inside") }}
+        </span>
+        <span class="inline-flex items-center gap-1">
+          <ShortcutHint :hotkey="SHORTCUTS.placeRename" />{{ t("shell.places_page.hint_rename") }}
+        </span>
+        <span>{{ t("shell.places_page.hint_drag") }}</span>
       </div>
     </section>
 
     <!-- The selected place -->
     <section v-if="selected" class="flex min-w-0 flex-col" :class="{ 'max-md:hidden': !placeParam }">
-      <header class="space-y-2 border-b border-border px-4 pt-5 pb-4 sm:px-6">
+      <header class="flex flex-col gap-2.5 border-b border-border/70 px-4 pt-[22px] pb-4 sm:px-6">
         <NuxtLink
           to="/locations"
           class="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground md:hidden"
@@ -411,7 +458,7 @@
           </template>
         </nav>
 
-        <div class="flex flex-wrap items-start gap-2">
+        <div class="flex flex-wrap items-center gap-3">
           <div class="min-w-0 flex-1">
             <InlineText
               ref="title"
@@ -422,72 +469,82 @@
               @save="rename"
             />
           </div>
-          <div class="flex items-center gap-1.5">
-            <Button size="sm" class="gap-1.5" @click="moveItemsHere">
-              <FolderInput class="size-4" />
-              {{ t("shell.places_page.move_items_here") }}
-              <ShortcutHint
-                :hotkey="SHORTCUTS.placeMoveItemsHere"
-                class="max-sm:hidden [&_kbd]:bg-primary-foreground/15 [&_kbd]:text-primary-foreground"
-              />
-            </Button>
-            <Button size="sm" variant="outline" class="gap-1.5" @click="addInside">
-              <Plus class="size-4" />
-              <span class="max-sm:sr-only">{{ t("shell.places_page.add_inside") }}</span>
-              <ShortcutHint :hotkey="SHORTCUTS.placeAddInside" class="max-sm:hidden" />
-            </Button>
-            <DropdownMenu>
-              <DropdownMenuTrigger as-child>
-                <Button variant="ghost" size="icon" class="size-8" :aria-label="t('shell.item_page.more')">
-                  <Ellipsis class="size-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" class="w-52">
-                <DropdownMenuItem @select="startRename">
-                  <Pencil class="size-4" />
-                  {{ t("shell.places_page.rename") }}
-                  <ShortcutHint :hotkey="SHORTCUTS.placeRename" class="ml-auto" />
-                </DropdownMenuItem>
-                <DropdownMenuItem @select="printLabel">
-                  <Printer class="size-4" />
-                  {{ t("shell.places_page.print_label") }}
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem as-child>
-                  <NuxtLink :to="`/location/${selected.id}`">
-                    <ExternalLink class="size-4" />
-                    {{ t("shell.places_page.open_details") }}
-                  </NuxtLink>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
+          <Button variant="outline" size="sm" class="h-[30px] text-[13px]" @click="startRename">
+            {{ t("shell.places_page.rename") }}
+            <ShortcutHint :hotkey="SHORTCUTS.placeRename" />
+          </Button>
+          <Button variant="outline" size="sm" class="h-[30px] text-[13px] max-sm:hidden" @click="printLabel">
+            {{ t("shell.places_page.print_label") }}
+            <ShortcutHint :hotkey="SHORTCUTS.placePrint" />
+          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger as-child>
+              <Button variant="outline" size="icon" class="size-[30px]" :aria-label="t('shell.item_page.more')">
+                <Ellipsis class="size-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" class="w-56">
+              <DropdownMenuItem @select="addInside">
+                <Plus class="size-4" />
+                {{ t("shell.places_page.add_inside") }}
+                <ShortcutHint :hotkey="SHORTCUTS.placeAddInside" class="ml-auto" />
+              </DropdownMenuItem>
+              <DropdownMenuItem class="sm:hidden" @select="printLabel">
+                <Printer class="size-4" />
+                {{ t("shell.places_page.print_label") }}
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem as-child>
+                <NuxtLink :to="`/location/${selected.id}`">
+                  <ExternalLink class="size-4" />
+                  {{ t("shell.places_page.open_details") }}
+                </NuxtLink>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
 
-        <p class="flex flex-wrap items-center gap-x-1.5 text-sm text-muted-foreground">
-          <span>{{ t("shell.places_page.summary_items", { n: total }) }}</span>
-          <template v-if="units !== total">
-            <span aria-hidden="true">·</span>
-            <span>{{ t("shell.places_page.summary_units", { n: units }) }}</span>
-          </template>
-          <span aria-hidden="true">·</span>
-          <Currency :amount="placeValue" />
-          <span aria-hidden="true">·</span>
-          <span>{{ t("shell.places_page.summary_places", { n: subPlaceCount }) }}</span>
+        <p class="flex flex-wrap items-center gap-x-[18px] gap-y-1 text-[13px] text-muted-foreground">
+          <span>
+            <b class="font-semibold text-foreground tabular-nums">{{ total }}</b>
+            {{ t("shell.places_page.stat_items", { n: total }) }}
+          </span>
+          <span v-if="units !== total">
+            <b class="font-semibold text-foreground tabular-nums">{{ units }}</b>
+            {{ t("shell.places_page.stat_units", { n: units }) }}
+          </span>
+          <span>
+            <b class="font-semibold text-foreground tabular-nums"><Currency :amount="placeValue" /></b>
+            {{ t("shell.places_page.stat_total") }}
+          </span>
+          <span>
+            <b class="font-semibold text-foreground tabular-nums">{{ subPlaceCount }}</b>
+            {{ t("shell.places_page.stat_places", { n: subPlaceCount }) }}
+          </span>
         </p>
       </header>
 
-      <form class="flex items-center gap-2 border-b border-border px-4 sm:px-6" @submit.prevent="addItem">
-        <Plus class="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
-        <input
-          v-model="newItemName"
-          class="h-10 min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
-          :placeholder="t('shell.places_page.add_item_placeholder', { name: selected.name })"
-          :aria-label="t('shell.places_page.add_item_placeholder', { name: selected.name })"
-        />
-      </form>
+      <div class="flex h-10 items-center gap-2 border-b border-border/70 px-4 text-[13px] sm:px-5">
+        <span class="font-semibold">{{ t("shell.places_page.contents") }}</span>
+        <span class="truncate text-muted-foreground max-sm:hidden"
+          >· {{ t("shell.places_page.including_sub_places") }}</span
+        >
+        <span class="flex-1" />
+        <NuxtLink :to="openInItems" class="mr-1.5 shrink-0 font-medium text-primary hover:underline max-sm:hidden">
+          {{ t("shell.places_page.open_in_items") }}
+        </NuxtLink>
+        <button
+          type="button"
+          class="flex h-7 shrink-0 items-center gap-1.5 rounded-[7px] border border-primary bg-primary/10 px-2.5 font-medium text-foreground hover:bg-primary/15"
+          @click="moveItemsHere"
+        >
+          {{ t("shell.places_page.move_items_here") }}
+          <ShortcutHint :hotkey="SHORTCUTS.placeMoveItemsHere" class="max-sm:hidden" />
+        </button>
+      </div>
 
       <ListTable
+        ref="list"
         :rows="rows"
         :total="total"
         :has-next-page="!!hasNextPage"
@@ -496,9 +553,22 @@
         :columns="columns"
         :filtered="false"
         draggable-rows
+        hide-header
         @load-more="fetchNextPage()"
-      />
-      <p class="hidden px-6 py-3 text-xs text-muted-foreground md:block">{{ t("shell.places_page.drag_hint") }}</p>
+      >
+        <template #append>
+          <form class="flex h-10 items-center gap-3 border-b border-border/60 px-3 sm:px-4" @submit.prevent="addItem">
+            <Plus class="size-4 shrink-0 text-primary" aria-hidden="true" />
+            <input
+              v-model="newItemName"
+              class="h-full min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
+              :placeholder="t('shell.places_page.add_item_placeholder', { name: selected.name })"
+              :aria-label="t('shell.places_page.add_item_placeholder', { name: selected.name })"
+            />
+          </form>
+        </template>
+      </ListTable>
+      <p class="hidden px-5 pb-5 text-xs text-muted-foreground md:block">{{ t("shell.places_page.drag_hint") }}</p>
     </section>
   </div>
 </template>

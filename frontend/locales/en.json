@@ -1472,17 +1472,38 @@
         }
     },
     "shell": {
+        "labels": "Labels",
         "home": {
-            "welcome": "Welcome back, {name}",
+            "stat_items": "{n, plural, one {item} other {items}}",
+            "stat_places": "{n, plural, one {place} other {places}}",
+            "stat_total": "total",
+            "stat_tags": "{n, plural, one {tag} other {tags}}",
+            "added_to": "Added {name} to {place}",
+            "added": "Added {name}",
             "view_all": "View all",
             "worth_a_minute": "Worth a minute",
             "all_caught_up": "All caught up. Nothing needs attention.",
-            "chore_overdue": "{n, plural, one {# maintenance task is overdue} other {# maintenance tasks are overdue}}",
-            "chore_upcoming": "{n, plural, one {# maintenance task due this month} other {# maintenance tasks due this month}}",
-            "chore_photo": "{n, plural, one {# item has no photo} other {# items have no photo}}",
-            "chore_empty_places": "{n, plural, one {# place is empty} other {# places are empty}}"
+            "chore_overdue": "Overdue maintenance",
+            "chore_upcoming": "Maintenance due this month",
+            "chore_photo": "Items without a photo",
+            "chore_empty_places": "Empty places"
         },
         "places_page": {
+            "print_labels": "Print labels",
+            "col_place": "Place",
+            "col_items": "Items",
+            "col_value": "Value",
+            "hint_open_close": "open / close",
+            "hint_add_inside": "add inside",
+            "hint_rename": "rename",
+            "hint_drag": "drag to nest",
+            "stat_items": "{n, plural, one {item} other {items}}",
+            "stat_units": "{n, plural, one {unit} other {units}}",
+            "stat_total": "total",
+            "stat_places": "{n, plural, one {sub-place} other {sub-places}}",
+            "contents": "Contents",
+            "including_sub_places": "including sub-places",
+            "open_in_items": "Open in Items",
             "filter_placeholder": "Filter places…",
             "hide_empty": "Hide empty",
             "new_place": "New place",
@@ -1496,8 +1517,8 @@
             "summary_items": "{n, plural, one {# item} other {# items}}",
             "summary_units": "{n, plural, one {# unit} other {# units}}",
             "summary_places": "{n, plural, =0 {no sub-places} one {# sub-place} other {# sub-places}}",
-            "add_item_placeholder": "Add an item to {name}…",
-            "drag_hint": "Drag rows onto a place in the tree to move them there, or select rows and press M.",
+            "add_item_placeholder": "Add to {name}… (type a name, press ↵)",
+            "drag_hint": "Drag a row by its ⋮⋮ handle onto any place in the tree to move it, or select rows and press M.",
             "tree_hint": "→ ← open and close · A add inside · drag a place onto another to nest it",
             "moved_items": "Moved {n, plural, one {# item} other {# items}} to {name}",
             "moved_place": "Moved {name} into {target}",
@@ -1514,6 +1535,24 @@
             "collapse": "Collapse"
         },
         "item_page": {
+            "group_product": "Product",
+            "group_purchase": "Purchase",
+            "model": "Model",
+            "serial": "Serial",
+            "from": "From",
+            "price": "Price",
+            "date": "Date",
+            "warranty": "Warranty",
+            "set_date": "Set date…",
+            "set_expiry": "Set expiry…",
+            "add_field": "Add field",
+            "add_photo": "Add photo",
+            "attach_file": "Attach file",
+            "edit": "Edit details",
+            "maintenance": "Maintenance",
+            "show_qr": "Show QR code",
+            "duplicate": "Duplicate",
+            "print_label": "Print label",
             "properties": "Properties",
             "place": "Place",
             "no_place": "No place",
@@ -1538,6 +1577,8 @@
             "no": "No"
         },
         "items_page": {
+            "focus_search": "Filter the list",
+            "add_item_row": "Add item or press",
             "filter_placeholder": "Filter by name, serial, model…",
             "select_all": "Select all",
             "increase": "Increase quantity",
@@ -1651,7 +1692,8 @@
             "item_duplicate": "Duplicate this item",
             "place_add_inside": "Add a place inside the selected one",
             "place_move_items_here": "Move items into this place",
-            "place_rename": "Rename this place"
+            "place_rename": "Rename this place",
+            "place_print": "Print this place's label"
         }
     }
 }

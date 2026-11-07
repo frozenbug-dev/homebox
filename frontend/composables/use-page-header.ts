@@ -47,3 +47,22 @@ export function usePageHeaderState() {
     }),
   });
 }
+
+/**
+ * How many pages currently put actions into the panel header. While any do,
+ * the layout hides its default Scan / New item buttons.
+ */
+const useHeaderActionCount = () => useState("page-header-actions", () => 0);
+
+/** True while a page shows its own header actions. */
+export function usePageHeaderActions() {
+  const count = useHeaderActionCount();
+  return computed(() => count.value > 0);
+}
+
+/** Registers the calling component as providing header actions for its lifetime. */
+export function useProvidePageHeaderActions() {
+  const count = useHeaderActionCount();
+  onMounted(() => count.value++);
+  onBeforeUnmount(() => count.value--);
+}

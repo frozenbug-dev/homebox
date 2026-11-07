@@ -2,13 +2,15 @@
   import { useI18n } from "vue-i18n";
   import { useRouteQuery } from "@vueuse/router";
   import { useHotkey } from "@tanstack/vue-hotkeys";
-  import { ListFilter, Search, SlidersHorizontal } from "@lucide/vue";
+  import { ListFilter, Plus, Search, SlidersHorizontal } from "@lucide/vue";
+  import { SHORTCUTS } from "~/lib/shortcuts";
+  import { useDialog } from "@/components/ui/dialog-provider";
+  import { DialogID } from "@/components/ui/dialog-provider/utils";
   import { useTagStore } from "~/stores/tags";
   import { useEntityTypeStore } from "~~/stores/entityTypes";
   import ListTable, { type ItemColumn } from "~/components/Items/ListTable.vue";
   import FilterChip from "~/components/Items/FilterChip.vue";
   import ShortcutHint from "~/components/App/ShortcutHint.vue";
-  import { Input } from "@/components/ui/input";
   import { Button } from "@/components/ui/button";
   import {
     DropdownMenu,
@@ -29,6 +31,7 @@
   usePageHeader(() => [{ label: t("shell.items") }]);
 
   const tagStore = useTagStore();
+  const { openDialog } = useDialog();
   const entityTypeStore = useEntityTypeStore();
   const places = useFlatLocations();
 
@@ -82,6 +85,11 @@
     setTimeout(() => (tagPickerOpen.value = true));
   }
 
+  const searchInput = useTemplateRef<HTMLInputElement>("searchInput");
+  useHotkey("/", () => searchInput.value?.focus(), {
+    meta: { name: t("shell.items_page.focus_search"), group: "list" },
+  });
+
   const filterMenuOpen = ref(false);
   useHotkey("F", () => (filterMenuOpen.value = true), {
     meta: { name: t("shell.items_page.add_filter"), group: "list" },
@@ -116,7 +124,7 @@
     tags: true,
     quantity: true,
     price: true,
-    added: false,
+    added: true,
   });
   const wide = useMediaQuery("(min-width: 768px)");
   const visibleColumns = computed<Record<ItemColumn, boolean>>(() =>
@@ -146,10 +154,17 @@
 <template>
   <div class="flex flex-col">
     <div class="flex flex-wrap items-center gap-2 border-b border-border px-3 py-2 sm:px-4">
-      <label class="relative flex w-full items-center sm:w-64">
+      <label class="flex h-7 w-full items-center gap-1.5 text-[13px] text-muted-foreground sm:w-64">
         <span class="sr-only">{{ t("shell.items_page.filter_placeholder") }}</span>
-        <Search class="pointer-events-none absolute left-2.5 size-3.5 text-muted-foreground" aria-hidden="true" />
-        <Input v-model="search" :placeholder="t('shell.items_page.filter_placeholder')" class="h-7 pl-8 text-sm" />
+        <Search class="size-3.5 shrink-0" aria-hidden="true" />
+        <input
+          ref="searchInput"
+          v-model="search"
+          :placeholder="t('shell.items_page.filter_placeholder')"
+          class="h-full min-w-0 flex-1 bg-transparent text-foreground outline-none placeholder:text-muted-foreground"
+          @keydown.esc="($event.target as HTMLInputElement).blur()"
+        />
+        <ShortcutHint v-if="!search" hotkey="/" />
       </label>
 
       <FilterChip
@@ -272,6 +287,18 @@
       :filtered="filtered"
       @load-more="fetchNextPage()"
       @clear-filters="clearFilters"
-    />
+    >
+      <template #append>
+        <button
+          type="button"
+          class="flex h-10 w-full items-center gap-2 border-b border-border/60 px-4 text-left text-sm text-muted-foreground hover:bg-muted/40"
+          @click="openDialog(DialogID.CreateEntity, { params: { baseType: 'item' } })"
+        >
+          <Plus class="size-4 text-primary" aria-hidden="true" />
+          {{ t("shell.items_page.add_item_row") }}
+          <ShortcutHint :hotkey="SHORTCUTS.newItem" />
+        </button>
+      </template>
+    </ListTable>
   </div>
 </template>

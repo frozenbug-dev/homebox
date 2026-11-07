@@ -2,11 +2,15 @@
   <Popover v-model:open="open">
     <PopoverTrigger as-child>
       <Button
-        variant="outline"
+        variant="ghost"
         role="combobox"
         :aria-expanded="open"
         :size="sidebar.state.value === 'collapsed' ? 'icon' : undefined"
-        :class="sidebar.state.value === 'collapsed' ? 'size-10' : 'h-10 w-full justify-between font-normal'"
+        :class="
+          sidebar.state.value === 'collapsed'
+            ? 'size-10'
+            : 'h-9 w-full justify-between px-1.5 font-semibold hover:bg-sidebar-accent'
+        "
         :aria-label="t('components.collection.selector.select_collection')"
         :title="t('components.collection.selector.select_collection')"
       >
@@ -16,7 +20,7 @@
         <template v-else>
           <span class="flex items-center gap-2 truncate">
             <span
-              class="flex size-5 shrink-0 items-center justify-center rounded-md bg-accent text-[11px] font-semibold text-accent-foreground"
+              class="flex size-[22px] shrink-0 items-center justify-center rounded-md bg-primary text-[11px] font-semibold text-primary-foreground"
               aria-hidden="true"
             >
               {{ (selectedCollection?.name || "?").charAt(0).toUpperCase() }}

@@ -6,6 +6,7 @@
   import type { TreeItem } from "~/lib/api/types/data-contracts";
   import { vDragSource, vDropTarget, type DragData } from "~/lib/dnd";
   import { canNest, type PlaceIndex } from "~/lib/place-tree";
+  import Currency from "~/components/global/Currency.vue";
 
   /**
    * The places tree: arrow keys move and open/close, Enter or a click selects.
@@ -17,6 +18,8 @@
     index: PlaceIndex;
     /** Item count per place, including what's in its sub-places. */
     counts: Map<string, number>;
+    /** Total value per place, for the Value column. */
+    values?: Map<string, number>;
     selectedId?: string;
     /** Place currently hovered by a drag. */
     dropActiveId?: string | null;
@@ -89,7 +92,7 @@
     else emit("cancelCreate");
   }
 
-  const indent = (level: number) => ({ paddingLeft: `${(level - 1) * 16 + 4}px` });
+  const indent = (level: number) => ({ paddingLeft: `${(level - 1) * 18 + 16}px` });
 </script>
 
 <template>
@@ -101,7 +104,7 @@
     :get-children="node => (node.children?.length ? node.children : undefined)"
     :model-value="selectedNode"
     as="div"
-    class="flex flex-col gap-px text-sm select-none"
+    class="flex flex-col text-sm select-none"
     @update:model-value="node => node && !Array.isArray(node) && emit('select', node.id)"
   >
     <template v-for="(item, i) in flattenItems" :key="item._id">
@@ -111,42 +114,50 @@
         v-drop-target="dropRule(item.value.id)"
         v-bind="item.bind"
         as="div"
-        class="group flex h-8 cursor-pointer items-center gap-1.5 rounded-md pr-2 outline-none hover:bg-accent/60 focus-visible:ring-2 focus-visible:ring-ring/50 data-selected:bg-accent data-selected:font-medium"
+        class="group grid h-[38px] cursor-pointer grid-cols-[minmax(0,1fr)_64px_84px] items-center border-b border-border/50 pr-4 outline-none hover:bg-muted/40 focus-visible:bg-muted/60 data-selected:bg-primary/10 data-selected:font-medium"
         :class="{ 'bg-primary/10 ring-2 ring-primary/60 ring-inset': dropActiveId === item.value.id }"
-        :style="indent(item.level)"
         @toggle="e => onToggle(e, expandedKeys.includes(item.value.id))"
       >
-        <button
-          v-if="item.hasChildren"
-          type="button"
-          tabindex="-1"
-          class="flex size-5 shrink-0 items-center justify-center rounded text-muted-foreground hover:bg-background"
-          :aria-label="isExpanded ? t('shell.places_page.collapse') : t('shell.places_page.expand')"
-          @click.stop="handleToggle()"
-        >
-          <ChevronRight class="size-3.5 transition-transform" :class="{ 'rotate-90': isExpanded }" />
-        </button>
-        <span v-else class="w-5 shrink-0" />
-        <MapPin class="size-3.5 shrink-0 text-muted-foreground" aria-hidden="true" />
-        <span class="truncate" :class="{ 'text-muted-foreground': !counts.get(item.value.id) }">
-          {{ item.value.name }}
+        <span class="flex min-w-0 items-center gap-1.5" :style="indent(item.level)">
+          <button
+            v-if="item.hasChildren"
+            type="button"
+            tabindex="-1"
+            class="flex size-4 shrink-0 items-center justify-center rounded text-muted-foreground/70 hover:text-foreground"
+            :aria-label="isExpanded ? t('shell.places_page.collapse') : t('shell.places_page.expand')"
+            @click.stop="handleToggle()"
+          >
+            <ChevronRight class="size-3.5 transition-transform" :class="{ 'rotate-90 text-primary': isExpanded }" />
+          </button>
+          <span v-else class="w-4 shrink-0" />
+          <MapPin
+            class="size-3.5 shrink-0"
+            :class="item.value.id === selectedId ? 'text-primary' : 'text-muted-foreground'"
+            aria-hidden="true"
+          />
+          <span class="truncate" :class="{ 'text-muted-foreground': !counts.get(item.value.id) }">
+            {{ item.value.name }}
+          </span>
         </span>
-        <span class="ml-auto pl-2 text-xs text-muted-foreground tabular-nums">
+        <span class="text-right text-[13px] text-muted-foreground tabular-nums">
           {{ counts.get(item.value.id) || "—" }}
+        </span>
+        <span class="truncate text-right text-[13px] text-muted-foreground tabular-nums">
+          <Currency v-if="values?.get(item.value.id)" :amount="values.get(item.value.id)!" />
         </span>
       </TreeRow>
 
       <div
         v-if="i === insertAfter(flattenItems)"
-        class="flex h-8 items-center gap-1.5 pr-2"
+        class="flex h-[38px] items-center gap-1.5 border-b border-border/50 bg-primary/5 pr-4"
         :style="indent(newRowLevel(flattenItems))"
       >
-        <span class="w-5 shrink-0" />
+        <span class="w-4 shrink-0" />
         <MapPin class="size-3.5 shrink-0 text-primary" aria-hidden="true" />
         <input
           v-model="newName"
           v-autofocus
-          class="h-7 min-w-0 flex-1 rounded-md border border-input bg-background px-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
+          class="h-[26px] min-w-0 flex-1 rounded-[7px] border-[1.5px] border-primary bg-background px-2 text-sm ring-3 ring-primary/12 outline-none"
           :placeholder="t('shell.places_page.new_place_placeholder')"
           :aria-label="t('shell.places_page.new_place_placeholder')"
           @keydown.enter.stop.prevent="submit"

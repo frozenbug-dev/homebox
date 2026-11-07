@@ -7,7 +7,14 @@
   import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
   import { useDialog } from "@/components/ui/dialog-provider";
 
-  const props = withDefaults(defineProps<{ variant?: "default" | "outline" | "ghost" }>(), { variant: "default" });
+  const props = withDefaults(
+    defineProps<{
+      variant?: "default" | "outline" | "ghost";
+      /** Only render the dialog; something else opens it via DialogID.PageQRCode. */
+      buttonless?: boolean;
+    }>(),
+    { variant: "default", buttonless: false }
+  );
 
   const { openDialog } = useDialog();
 
@@ -30,7 +37,7 @@
     </DialogContent>
   </Dialog>
 
-  <Tooltip>
+  <Tooltip v-if="!buttonless">
     <TooltipTrigger as-child>
       <Button size="icon" :variant="props.variant" @click="openDialog(DialogID.PageQRCode)">
         <MdiQrcode name="mdi-qrcode" />

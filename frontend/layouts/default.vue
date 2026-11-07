@@ -20,7 +20,7 @@
     <CollectionInviteCreateModal />
     <SidebarProvider :default-open="sidebarState">
       <Sidebar collapsible="icon" class="border-r-0">
-        <SidebarHeader class="gap-2 p-3">
+        <SidebarHeader class="gap-2 p-2.5 pb-2">
           <div class="flex items-center gap-2">
             <div class="min-w-0 flex-1">
               <CollectionSelector />
@@ -28,7 +28,7 @@
           </div>
           <div class="flex gap-1.5 group-data-[collapsible=icon]:flex-col">
             <SidebarMenuButton
-              class="h-9 flex-1 justify-start border border-sidebar-border bg-background text-muted-foreground shadow-xs hover:bg-background hover:text-foreground"
+              class="h-9 flex-1 justify-start rounded-[9px] border border-border bg-background text-[13px] text-muted-foreground hover:bg-background hover:text-foreground"
               :tooltip="$t('shell.search_or_add')"
               @click="openDialog(DialogID.CommandPalette)"
             >
@@ -36,36 +36,14 @@
               <span>{{ $t("shell.search_or_add") }}</span>
               <ShortcutHint :hotkey="SHORTCUTS.commandPalette" class="ml-auto group-data-[collapsible=icon]:hidden" />
             </SidebarMenuButton>
-            <DropdownMenu>
-              <DropdownMenuTrigger as-child>
-                <SidebarMenuButton
-                  class="size-9 shrink-0 justify-center bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground data-[state=open]:bg-primary/90 data-[state=open]:text-primary-foreground data-[state=open]:hover:bg-primary/90 data-[state=open]:hover:text-primary-foreground"
-                  :tooltip="$t('global.create')"
-                  :aria-label="$t('global.create')"
-                >
-                  <Plus />
-                </SidebarMenuButton>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" class="z-40 w-56">
-                <DropdownMenuItem
-                  class="cursor-pointer"
-                  @click="openDialog(DialogID.CreateEntity, { params: { baseType: 'item' } })"
-                >
-                  {{ $t("menu.create_item") }}
-                  <ShortcutHint :hotkey="SHORTCUTS.newItem" class="ml-auto" />
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  class="cursor-pointer"
-                  @click="openDialog(DialogID.CreateEntity, { params: { baseType: 'location' } })"
-                >
-                  {{ $t("menu.create_location") }}
-                  <ShortcutHint :hotkey="SHORTCUTS.newPlace" class="ml-auto" />
-                </DropdownMenuItem>
-                <DropdownMenuItem class="cursor-pointer" @click="openDialog(DialogID.CreateTag)">
-                  {{ $t("menu.create_tag") }}
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            <SidebarMenuButton
+              class="size-9 shrink-0 justify-center bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground"
+              :tooltip="$t('shell.new_item')"
+              :aria-label="$t('shell.new_item')"
+              @click="openDialog(DialogID.CreateEntity, { params: { baseType: 'item' } })"
+            >
+              <Plus />
+            </SidebarMenuButton>
           </div>
         </SidebarHeader>
 
@@ -84,11 +62,15 @@
                 >
                   <component :is="n.icon" />
                   <span>{{ n.name.value }}</span>
-                  <span
-                    v-if="n.count?.value !== undefined"
-                    class="ml-auto text-xs text-muted-foreground tabular-nums group-data-[collapsible=icon]:hidden"
-                  >
-                    {{ n.count.value }}
+                  <span class="ml-auto flex items-center gap-1.5 group-data-[collapsible=icon]:hidden">
+                    <ShortcutHint
+                      v-if="n.hotkey"
+                      :hotkey="n.hotkey"
+                      class="opacity-0 transition-opacity group-hover/menu-item:opacity-100"
+                    />
+                    <span v-if="n.count?.value !== undefined" class="text-xs text-muted-foreground tabular-nums">
+                      {{ n.count.value }}
+                    </span>
                   </span>
                 </SidebarMenuLink>
               </SidebarMenuItem>
@@ -190,7 +172,7 @@
             class="sticky top-0 z-20 flex h-(--header-height-mobile) items-center gap-2 border-b border-border bg-background/95 px-2 backdrop-blur-sm sm:h-(--header-height) sm:gap-3 sm:px-4"
           >
             <SidebarTrigger variant="ghost" class="text-muted-foreground" />
-            <nav aria-label="Breadcrumb" class="flex min-w-0 items-center gap-2 text-sm">
+            <nav aria-label="Breadcrumb" class="flex min-w-0 shrink items-center gap-2 text-sm">
               <template v-for="(crumb, i) in pageHeader.crumbs" :key="i">
                 <NuxtLink v-if="crumb.to" :to="crumb.to" class="shrink-0 text-muted-foreground hover:text-foreground">
                   {{ crumb.label }}
@@ -199,17 +181,16 @@
                 <span v-if="i < pageHeader.crumbs.length - 1" class="text-border" aria-hidden="true">/</span>
               </template>
             </nav>
-            <div class="flex-1" />
             <button
               type="button"
-              class="hidden h-8 w-full max-w-md items-center gap-2 rounded-lg border border-border bg-background-accent/60 px-2.5 text-sm text-muted-foreground transition-colors hover:border-ring/40 hover:text-foreground md:flex"
+              class="mx-auto hidden h-[34px] w-full max-w-140 min-w-0 flex-1 items-center gap-2 rounded-[9px] border border-border bg-muted/40 px-2.5 text-sm text-muted-foreground transition-colors hover:border-ring/40 hover:text-foreground md:flex"
               @click="openDialog(DialogID.CommandPalette)"
             >
-              <Search class="size-4" aria-hidden="true" />
-              <span class="truncate">{{ $t("shell.shortcuts.command_palette") }}…</span>
+              <Search class="size-4 shrink-0" aria-hidden="true" />
+              <span class="truncate">{{ $t("shell.palette.placeholder") }}</span>
               <ShortcutHint :hotkey="SHORTCUTS.commandPalette" class="ml-auto" />
             </button>
-            <div class="flex-1" />
+            <div class="flex-1 md:hidden" />
             <Button
               variant="ghost"
               size="icon"
@@ -219,24 +200,43 @@
             >
               <Search />
             </Button>
-            <Button variant="outline" size="sm" :aria-label="$t('shell.scan')" @click="openScanner">
-              <ScanQrCode />
-              <span class="hidden lg:inline">{{ $t("shell.scan") }}</span>
-              <ShortcutHint :hotkey="SHORTCUTS.scan" class="hidden lg:inline-flex" />
-            </Button>
-            <Button size="sm" @click="openDialog(DialogID.CreateEntity, { params: { baseType: 'item' } })">
-              <Plus />
-              <span class="hidden sm:inline">{{ $t("shell.new_item") }}</span>
-              <ShortcutHint :hotkey="SHORTCUTS.newItem" class="hidden lg:inline-flex" />
-            </Button>
+            <!-- Pages put their own actions here (see components/App/HeaderActions.vue) -->
+            <div id="page-header-actions" class="flex shrink-0 items-center gap-1.5 empty:hidden" />
+            <template v-if="!hasPageActions">
+              <Button
+                variant="outline"
+                size="sm"
+                class="h-[30px] text-[13px]"
+                :aria-label="$t('shell.scan')"
+                @click="openScanner"
+              >
+                <ScanQrCode />
+                <span class="hidden lg:inline">{{ $t("shell.scan") }}</span>
+                <ShortcutHint :hotkey="SHORTCUTS.scan" class="hidden lg:inline-flex" />
+              </Button>
+              <Button
+                size="sm"
+                class="h-[30px] text-[13px]"
+                @click="openDialog(DialogID.CreateEntity, { params: { baseType: 'item' } })"
+              >
+                <Plus />
+                <span class="hidden sm:inline">{{ $t("shell.new_item") }}</span>
+                <ShortcutHint
+                  :hotkey="SHORTCUTS.newItem"
+                  class="hidden lg:inline-flex [&_kbd]:border-primary-foreground/20 [&_kbd]:bg-primary-foreground/15 [&_kbd]:text-primary-foreground"
+                />
+              </Button>
+            </template>
           </header>
 
           <div v-if="preferences.displayLegacyHeader">
             <AppHeaderDecor class="-mt-10 hidden lg:block" />
           </div>
 
-          <slot />
-          <div class="grow" />
+          <!-- Pages fill the panel (flex-1 on their root) and the footer stays at the bottom -->
+          <div class="flex flex-1 flex-col">
+            <slot />
+          </div>
 
           <footer v-if="status" class="w-full pb-4 text-center">
             <p class="text-center text-xs text-muted-foreground">
@@ -264,6 +264,7 @@
   import { useI18n } from "vue-i18n";
   import DOMPurify from "dompurify";
   import { useQuery, useQueryClient } from "@tanstack/vue-query";
+  import type { RegisterableHotkey } from "@tanstack/vue-hotkeys";
   import {
     FileText,
     House,
@@ -300,12 +301,6 @@
     SidebarRail,
     SidebarTrigger,
   } from "@/components/ui/sidebar";
-  import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuTrigger,
-  } from "@/components/ui/dropdown-menu";
   import { useDialog } from "~/components/ui/dialog-provider";
   import { Button } from "~/components/ui/button";
   import { toast } from "@/components/ui/sonner";
@@ -380,6 +375,7 @@
   });
 
   const pageHeader = usePageHeaderState();
+  const hasPageActions = usePageHeaderActions();
 
   type NavItem = {
     icon: Component;
@@ -388,6 +384,7 @@
     name: ComputedRef<string>;
     to: string;
     count?: ComputedRef<number | undefined>;
+    hotkey?: RegisterableHotkey;
   };
 
   const navItem = (
@@ -395,8 +392,9 @@
     icon: Component,
     name: () => string,
     to: string,
-    opts: { isActive?: () => boolean; count?: () => number | undefined } = {}
+    opts: { isActive?: () => boolean; count?: () => number | undefined; hotkey?: RegisterableHotkey } = {}
   ): NavItem => ({
+    hotkey: opts.hotkey,
     id,
     icon,
     name: computed(name),
@@ -405,27 +403,31 @@
     count: opts.count ? computed(opts.count) : undefined,
   });
 
+  // Same order as the design; Templates sits at the end since the design has no slot for it.
   const nav: NavItem[] = [
-    navItem("home", House, () => t("menu.home"), "/home"),
+    navItem("home", House, () => t("menu.home"), "/home", { hotkey: SHORTCUTS.goHome }),
     navItem("items", Package, () => t("shell.items"), "/items", {
       isActive: () => route.path === "/items" || route.path === "/search" || route.path.startsWith("/item/"),
       count: () => stats.value?.totalItems,
+      hotkey: SHORTCUTS.goItems,
     }),
     navItem("places", MapPin, () => t("shell.places"), "/locations", {
       isActive: () => route.path === "/locations" || route.path.startsWith("/location/"),
       count: () => stats.value?.totalLocations,
+      hotkey: SHORTCUTS.goPlaces,
     }),
     navItem("tags", Tags, () => t("global.tags"), "/tags", {
       isActive: () => route.path === "/tags" || route.path.startsWith("/tag/"),
       count: () => stats.value?.totalTags,
+      hotkey: SHORTCUTS.goTags,
+    }),
+    navItem("maintenance", Wrench, () => t("menu.maintenance"), "/maintenance"),
+    navItem("labels", Printer, () => t("shell.labels"), "/label-templates", {
+      isActive: () => route.path.startsWith("/label-templates"),
     }),
     navItem("templates", FileText, () => t("menu.templates"), "/templates", {
       isActive: () => route.path === "/templates" || route.path.startsWith("/template/"),
     }),
-    navItem("labels", Printer, () => t("menu.label_templates"), "/label-templates", {
-      isActive: () => route.path.startsWith("/label-templates"),
-    }),
-    navItem("maintenance", Wrench, () => t("menu.maintenance"), "/maintenance"),
   ];
 
   const tagStore = useTagStore();

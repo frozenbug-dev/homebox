@@ -1,30 +1,18 @@
 <script setup lang="ts">
   import { useI18n } from "vue-i18n";
   import { useQuery } from "@tanstack/vue-query";
-  import { ArrowRight, CalendarClock, ImageOff, MapPin, Search, Wrench } from "@lucide/vue";
-  import type { Component } from "vue";
   import { MaintenanceFilterStatus } from "~/lib/api/types/data-contracts";
-  import { SHORTCUTS } from "~/lib/shortcuts";
-  import { useTagStore } from "~/stores/tags";
   import { useEntityTypeStore } from "~~/stores/entityTypes";
-  import { useDialog } from "@/components/ui/dialog-provider";
-  import { DialogID } from "@/components/ui/dialog-provider/utils";
-  import ShortcutHint from "~/components/App/ShortcutHint.vue";
   import Currency from "~/components/global/Currency.vue";
-  import DateTime from "~/components/global/DateTime.vue";
-  import TagChip from "~/components/Tag/Chip.vue";
 
   definePageMeta({ middleware: ["auth"] });
 
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   useHead({ title: () => `HomeBox | ${t("menu.home")}` });
 
   const api = useUserApi();
-  const auth = useAuthContext();
   const preferences = useViewPreferences();
-  const { openDialog } = useDialog();
   const entityTypeStore = useEntityTypeStore();
-  const tagStore = useTagStore();
 
   const collection = computed(() => preferences.value.collectionId);
   const itemTypeIds = computed(() => entityTypeStore.itemTypes.map(et => et.id));
@@ -103,6 +91,12 @@
     return { overdue, upcoming };
   });
 
+  /** "Nov 7" style dates, like the design's activity list. */
+  function shortDate(value: Date | string) {
+    const d = new Date(value);
+    return Number.isNaN(d.getTime()) ? "" : d.toLocaleDateString(locale.value, { month: "short", day: "numeric" });
+  }
+
   /** Places with nothing in them and no places inside them. */
   const emptyPlaces = computed(() => {
     const all = places.value ?? [];
@@ -110,175 +104,114 @@
     return all.filter(p => !p.itemCount && !hasChildren.has(p.id)).length;
   });
 
-  type Chore = { key: string; count: number; label: string; to: string; icon: Component; tone?: "warn" };
+  type Chore = { key: string; count: number; label: string; to: string; tone?: "warn" };
   const chores = computed<Chore[]>(() =>
     [
       {
         key: "overdue",
         count: maintenanceCounts.value.overdue,
-        label: t("shell.home.chore_overdue", { n: maintenanceCounts.value.overdue }),
+        label: t("shell.home.chore_overdue"),
         to: "/maintenance",
-        icon: Wrench,
         tone: "warn" as const,
       },
       {
         key: "upcoming",
         count: maintenanceCounts.value.upcoming,
-        label: t("shell.home.chore_upcoming", { n: maintenanceCounts.value.upcoming }),
+        label: t("shell.home.chore_upcoming"),
         to: "/maintenance",
-        icon: CalendarClock,
       },
       {
         key: "photo",
         count: withoutPhoto.value ?? 0,
-        label: t("shell.home.chore_photo", { n: withoutPhoto.value ?? 0 }),
+        label: t("shell.home.chore_photo"),
         to: "/items?photo=without",
-        icon: ImageOff,
       },
       {
         key: "empty",
         count: emptyPlaces.value,
-        label: t("shell.home.chore_empty_places", { n: emptyPlaces.value }),
+        label: t("shell.home.chore_empty_places"),
         to: "/locations",
-        icon: MapPin,
       },
     ].filter(c => c.count > 0)
   );
-
-  const topPlaces = computed(() =>
-    (places.value ?? [])
-      .filter(p => !p.parent)
-      .sort((a, b) => b.itemCount - a.itemCount)
-      .slice(0, 8)
-  );
-
-  const statCells = computed(() => [
-    { key: "value", label: t("home.total_value"), value: stats.value?.totalItemPrice ?? 0, currency: true },
-    { key: "items", label: t("home.total_items"), value: stats.value?.totalItems ?? 0 },
-    { key: "places", label: t("home.total_locations"), value: stats.value?.totalLocations ?? 0 },
-    { key: "tags", label: t("home.total_tags"), value: stats.value?.totalTags ?? 0 },
-  ]);
-
-  const firstName = computed(() => auth.user?.name?.split(" ")[0] ?? "");
 </script>
 
 <template>
-  <div class="flex flex-col">
-    <!-- Find or add: the fastest way to do almost anything -->
-    <section class="border-b border-border px-4 py-6 sm:p-8">
-      <h1 class="text-xl font-semibold tracking-tight sm:text-2xl">
-        {{ firstName ? t("shell.home.welcome", { name: firstName }) : t("menu.home") }}
-      </h1>
-      <button
-        type="button"
-        class="mt-4 flex h-11 w-full max-w-2xl items-center gap-2.5 rounded-lg border border-input bg-background px-3 text-left text-sm text-muted-foreground shadow-xs transition-colors hover:border-ring/60 hover:text-foreground"
-        @click="openDialog(DialogID.CommandPalette)"
-      >
-        <Search class="size-4 shrink-0" aria-hidden="true" />
-        <span class="truncate">{{ t("shell.palette.placeholder") }}</span>
-        <ShortcutHint :hotkey="SHORTCUTS.commandPalette" class="ml-auto max-sm:hidden" />
-      </button>
-    </section>
+  <div class="flex flex-1 flex-col">
+    <!-- Totals in one line, as in the design -->
+    <p
+      class="flex flex-wrap items-center gap-x-4 gap-y-1 border-b border-border px-4 py-3 text-[13px] text-muted-foreground"
+      :aria-label="t('home.quick_statistics')"
+    >
+      <span>
+        <b class="font-semibold text-foreground tabular-nums">{{ stats?.totalItems ?? 0 }}</b>
+        {{ t("shell.home.stat_items", { n: stats?.totalItems ?? 0 }) }}
+      </span>
+      <span>
+        <b class="font-semibold text-foreground tabular-nums">{{ stats?.totalLocations ?? 0 }}</b>
+        {{ t("shell.home.stat_places", { n: stats?.totalLocations ?? 0 }) }}
+      </span>
+      <span>
+        <b class="font-semibold text-foreground tabular-nums"><Currency :amount="stats?.totalItemPrice ?? 0" /></b>
+        {{ t("shell.home.stat_total") }}
+      </span>
+      <span>
+        <b class="font-semibold text-foreground tabular-nums">{{ stats?.totalTags ?? 0 }}</b>
+        {{ t("shell.home.stat_tags", { n: stats?.totalTags ?? 0 }) }}
+      </span>
+    </p>
 
-    <!-- Totals -->
-    <section class="grid grid-cols-2 border-b border-border md:grid-cols-4" :aria-label="t('home.quick_statistics')">
-      <div
-        v-for="(cell, i) in statCells"
-        :key="cell.key"
-        class="border-border p-4 sm:px-8"
-        :class="{ 'border-r': i % 2 === 0 || i < 3, 'max-md:border-b': i < 2, 'md:border-r-0': i === 3 }"
-      >
-        <p class="text-xs text-muted-foreground">{{ cell.label }}</p>
-        <p class="mt-1 text-xl font-semibold tracking-tight tabular-nums">
-          <Currency v-if="cell.currency" :amount="cell.value" />
-          <template v-else>{{ cell.value }}</template>
-        </p>
-      </div>
-    </section>
-
-    <div class="grid flex-1 lg:grid-cols-[minmax(0,1fr)_20rem]">
-      <!-- Recently added -->
-      <section class="min-w-0 px-4 py-5 sm:px-8">
-        <div class="mb-2 flex items-center justify-between">
-          <h2 class="text-sm font-medium">{{ t("home.recently_added") }}</h2>
-          <NuxtLink
-            to="/items"
-            class="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
-          >
+    <div class="flex flex-1 flex-wrap">
+      <!-- Recently added, styled like the design's activity list -->
+      <section class="min-w-0 flex-[3_1_520px] border-border lg:border-r">
+        <div class="flex items-center justify-between px-4 pt-3.5 pb-2">
+          <h2 class="text-[13px] font-semibold text-foreground/80">{{ t("home.recently_added") }}</h2>
+          <NuxtLink to="/items" class="text-xs text-muted-foreground hover:text-foreground">
             {{ t("shell.home.view_all") }}
-            <ArrowRight class="size-3.5" />
           </NuxtLink>
         </div>
-        <p v-if="recent && recent.length === 0" class="py-6 text-sm text-muted-foreground">
+        <p v-if="recent && recent.length === 0" class="px-4 py-6 text-sm text-muted-foreground">
           {{ t("items.no_results") }}
         </p>
-        <ul v-else class="divide-y divide-border/60 border-y border-border/60">
-          <li v-for="item in recent" :key="item.id">
-            <NuxtLink
-              :to="`/item/${item.id}`"
-              class="-mx-2 flex h-11 items-center gap-3 rounded-md px-2 text-sm hover:bg-muted/50"
-            >
-              <span class="min-w-0 flex-1 truncate font-medium">{{ item.name }}</span>
-              <span v-if="item.parent" class="hidden max-w-40 truncate text-muted-foreground sm:inline">
-                {{ item.parent.name }}
-              </span>
-              <span class="shrink-0 text-right text-xs text-muted-foreground tabular-nums">
-                <DateTime :date="item.createdAt" format="long" />
-              </span>
-            </NuxtLink>
-          </li>
-        </ul>
+        <NuxtLink
+          v-for="item in recent"
+          :key="item.id"
+          :to="`/item/${item.id}`"
+          class="flex h-10 items-center gap-3 border-b border-border/70 px-4 text-sm hover:bg-muted/40"
+        >
+          <span class="size-1.5 shrink-0 rounded-full bg-primary" aria-hidden="true" />
+          <span class="min-w-0 flex-1 truncate">
+            <i18n-t v-if="item.parent" keypath="shell.home.added_to" scope="global">
+              <template #name
+                ><b class="font-semibold">{{ item.name }}</b></template
+              >
+              <template #place>{{ item.parent.name }}</template>
+            </i18n-t>
+            <i18n-t v-else keypath="shell.home.added" scope="global">
+              <template #name
+                ><b class="font-semibold">{{ item.name }}</b></template
+              >
+            </i18n-t>
+          </span>
+          <span class="shrink-0 text-xs text-muted-foreground">{{ shortDate(item.createdAt) }}</span>
+        </NuxtLink>
       </section>
 
-      <!-- Worth a minute, places, tags -->
-      <aside class="space-y-6 border-t border-border px-4 py-5 sm:px-8 lg:border-t-0 lg:border-l lg:px-5">
-        <section>
-          <h2 class="mb-2 text-sm font-medium">{{ t("shell.home.worth_a_minute") }}</h2>
-          <p v-if="chores.length === 0" class="text-sm text-muted-foreground">{{ t("shell.home.all_caught_up") }}</p>
-          <ul v-else class="space-y-1.5">
-            <li v-for="chore in chores" :key="chore.key">
-              <NuxtLink
-                :to="chore.to"
-                class="group flex items-center gap-2.5 rounded-lg border border-border px-3 py-2.5 text-sm hover:bg-muted/50"
-              >
-                <component
-                  :is="chore.icon"
-                  class="size-4 shrink-0"
-                  :class="chore.tone === 'warn' ? 'text-destructive' : 'text-muted-foreground'"
-                  aria-hidden="true"
-                />
-                <span class="min-w-0 flex-1">{{ chore.label }}</span>
-                <ArrowRight
-                  class="size-3.5 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100"
-                  aria-hidden="true"
-                />
-              </NuxtLink>
-            </li>
-          </ul>
-        </section>
-
-        <section v-if="topPlaces.length">
-          <h2 class="mb-2 text-sm font-medium">{{ t("shell.places") }}</h2>
-          <div class="flex flex-wrap gap-1.5">
-            <NuxtLink
-              v-for="place in topPlaces"
-              :key="place.id"
-              :to="`/locations?place=${place.id}`"
-              class="inline-flex h-7 items-center gap-1.5 rounded-md border border-border px-2 text-xs hover:bg-muted/50"
-            >
-              <MapPin class="size-3 text-muted-foreground" aria-hidden="true" />
-              {{ place.name }}
-              <span class="text-muted-foreground tabular-nums">{{ place.itemCount }}</span>
-            </NuxtLink>
-          </div>
-        </section>
-
-        <section v-if="tagStore.tags.length">
-          <h2 class="mb-2 text-sm font-medium">{{ t("global.tags") }}</h2>
-          <div class="flex flex-wrap gap-1.5">
-            <TagChip v-for="tag in tagStore.tags" :key="tag.id" :tag="tag" size="sm" />
-          </div>
-        </section>
+      <!-- Worth a minute -->
+      <aside class="flex min-w-0 flex-[2_1_300px] flex-col gap-2.5 px-4 py-3.5">
+        <h2 class="text-[13px] font-semibold text-foreground/80">{{ t("shell.home.worth_a_minute") }}</h2>
+        <p v-if="chores.length === 0" class="text-sm text-muted-foreground">{{ t("shell.home.all_caught_up") }}</p>
+        <NuxtLink
+          v-for="chore in chores"
+          :key="chore.key"
+          :to="chore.to"
+          class="flex items-center justify-between gap-3 rounded-[9px] border border-border/70 px-3 py-2.5 text-sm hover:bg-muted/40"
+        >
+          <span>{{ chore.label }}</span>
+          <b class="font-semibold tabular-nums" :class="{ 'text-destructive': chore.tone === 'warn' }">
+            {{ chore.count }}
+          </b>
+        </NuxtLink>
       </aside>
     </div>
   </div>

@@ -13,6 +13,8 @@
     class?: HTMLAttributes["class"];
     label?: string;
     wrap?: boolean;
+    /** Shown instead of the raw value when not editing, e.g. a formatted price. */
+    display?: string;
   }>();
   const emit = defineEmits<{ save: [value: string] }>();
 
@@ -42,12 +44,21 @@
     select-on-focus
     @submit="submit"
   >
-    <EditableArea :class="cn('min-w-0 rounded-md px-1.5 py-1 hover:bg-accent has-[input]:bg-background', props.class)">
+    <EditableArea
+      :class="
+        cn(
+          'min-w-0 rounded-md px-1.5 py-1 focus-within:bg-background focus-within:ring-1 focus-within:ring-ring/40 hover:bg-muted',
+          props.class
+        )
+      "
+    >
       <EditablePreview
         class="block w-full cursor-text"
         :class="[wrap ? 'wrap-break-word' : 'truncate', { 'text-muted-foreground': !value }]"
         :aria-label="label"
-      />
+      >
+        {{ (value && display) || value || placeholder || "—" }}
+      </EditablePreview>
       <EditableInput class="w-full bg-transparent outline-none" :aria-label="label" />
     </EditableArea>
   </EditableRoot>

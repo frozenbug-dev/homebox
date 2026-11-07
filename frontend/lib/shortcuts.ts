@@ -32,6 +32,7 @@ export const SHORTCUTS = {
   placeAddInside: "A",
   placeMoveItemsHere: "I",
   placeRename: "R",
+  placePrint: "P",
 } as const;
 
 export type ShortcutGroup = "general" | "navigation" | "list" | "item" | "places";

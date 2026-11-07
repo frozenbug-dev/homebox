@@ -169,11 +169,11 @@
     --input: 103 9% 84%;
     --border: 96 9% 90%;
     --ring: 139 19% 37%;
-    --sidebar-background: 90 6% 96%;
+    --sidebar-background: 90 10% 93.5%;
     --sidebar-foreground: 140 9% 13%;
     --sidebar-primary: 139 19% 37%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 120 12% 90%;
+    --sidebar-accent: 105 12% 88%;
     --sidebar-accent-foreground: 140 25% 23%;
     --sidebar-border: 96 9% 90%;
     --sidebar-ring: 139 19% 37%;
@@ -1191,7 +1191,7 @@
 }
 
 :root {
-  --header-height: 3.5rem;
+  --header-height: 3.25rem;
   --header-height-mobile: 3.5rem;
 }
 

@@ -3,14 +3,18 @@
   import { useQueryClient } from "@tanstack/vue-query";
   import { useHotkey } from "@tanstack/vue-hotkeys";
   import {
-    ChevronDown,
-    ChevronUp,
     CopyPlus,
+    ImagePlus,
     Ellipsis,
     LayoutTemplate,
+    Paperclip,
+    Pencil,
+    Printer,
+    QrCode,
     Link as LinkIcon,
     Plus,
     Trash2,
+    Wrench,
   } from "@lucide/vue";
   import { toast } from "@/components/ui/sonner";
   import type { AnyDetail, Detail, Details } from "~~/components/global/DetailsSection/types";
@@ -34,7 +38,7 @@
   import ItemDuplicateSettings from "~/components/Item/DuplicateSettings.vue";
   import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
   import PageQRCode from "~/components/global/PageQRCode.vue";
-  import LabelTemplatePrintButton from "~/components/LabelTemplate/PrintButton.vue";
+  import AppHeaderActions from "~/components/App/HeaderActions.vue";
   import DetailsSection from "~/components/global/DetailsSection/DetailsSection.vue";
   import ItemAttachmentsList from "~/components/Item/AttachmentsList.vue";
   import ItemViewSelectable from "~/components/Item/View/Selectable.vue";
@@ -285,11 +289,8 @@
     return ret;
   });
 
+  // Only sections with content show; "Add photo / Attach file" covers the empty case.
   const showAttachments = computed(() => {
-    if (preferences.value?.showEmpty) {
-      return true;
-    }
-
     return (
       attachments.value.attachments.length > 0 ||
       attachments.value.warranty.length > 0 ||
@@ -328,85 +329,7 @@
     return details;
   });
 
-  const showWarranty = computed(() => {
-    if (preferences.value.showEmpty) {
-      return true;
-    }
-    return item.value?.lifetimeWarranty || validDate(item.value?.warrantyExpires);
-  });
-
-  const warrantyDetails = computed(() => {
-    const details: Details = [
-      {
-        name: "items.lifetime_warranty",
-        text: item.value?.lifetimeWarranty ? "Yes" : "No",
-      },
-    ];
-
-    if (item.value?.lifetimeWarranty) {
-      details.push({
-        name: "items.warranty_expires",
-        text: "N/A",
-      });
-    } else {
-      details.push({
-        name: "items.warranty_expires",
-        text: item.value?.warrantyExpires || "",
-        type: "date",
-        date: true,
-      });
-    }
-
-    details.push({
-      name: "items.warranty_details",
-      type: "markdown",
-      text: item.value?.warrantyDetails || "",
-    });
-
-    if (!preferences.value.showEmpty) {
-      return filterZeroValues(details);
-    }
-
-    return details;
-  });
-
-  const showPurchase = computed(() => {
-    if (preferences.value.showEmpty) {
-      return true;
-    }
-    return item.value?.purchaseFrom || item.value?.purchasePrice !== 0 || validDate(item.value?.purchaseDate);
-  });
-
-  const purchaseDetails = computed<Details>(() => {
-    const v: Details = [
-      {
-        name: "items.purchased_from",
-        text: item.value?.purchaseFrom || "",
-      },
-      {
-        name: "items.purchase_price",
-        text: String(item.value?.purchasePrice) || "",
-        type: "currency",
-      },
-      {
-        name: "items.purchase_date",
-        text: item.value?.purchaseDate || "",
-        type: "date",
-        date: true,
-      },
-    ];
-
-    if (!preferences.value.showEmpty) {
-      return filterZeroValues(v);
-    }
-
-    return v;
-  });
-
   const showSold = computed(() => {
-    if (preferences.value.showEmpty) {
-      return true;
-    }
     return (
       item.value?.soldTo || item.value?.soldPrice !== 0 || validDate(item.value?.soldDate) || item.value?.soldNotes
     );
@@ -460,26 +383,6 @@
       },
     });
   }
-
-  const tabs = computed(() => {
-    return [
-      {
-        id: "details",
-        name: "global.details",
-        to: `/item/${itemId.value}`,
-      },
-      {
-        id: "log",
-        name: "global.maintenance",
-        to: `/item/${itemId.value}/maintenance`,
-      },
-      {
-        id: "edit",
-        name: "global.edit",
-        to: `/item/${itemId.value}/edit`,
-      },
-    ];
-  });
 
   const fullpath = computedAsync(async () => {
     if (!item.value) {
@@ -614,27 +517,41 @@
     });
   }
 
-  /** Purchase, warranty and sold details, each only when it has something to show. */
+  /** Sold details and warranty notes; purchase and warranty dates live in the properties column. */
   const detailBlocks = computed(() =>
     [
-      showPurchase.value && { title: "items.purchase_details", details: purchaseDetails.value },
-      showWarranty.value && { title: "items.warranty_details", details: warrantyDetails.value },
+      item.value?.warrantyDetails && {
+        title: "items.warranty_details",
+        details: [{ name: "items.warranty_details", type: "markdown", text: item.value.warrantyDetails }] as Details,
+      },
       showSold.value && { title: "items.sold_details", details: soldDetails.value },
     ].filter((b): b is { title: string; details: Details } => !!b && b.details.length > 0)
   );
+
+  const addTiles = computed(() => [
+    { key: "photo", label: t("shell.item_page.add_photo"), icon: ImagePlus },
+    { key: "file", label: t("shell.item_page.attach_file"), icon: Paperclip },
+  ]);
 
   usePageHeader(() => {
     const parts = fullpath.value ?? [];
     return [
       { label: t("shell.items"), to: "/items" },
       ...parts.slice(0, -1).map(part => ({ label: part.name, to: `/${part.type}/${part.id}` })),
-      { label: item.value?.name ?? "" },
+      ...(hasNested.value
+        ? [
+            { label: item.value?.name ?? "", to: `/item/${itemId.value}` },
+            {
+              label: route.path.endsWith("/edit") ? t("shell.item_page.edit") : t("shell.item_page.maintenance"),
+            },
+          ]
+        : [{ label: item.value?.name ?? "" }]),
     ];
   });
 </script>
 
 <template>
-  <div v-if="item" class="flex min-h-[calc(100svh-var(--header-height)-1rem)] flex-col">
+  <div v-if="item" class="flex flex-1 flex-col">
     <!-- set page title -->
     <Title>{{ item.name }}</Title>
 
@@ -658,68 +575,71 @@
       </DialogContent>
     </Dialog>
 
-    <!-- Toolbar: sub-pages on the left, list navigation and actions on the right -->
-    <div class="flex flex-wrap items-center gap-1 border-b border-border px-3 py-1.5 sm:px-4">
-      <nav class="flex items-center gap-0.5">
-        <NuxtLink
-          v-for="tab in tabs"
-          :key="tab.id"
-          :to="tab.to"
-          class="rounded-md px-2 py-1 text-sm text-muted-foreground hover:bg-accent hover:text-foreground"
-          :class="{ 'bg-accent font-medium text-foreground': tab.to === route.path }"
-          :aria-current="tab.to === route.path ? 'page' : undefined"
-        >
-          {{ $t(tab.name) }}
-        </NuxtLink>
-      </nav>
-      <div class="grow" />
-
-      <div v-if="neighbours && !hasNested" class="mr-1 hidden items-center gap-0.5 sm:flex">
-        <span class="mr-1 text-xs text-muted-foreground tabular-nums">
-          {{ t("shell.item_page.position", { index: neighbours.index + 1, total: neighbours.total }) }}
-        </span>
-        <Button
-          variant="ghost"
-          size="icon"
-          class="size-7"
+    <!-- Item actions live in the panel header, as in the design -->
+    <AppHeaderActions v-if="!hasNested">
+      <span v-if="neighbours" class="mr-1 hidden items-center gap-1 text-xs text-muted-foreground tabular-nums xl:flex">
+        {{ t("shell.item_page.position", { index: neighbours.index + 1, total: neighbours.total }) }}
+        <button
+          type="button"
+          class="rounded disabled:opacity-40"
           :disabled="!neighbours.prev"
           :aria-label="t('shell.item_page.previous')"
           @click="go(neighbours.prev)"
         >
-          <ChevronUp class="size-4" />
-        </Button>
-        <Button
-          variant="ghost"
-          size="icon"
-          class="size-7"
+          <ShortcutHint :hotkey="SHORTCUTS.itemPrevious" />
+        </button>
+        <button
+          type="button"
+          class="rounded disabled:opacity-40"
           :disabled="!neighbours.next"
           :aria-label="t('shell.item_page.next')"
           @click="go(neighbours.next)"
         >
-          <ChevronDown class="size-4" />
-        </Button>
-      </div>
-
-      <LabelTemplatePrintButton :id="item.id" type="item" variant="outline" />
-      <PageQRCode variant="ghost" />
+          <ShortcutHint :hotkey="SHORTCUTS.itemNext" />
+        </button>
+      </span>
+      <Button variant="outline" size="sm" class="h-[30px] text-[13px] max-sm:hidden" @click="duplicateItem()">
+        {{ t("shell.item_page.duplicate") }}
+        <ShortcutHint :hotkey="SHORTCUTS.itemDuplicate" />
+      </Button>
+      <Button size="sm" class="h-[30px] text-[13px]" @click="printLabel">
+        <Printer class="sm:hidden" />
+        <span class="max-sm:sr-only">{{ t("shell.item_page.print_label") }}</span>
+        <ShortcutHint
+          :hotkey="SHORTCUTS.itemPrint"
+          class="max-sm:hidden [&_kbd]:border-primary-foreground/20 [&_kbd]:bg-primary-foreground/15 [&_kbd]:text-primary-foreground"
+        />
+      </Button>
       <DropdownMenu>
         <DropdownMenuTrigger as-child>
-          <Button variant="ghost" size="icon" class="size-8" :aria-label="t('shell.item_page.more')">
+          <Button variant="outline" size="icon" class="size-[30px]" :aria-label="t('shell.item_page.more')">
             <Ellipsis class="size-4" />
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" class="w-60">
+          <DropdownMenuItem as-child>
+            <NuxtLink :to="`/item/${item.id}/edit`">
+              <Pencil class="size-4" />
+              {{ t("shell.item_page.edit") }}
+            </NuxtLink>
+          </DropdownMenuItem>
+          <DropdownMenuItem as-child>
+            <NuxtLink :to="`/item/${item.id}/maintenance`">
+              <Wrench class="size-4" />
+              {{ t("shell.item_page.maintenance") }}
+            </NuxtLink>
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
           <DropdownMenuItem @select="createSubitem">
             <Plus class="size-4" />
             {{ $t("global.create_subitem") }}
           </DropdownMenuItem>
-          <DropdownMenuItem @select="duplicateItem()">
+          <DropdownMenuItem class="sm:hidden" @select="duplicateItem()">
             <CopyPlus class="size-4" />
-            {{ $t("global.duplicate") }}
-            <ShortcutHint :hotkey="SHORTCUTS.itemDuplicate" class="ml-auto" />
+            {{ t("shell.item_page.duplicate") }}
           </DropdownMenuItem>
           <DropdownMenuItem @select="openDialog(DialogID.DuplicateTemporarySettings)">
-            <CopyPlus class="size-4 opacity-0" />
+            <CopyPlus class="size-4" />
             {{ $t("items.duplicate.temporary_title") }}…
           </DropdownMenuItem>
           <DropdownMenuItem @select="saveAsTemplate">
@@ -729,6 +649,10 @@
           <DropdownMenuItem @select="copyLink">
             <LinkIcon class="size-4" />
             {{ t("shell.item_page.copy_link") }}
+          </DropdownMenuItem>
+          <DropdownMenuItem @select="openDialog(DialogID.PageQRCode)">
+            <QrCode class="size-4" />
+            {{ t("shell.item_page.show_qr") }}
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuCheckboxItem v-model="preferences.showEmpty" @select.prevent>
@@ -741,7 +665,8 @@
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
-    </div>
+    </AppHeaderActions>
+    <PageQRCode buttonless />
 
     <!-- Maintenance and Edit -->
     <div v-if="hasNested" class="px-3 py-4 sm:px-6">
@@ -749,14 +674,14 @@
     </div>
 
     <!-- Properties sit beside the content on wide screens and right below the title on narrow ones -->
-    <div v-else class="grid flex-1 lg:grid-cols-[minmax(0,1fr)_21rem]">
-      <div class="min-w-0 space-y-8 px-4 py-6 sm:px-8">
-        <header class="space-y-1">
+    <div v-else class="grid flex-1 lg:grid-cols-[minmax(0,1fr)_minmax(300px,22rem)]">
+      <div class="flex min-w-0 flex-col gap-[22px] px-4 py-6 sm:px-10 sm:pt-7 sm:pb-10">
+        <header class="flex max-w-190 flex-col gap-1.5">
           <InlineText
             :value="item.name"
             :label="t('items.name')"
             wrap
-            class="-mx-1.5 text-2xl font-semibold tracking-tight"
+            class="-mx-1.5 text-[26px] leading-tight font-semibold tracking-tight"
             @save="name => name && update({ name })"
           />
           <InlineMarkdown
@@ -767,7 +692,7 @@
           />
         </header>
 
-        <div v-if="!wide" class="-mx-4 border-y border-border px-3 py-4 sm:-mx-8 sm:px-6">
+        <div v-if="!wide" class="-mx-4 border-y border-border/70 bg-muted/20 p-4 sm:-mx-10 sm:px-10">
           <PropertiesPanel
             v-model:place-open="placePickerOpen"
             :item="item"
@@ -776,22 +701,32 @@
             @quantity="setQuantity"
           />
         </div>
-        <section v-if="photos.length > 0" :aria-label="t('items.photos')">
-          <div class="grid grid-cols-2 gap-2 sm:grid-cols-3 xl:grid-cols-4">
-            <button
-              v-for="img in photos"
-              :key="img.attachmentId"
-              type="button"
-              class="aspect-square overflow-hidden rounded-lg border border-border bg-muted transition-opacity hover:opacity-90"
-              @click="openImageDialog(img, item.id)"
-            >
-              <img class="size-full object-cover" :src="img.thumbnailSrc" :alt="$t('items.photo')" loading="lazy" />
-            </button>
-          </div>
+        <!-- Photos, then quick ways to add more (uploads happen on the edit page) -->
+        <section class="flex flex-wrap gap-2.5" :aria-label="t('items.photos')">
+          <button
+            v-for="img in photos"
+            :key="img.attachmentId"
+            type="button"
+            class="h-[90px] w-30 overflow-hidden rounded-[10px] border border-border bg-muted transition-opacity hover:opacity-90"
+            @click="openImageDialog(img, item.id)"
+          >
+            <img class="size-full object-cover" :src="img.thumbnailSrc" :alt="$t('items.photo')" loading="lazy" />
+          </button>
+          <NuxtLink
+            v-for="tile in addTiles"
+            :key="tile.key"
+            :to="`/item/${item.id}/edit`"
+            class="flex h-[90px] w-30 flex-col items-center justify-center gap-1 rounded-[10px] border-[1.5px] border-dashed border-border text-xs text-muted-foreground transition-colors hover:border-primary/50 hover:text-foreground"
+          >
+            <component :is="tile.icon" class="size-4" aria-hidden="true" />
+            {{ tile.label }}
+          </NuxtLink>
         </section>
 
+        <div class="h-px bg-border/70" />
+
         <section>
-          <h2 class="mb-1 text-sm font-medium">{{ $t("items.notes") }}</h2>
+          <h2 class="mb-1 text-[13px] font-semibold text-foreground/80">{{ $t("items.notes") }}</h2>
           <InlineMarkdown
             :value="item.notes"
             :label="t('items.notes')"
@@ -801,14 +736,14 @@
         </section>
 
         <section v-if="customFields.length > 0">
-          <h2 class="mb-2 text-sm font-medium">{{ t("shell.item_page.fields") }}</h2>
+          <h2 class="mb-2 text-[13px] font-semibold text-foreground/80">{{ t("shell.item_page.fields") }}</h2>
           <div class="overflow-hidden rounded-lg border border-border [&>div]:border-t-0">
             <DetailsSection :details="customFields" />
           </div>
         </section>
 
         <section v-if="showAttachments">
-          <h2 class="mb-2 text-sm font-medium">{{ $t("items.attachments") }}</h2>
+          <h2 class="mb-2 text-[13px] font-semibold text-foreground/80">{{ $t("items.attachments") }}</h2>
           <div class="overflow-hidden rounded-lg border border-border [&>div]:border-t-0">
             <DetailsSection v-if="attachmentDetails.length > 0" :details="attachmentDetails">
               <template #manuals>
@@ -829,7 +764,7 @@
         </section>
 
         <section v-for="block in detailBlocks" :key="block.title">
-          <h2 class="mb-2 text-sm font-medium">{{ $t(block.title) }}</h2>
+          <h2 class="mb-2 text-[13px] font-semibold text-foreground/80">{{ $t(block.title) }}</h2>
           <div class="overflow-hidden rounded-lg border border-border [&>div]:border-t-0">
             <DetailsSection :details="block.details" />
           </div>
@@ -840,7 +775,7 @@
         </section>
       </div>
 
-      <aside v-if="wide" class="border-l border-border px-3 py-6">
+      <aside v-if="wide" class="border-l border-border/70 bg-muted/20 px-4 py-[18px]">
         <PropertiesPanel
           v-model:place-open="placePickerOpen"
           :item="item"
