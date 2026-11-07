@@ -1,5 +1,6 @@
 import { describe, expect, test } from "vitest";
 import type { EntityTemplateOut } from "../../types/data-contracts";
+import { templateField } from "../../template-fields";
 import type { UserClient } from "../../user";
 import { factories } from "../factories";
 import { sharedUserClient } from "../test-utils";
@@ -129,8 +130,8 @@ describe("templates lifecycle (create, update, delete)", () => {
 
     const templateData = factories.template();
     templateData.fields = [
-      { id: NIL_UUID, name: "Custom Field 1", type: "text", textValue: "Value 1" },
-      { id: NIL_UUID, name: "Custom Field 2", type: "text", textValue: "Value 2" },
+      templateField({ id: NIL_UUID, name: "Custom Field 1", textValue: "Value 1" }),
+      templateField({ id: NIL_UUID, name: "Custom Field 2", textValue: "Value 2" }),
     ];
 
     const { response, data } = await api.templates.create(templateData);
@@ -153,7 +154,7 @@ describe("templates lifecycle (create, update, delete)", () => {
 
     // Create template with a field
     const templateData = factories.template();
-    templateData.fields = [{ id: NIL_UUID, name: "Original Field", type: "text", textValue: "Original Value" }];
+    templateData.fields = [templateField({ id: NIL_UUID, name: "Original Field", textValue: "Original Value" })];
 
     const { response: createResponse, data: createdTemplate } = await api.templates.create(templateData);
     expect(createResponse.status).toBe(201);
@@ -179,8 +180,8 @@ describe("templates lifecycle (create, update, delete)", () => {
       includePurchaseFields: createdTemplate.includePurchaseFields,
       includeSoldFields: createdTemplate.includeSoldFields,
       fields: [
-        { id: createdTemplate.fields![0]!.id, name: "Updated Field", type: "text", textValue: "Updated Value" },
-        { id: NIL_UUID, name: "New Field", type: "text", textValue: "New Value" },
+        templateField({ id: createdTemplate.fields![0]!.id, name: "Updated Field", textValue: "Updated Value" }),
+        templateField({ id: NIL_UUID, name: "New Field", textValue: "New Value" }),
       ],
     };
 
@@ -197,12 +198,20 @@ describe("templates lifecycle (create, update, delete)", () => {
   });
 });
 
+async function locationTypeId(api: UserClient): Promise<string> {
+  const { response, data } = await api.entityTypes.getAll();
+  expect(response.status).toBe(200);
+  const type = data.find(t => t.isLocation);
+  expect(type).toBeTruthy();
+  return type!.id;
+}
+
 describe("templates with location and tags", () => {
   test("user should be able to create a template with a default location", async () => {
     const api = await sharedUserClient();
 
     // First create a location
-    const locationData = factories.location();
+    const locationData = factories.location(await locationTypeId(api));
     const { response: locResponse, data: location } = await api.items.createLocation(locationData);
     expect(locResponse.status).toBe(201);
 
@@ -253,7 +262,9 @@ describe("templates with location and tags", () => {
     const api = await sharedUserClient();
 
     // Create a location
-    const { response: locResponse, data: location } = await api.items.createLocation(factories.location());
+    const { response: locResponse, data: location } = await api.items.createLocation(
+      factories.location(await locationTypeId(api))
+    );
     expect(locResponse.status).toBe(201);
 
     // Create template with location

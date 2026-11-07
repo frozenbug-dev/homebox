@@ -586,6 +586,7 @@
 
     const payload: EntityUpdate = {
       ...item.value,
+      entityTypeId: item.value.entityType!.id,
       parentId: parent.value?.id || location.value?.id || null,
       locationId: parent.value?.id && locationExplicit.value ? location.value?.id || null : null,
       tagIds: item.value.tagIds,

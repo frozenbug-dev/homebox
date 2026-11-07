@@ -7,6 +7,7 @@
   import { Card, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
   import { Button } from "@/components/ui/button";
   import type { EntityTemplateSummary, EntityTemplateCreate } from "~/lib/api/types/data-contracts";
+  import { NIL_UUID, templateField } from "~/lib/api/template-fields";
 
   const props = defineProps<{
     template: EntityTemplateSummary;
@@ -43,8 +44,6 @@
       return;
     }
 
-    const NIL_UUID = "00000000-0000-0000-0000-000000000000";
-
     // Create a duplicate with "(Copy)" suffix
     const duplicateData: EntityTemplateCreate = {
       name: `${fullTemplate.name} (Copy)`,
@@ -63,12 +62,7 @@
       includeWarrantyFields: fullTemplate.includeWarrantyFields,
       includePurchaseFields: fullTemplate.includePurchaseFields,
       includeSoldFields: fullTemplate.includeSoldFields,
-      fields: fullTemplate.fields.map(field => ({
-        id: NIL_UUID,
-        name: field.name,
-        type: field.type,
-        textValue: field.textValue,
-      })),
+      fields: fullTemplate.fields.map(field => templateField({ ...field, id: NIL_UUID })),
     };
 
     const { data, error } = await api.templates.create(duplicateData);
