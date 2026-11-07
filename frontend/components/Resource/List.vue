@@ -23,8 +23,8 @@
     defineProps<{
       items: T[];
       getKey: (item: T) => string;
-      /** Where a row leads; used by click and Enter. */
-      to?: (item: T) => string;
+      /** Where a row leads; used by click and Enter. Return nothing for rows that don't open. */
+      to?: (item: T) => string | undefined;
       label: string;
       /** Window-scroll virtualization, for long (infinite) lists. */
       virtual?: boolean;
@@ -93,7 +93,8 @@
     const item = byKey.value.get(key);
     if (!item) return;
     emit("open", item);
-    if (props.to) router.push(props.to(item));
+    const to = props.to?.(item);
+    if (to) router.push(to);
   }
 
   /** The selection, or else the focused row: what M / T / P act on. */

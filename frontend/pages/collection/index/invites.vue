@@ -1,15 +1,14 @@
 <script setup lang="ts">
   import { useI18n } from "vue-i18n";
-  import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
   import { Button } from "@/components/ui/button";
   import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
   import MdiPlus from "~icons/mdi/plus";
-  import MdiDelete from "~icons/mdi/delete";
   import { toast } from "@/components/ui/sonner";
   import { useUserApi } from "~/composables/use-api";
   import { useDialog } from "~/components/ui/dialog-provider";
   import { DialogID } from "@/components/ui/dialog-provider/utils";
-  import CopyText from "@/components/global/CopyText.vue";
+  import ResourceList from "~/components/Resource/List.vue";
+  import InviteResource from "~/components/Resource/InviteResource.vue";
   import type { Group, GroupInvitation } from "~~/lib/api/types/data-contracts";
 
   definePageMeta({
@@ -27,7 +26,6 @@
   const { openDialog } = useDialog();
   const confirm = useConfirm();
   const localInvites = ref<Invitation[]>([]);
-  const baseUrl = `${window.location.protocol}//${window.location.host}`;
   const loading = ref(true);
   const invites = ref<Invitation[]>([]);
   const error = ref<string | null>(null);
@@ -158,66 +156,18 @@
         {{ $t("collection.no_invites") }}
       </div>
 
-      <div v-else class="scroll-bg overflow-x-auto rounded-md border bg-card">
-        <Table class="min-w-160">
-          <TableHeader>
-            <TableRow>
-              <TableHead>{{ $t("collection.invite_token") }}</TableHead>
-              <TableHead>{{ $t("collection.expires_at") }}</TableHead>
-              <TableHead>{{ $t("collection.remaining_uses") }}</TableHead>
-              <TableHead class="w-40 text-right"></TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            <TableRow v-for="inv in allInvites" :key="inv.id || inv.token">
-              <TableCell>
-                <span class="font-mono text-xs break-all">
-                  <template v-if="inv.token">
-                    {{ inv.token }}
-                  </template>
-                  <span v-else class="font-sans text-muted-foreground">
-                    {{ $t("collection.invite_token_hidden") }}
-                  </span>
-                </span>
-              </TableCell>
-              <TableCell>
-                {{ new Date(inv.expiresAt).toLocaleString() }}
-              </TableCell>
-              <TableCell>
-                {{ inv.uses }}
-              </TableCell>
-              <TableCell>
-                <div class="ml-auto flex items-center gap-2">
-                  <CopyText
-                    v-if="inv.token"
-                    :text="`${baseUrl}?token=${inv.token}`"
-                    :icon-size="16"
-                    :tooltip="$t('collection.copy_invite')"
-                  />
-                  <TooltipProvider :delay-duration="0">
-                    <Tooltip>
-                      <TooltipTrigger as-child>
-                        <Button
-                          variant="destructive"
-                          size="icon"
-                          :aria-label="$t('global.delete')"
-                          :disabled="removing[inv.id]"
-                          @click="handleDelete(inv)"
-                        >
-                          <MdiDelete class="size-4" />
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        {{ $t("global.delete") }}
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                </div>
-              </TableCell>
-            </TableRow>
-          </TableBody>
-        </Table>
-      </div>
+      <ResourceList
+        v-else
+        class="rounded-md border bg-card py-1.5"
+        :items="allInvites"
+        :get-key="inv => inv.id || inv.token"
+        :label="$t('collection.tabs.invites')"
+        :selectable="false"
+      >
+        <template #default="{ item }">
+          <InviteResource :invite="item" :row-key="item.id || item.token" @delete="handleDelete" />
+        </template>
+      </ResourceList>
     </div>
   </div>
 </template>

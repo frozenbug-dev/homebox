@@ -1,9 +1,7 @@
 <script setup lang="ts">
   import { useI18n } from "vue-i18n";
-  import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-  import { Button } from "@/components/ui/button";
-  import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-  import MdiDelete from "~icons/mdi/delete";
+  import ResourceList from "~/components/Resource/List.vue";
+  import MemberResource from "~/components/Resource/MemberResource.vue";
   import { toast } from "@/components/ui/sonner";
   import type { UserSummary } from "~~/lib/api/types/data-contracts";
 
@@ -95,50 +93,26 @@
       {{ $t("global.loading") }}
     </div>
 
-    <div v-else>
-      <div v-if="!members.length" class="rounded-md border bg-card p-4 text-sm text-muted-foreground">
-        {{ $t("collection.members.empty") }}
-      </div>
-
-      <div v-else class="scroll-bg overflow-x-auto rounded-md border bg-card">
-        <Table class="min-w-120">
-          <TableHeader>
-            <TableRow>
-              <TableHead>{{ $t("collection.members.name") }}</TableHead>
-              <TableHead>{{ $t("collection.members.email") }}</TableHead>
-              <TableHead class="w-32 text-right"></TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            <TableRow v-for="user in members" :key="user.id">
-              <TableCell>{{ user.name }}</TableCell>
-              <TableCell>{{ user.email }}</TableCell>
-              <TableCell>
-                <div class="ml-auto">
-                  <TooltipProvider :delay-duration="0">
-                    <Tooltip>
-                      <TooltipTrigger as-child>
-                        <Button
-                          variant="destructive"
-                          size="icon"
-                          :aria-label="$t('global.delete')"
-                          :disabled="removing[user.id] || (isLastMember && user.id === currentUserId)"
-                          @click="handleRemove(user)"
-                        >
-                          <MdiDelete class="size-4" />
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        {{ $t("global.delete") }}
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                </div>
-              </TableCell>
-            </TableRow>
-          </TableBody>
-        </Table>
-      </div>
+    <div v-else-if="!members.length" class="rounded-md border bg-card p-4 text-sm text-muted-foreground">
+      {{ $t("collection.members.empty") }}
     </div>
+
+    <ResourceList
+      v-else
+      class="rounded-md border bg-card py-1.5"
+      :items="members"
+      :get-key="u => u.id"
+      :label="$t('collection.tabs.members')"
+      :selectable="false"
+    >
+      <template #default="{ item }">
+        <MemberResource
+          :user="item"
+          :is-self="item.id === currentUserId"
+          :can-remove="!removing[item.id] && !(isLastMember && item.id === currentUserId)"
+          @remove="handleRemove"
+        />
+      </template>
+    </ResourceList>
   </div>
 </template>

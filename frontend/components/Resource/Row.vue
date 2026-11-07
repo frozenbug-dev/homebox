@@ -1,6 +1,6 @@
 <script setup lang="ts">
   import { useI18n } from "vue-i18n";
-  import { Check, GripVertical } from "@lucide/vue";
+  import { Check, Ellipsis, GripVertical } from "@lucide/vue";
   import { vDragSource, type DragData } from "~/lib/dnd";
   import { cn } from "@/lib/utils";
   import { ContextMenu, ContextMenuContent, ContextMenuTrigger } from "@/components/ui/context-menu";
@@ -53,6 +53,17 @@
     list.open(props.id);
   }
 
+  /** The ⋯ button opens the same menu as a right-click, below the button. */
+  function openMenuFrom(e: MouseEvent) {
+    const button = e.currentTarget as HTMLElement;
+    const rect = button.getBoundingClientRect();
+    document
+      .getElementById(list.rowId(props.id))
+      ?.dispatchEvent(
+        new MouseEvent("contextmenu", { bubbles: true, cancelable: true, clientX: rect.left, clientY: rect.bottom + 4 })
+      );
+  }
+
   function onMenuOpen(open: boolean) {
     if (open) menuTargets.value = list.targetsFor(props.id);
     list.setMenuOpen(props.id, open);
@@ -89,7 +100,7 @@
           :aria-label="t('components.item.view.selectable.select_card')"
         >
           <GripVertical
-            v-if="dragData && !list.hasSelection.value"
+            v-if="dragData && !list.hasSelection.value && !focused"
             class="size-3.5 cursor-grab text-muted-foreground/50 group-hover/row:hidden pointer-coarse:hidden"
             aria-hidden="true"
           />
@@ -121,6 +132,17 @@
         >
           <slot name="right" />
         </span>
+        <button
+          v-if="$slots.menu"
+          type="button"
+          tabindex="-1"
+          class="-mr-1.5 flex size-6 shrink-0 items-center justify-center rounded text-muted-foreground opacity-0 group-hover/row:opacity-100 hover:bg-accent hover:text-foreground pointer-coarse:opacity-100"
+          :class="{ 'opacity-100': focused || menuOpen }"
+          :aria-label="t('shell.resource.more_actions')"
+          @click.stop="openMenuFrom"
+        >
+          <Ellipsis class="size-4" />
+        </button>
       </div>
     </ContextMenuTrigger>
     <ContextMenuContent v-if="$slots.menu" class="w-56">

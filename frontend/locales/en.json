@@ -1584,6 +1584,7 @@
             "copy_link": "Copy link",
             "link_copied": "Link copied",
             "delete": "{n, plural, one {Delete} other {Delete # items}}",
+            "more_actions": "More actions",
             "previous_page": "Previous",
             "next_page": "Next"
         },
@@ -1605,6 +1606,20 @@
             "delete": "{n, plural, one {Delete} other {Delete # entries}}",
             "delete_confirm": "{n, plural, one {Delete this entry? This can't be undone.} other {Delete # entries? This can't be undone.}}",
             "empty": "Nothing here."
+        },
+        "templates_page": {
+            "new_template": "New template",
+            "delete": "{n, plural, one {Delete} other {Delete # templates}}",
+            "delete_confirm": "{n, plural, one {Delete this template?} other {Delete # templates? This can't be undone.}}"
+        },
+        "members_page": {
+            "you": "You",
+            "copy_email": "Copy email",
+            "email_copied": "Email copied",
+            "remove": "Remove from collection"
+        },
+        "invites_page": {
+            "uses": "{n, plural, one {# use left} other {# uses left}}"
         },
         "items_page": {
             "focus_search": "Filter the list",
