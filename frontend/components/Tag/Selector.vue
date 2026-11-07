@@ -142,7 +142,7 @@
 
   const filteredTags = computed(() => {
     const filtered = fuzzysort
-      .go(searchTerm.value, props.tags, { key: "name", all: true })
+      .go(searchTerm.value, props.tags, { key: "name", limit: 0, threshold: 0 })
       .map(l => {
         const ancestors = getTagAncestors(l.obj.id);
         return {

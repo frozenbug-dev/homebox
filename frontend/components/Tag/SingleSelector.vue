@@ -102,7 +102,7 @@
   }
 
   const filteredTags = computed(() => {
-    const filtered = fuzzysort.go(search.value, props.tags, { key: "name", all: true }).map(i => i.obj);
+    const filtered = fuzzysort.go(search.value, props.tags, { key: "name", limit: 0, threshold: 0 }).map(i => i.obj);
 
     return filtered;
   });

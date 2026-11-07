@@ -164,7 +164,9 @@
 
   const filteredTemplates = computed(() => {
     if (!templates.value) return [];
-    const filtered = fuzzysort.go(search.value, templates.value, { key: "name", all: true }).map(i => i.obj);
+    const filtered = fuzzysort
+      .go(search.value, templates.value, { key: "name", limit: 0, threshold: 0 })
+      .map(i => i.obj);
     return filtered;
   });
 

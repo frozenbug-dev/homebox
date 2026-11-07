@@ -208,7 +208,7 @@
       return baseItems.filter(item => item.toLowerCase().includes(searchTerm.toLowerCase()));
     } else {
       // Fuzzy search on itemText
-      return fuzzysort.go(searchTerm, baseItems, { key: props.itemText, all: true }).map(i => i.obj);
+      return fuzzysort.go(searchTerm, baseItems, { key: props.itemText, limit: 0, threshold: 0 }).map(i => i.obj);
     }
   });
 
