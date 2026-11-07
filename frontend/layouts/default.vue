@@ -136,6 +136,7 @@
                 :tooltip="$t('profile.user_profile')"
               >
                 <span
+                  data-sidebar-icon
                   class="flex size-7 shrink-0 items-center justify-center rounded-full bg-accent text-xs font-semibold text-accent-foreground"
                   aria-hidden="true"
                 >
