@@ -36,7 +36,7 @@
       </PopoverTrigger>
       <PopoverContent class="w-64 p-0" align="start">
         <Command>
-          <CommandInput :placeholder="$t('components.search.filter.search_placeholder')" />
+          <CommandInput :placeholder="$t('components.search.filter.search_placeholder')" @keydown.esc="open = false" />
           <CommandList class="max-h-64">
             <CommandEmpty class="py-4 text-center text-sm text-muted-foreground">{{
               $t("shell.palette.no_results")

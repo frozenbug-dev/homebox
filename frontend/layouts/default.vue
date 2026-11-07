@@ -179,7 +179,7 @@
         <SidebarRail />
       </Sidebar>
 
-      <SidebarInset class="min-h-dvh max-w-full bg-sidebar md:p-2 md:pl-0">
+      <SidebarInset class="min-h-dvh max-w-full min-w-0 bg-sidebar md:p-2 md:pl-0">
         <!-- The page lives in one bordered panel; its header stays at the top while the page scrolls. -->
         <div
           class="relative flex min-h-dvh flex-col overflow-clip bg-background md:min-h-[calc(100dvh-1rem)] md:rounded-xl md:border md:border-border md:shadow-xs"

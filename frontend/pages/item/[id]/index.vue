@@ -1,52 +1,47 @@
 <script setup lang="ts">
   import { useI18n } from "vue-i18n";
+  import { useQueryClient } from "@tanstack/vue-query";
+  import { useHotkey } from "@tanstack/vue-hotkeys";
+  import {
+    ChevronDown,
+    ChevronUp,
+    CopyPlus,
+    Ellipsis,
+    LayoutTemplate,
+    Link as LinkIcon,
+    Plus,
+    Trash2,
+  } from "@lucide/vue";
   import { toast } from "@/components/ui/sonner";
   import type { AnyDetail, Detail, Details } from "~~/components/global/DetailsSection/types";
   import { filterZeroValues } from "~~/components/global/DetailsSection/types";
-  import type { ItemAttachment } from "~~/lib/api/types/data-contracts";
+  import type { EntityPatch, EntityUpdate, ItemAttachment } from "~~/lib/api/types/data-contracts";
   import { templateField } from "~~/lib/api/template-fields";
-  import MdiPackageVariant from "~icons/mdi/package-variant";
-  import MdiPlus from "~icons/mdi/plus";
-  import MdiMinus from "~icons/mdi/minus";
-  import MdiDelete from "~icons/mdi/delete";
-  import MdiPlusBoxMultipleOutline from "~icons/mdi/plus-box-multiple-outline";
-  import MdiContentSaveEdit from "~icons/mdi/content-save-edit";
-  import MdiDotsVertical from "~icons/mdi/dots-vertical";
-  import { Separator } from "@/components/ui/separator";
+  import { toEntityUpdate } from "~/lib/entity-update";
+  import { SHORTCUTS } from "~/lib/shortcuts";
   import {
     DropdownMenu,
+    DropdownMenuCheckboxItem,
     DropdownMenuContent,
     DropdownMenuItem,
     DropdownMenuSeparator,
     DropdownMenuTrigger,
   } from "@/components/ui/dropdown-menu";
-  import {
-    Breadcrumb,
-    BreadcrumbItem,
-    BreadcrumbLink,
-    BreadcrumbList,
-    BreadcrumbSeparator,
-  } from "@/components/ui/breadcrumb";
-  import { Button, ButtonGroup } from "@/components/ui/button";
+  import { Button } from "@/components/ui/button";
   import { useDialog } from "@/components/ui/dialog-provider";
-  import { Label } from "@/components/ui/label";
-  import { Switch } from "@/components/ui/switch";
-  import { Card } from "@/components/ui/card";
   import { DialogID } from "~/components/ui/dialog-provider/utils";
-  import BaseContainer from "@/components/Base/Container.vue";
   import ItemImageDialog from "~/components/Item/ImageDialog.vue";
   import ItemDuplicateSettings from "~/components/Item/DuplicateSettings.vue";
   import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-  import TagChip from "~/components/Tag/Chip.vue";
-  import DateTime from "~/components/global/DateTime.vue";
   import PageQRCode from "~/components/global/PageQRCode.vue";
   import LabelTemplatePrintButton from "~/components/LabelTemplate/PrintButton.vue";
-  import Markdown from "~/components/global/Markdown.vue";
-  import BaseCard from "@/components/Base/Card.vue";
-  import CopyText from "@/components/global/CopyText.vue";
   import DetailsSection from "~/components/global/DetailsSection/DetailsSection.vue";
   import ItemAttachmentsList from "~/components/Item/AttachmentsList.vue";
   import ItemViewSelectable from "~/components/Item/View/Selectable.vue";
+  import PropertiesPanel from "~/components/Item/PropertiesPanel.vue";
+  import ShortcutHint from "~/components/App/ShortcutHint.vue";
+  import InlineText from "~/components/Item/Inline/Text.vue";
+  import InlineMarkdown from "~/components/Item/Inline/Markdown.vue";
 
   const { t } = useI18n();
 
@@ -57,7 +52,9 @@
   });
 
   const route = useRoute();
+  const router = useRouter();
   const api = useUserApi();
+  const queryClient = useQueryClient();
 
   const itemId = computed<string>(() => route.params.id as string);
   const preferences = useViewPreferences();
@@ -69,19 +66,23 @@
     copyPrefixOverride: preferences.value.duplicateSettings.copyPrefixOverride,
   });
 
+  /** True on the Maintenance and Edit sub-pages, which render through <NuxtPage>. */
   const hasNested = computed<boolean>(() => {
     return route.fullPath.split("/").at(-1) !== itemId.value;
   });
 
-  const { data: item, refresh } = useAsyncData(itemId.value, async () => {
-    const { data, error } = await api.items.get(itemId.value);
-    if (error) {
-      toast.error(t("items.toast.failed_load_item"));
-      navigateTo("/home");
-      return;
+  const { data: item, refresh } = useAsyncData(
+    () => `item-${itemId.value}`,
+    async () => {
+      const { data, error } = await api.items.get(itemId.value);
+      if (error) {
+        toast.error(t("items.toast.failed_load_item"));
+        navigateTo("/home");
+        return;
+      }
+      return data;
     }
-    return data;
-  });
+  );
   onMounted(() => {
     refresh();
   });
@@ -95,30 +96,90 @@
     lastRoute.value = route.fullPath;
   });
 
-  async function adjustQuantity(amount: number) {
-    if (!item.value) {
+  // ----- Saving single fields -----
+
+  function saved(data: NonNullable<typeof item.value>) {
+    item.value = data;
+    queryClient.invalidateQueries({ queryKey: ["entities"] });
+  }
+
+  /** Quantity, place and tags go through PATCH. */
+  async function patch(changes: Omit<EntityPatch, "id">) {
+    const { data, error } = await api.items.patch(itemId.value, { id: itemId.value, ...changes });
+    if (error) {
+      toast.error(t("items.toast.failed_save"));
       return;
     }
+    saved(data);
+  }
 
-    const newQuantity = item.value.quantity + amount;
-    if (newQuantity < 0) {
+  /** Everything else is a full PUT built from the current item, shown optimistically. */
+  async function update(changes: Partial<EntityUpdate>) {
+    const prev = item.value;
+    if (!prev) return;
+    item.value = { ...prev, ...changes } as typeof prev;
+    const { data, error } = await api.items.update(itemId.value, toEntityUpdate(prev, changes));
+    if (error) {
+      item.value = prev;
+      toast.error(t("items.toast.failed_save"));
+      return;
+    }
+    saved(data);
+  }
+
+  async function setQuantity(quantity: number) {
+    if (!item.value || !Number.isFinite(quantity)) return;
+    if (quantity < 0) {
       toast.error(t("items.toast.quantity_cannot_negative"));
       return;
     }
+    item.value = { ...item.value, quantity };
+    await patch({ quantity });
+  }
 
-    const resp = await api.items.patch(item.value.id, {
-      id: item.value.id,
-      quantity: newQuantity,
-    });
+  const placePickerOpen = ref(false);
+  const wide = useMediaQuery("(min-width: 1024px)");
 
-    if (resp.error) {
-      toast.error(t("items.toast.failed_adjust_quantity"));
-      return;
-    }
+  // ----- Header, neighbours and shortcuts -----
 
-    if (resp.data) {
-      item.value = resp.data;
-    }
+  const neighbours = useEntityNeighbours(itemId);
+
+  function go(target?: { id: string }) {
+    if (target) router.push(`/item/${target.id}`);
+  }
+
+  const itemMeta = (name: string) => ({ meta: { name: t(name), group: "item" as const } });
+  const onDetails = () => !hasNested.value && !!item.value;
+
+  useHotkey(SHORTCUTS.itemPrevious, () => go(neighbours.value?.prev), {
+    ...itemMeta("shell.shortcuts.item_previous"),
+    enabled: () => onDetails() && !!neighbours.value?.prev,
+  });
+  useHotkey(SHORTCUTS.itemNext, () => go(neighbours.value?.next), {
+    ...itemMeta("shell.shortcuts.item_next"),
+    enabled: () => onDetails() && !!neighbours.value?.next,
+  });
+  useHotkey(SHORTCUTS.itemMove, () => (placePickerOpen.value = true), {
+    ...itemMeta("shell.shortcuts.item_move"),
+    enabled: onDetails,
+  });
+  useHotkey(SHORTCUTS.itemPrint, () => printLabel(), {
+    ...itemMeta("shell.shortcuts.item_print"),
+    enabled: onDetails,
+  });
+  useHotkey(SHORTCUTS.itemDuplicate, () => duplicateItem(), {
+    ...itemMeta("shell.shortcuts.item_duplicate"),
+    enabled: onDetails,
+  });
+
+  function printLabel() {
+    openDialog(DialogID.PrintLabelTemplate, { params: { itemIds: [itemId.value] } });
+  }
+
+  const { copy } = useClipboard();
+  function copyLink() {
+    copy(window.location.href);
+    toast.success(t("shell.item_page.link_copied"));
   }
 
   type FilteredAttachments = {
@@ -134,10 +195,6 @@
     attachmentId: string;
     originalType?: string;
   };
-
-  const itemTags = computed(() => {
-    return useTagStore().withAncestors(item.value?.tags || []);
-  });
 
   const photos = computed<Photo[]>(() => {
     if (!item.value) {
@@ -198,83 +255,28 @@
     );
   });
 
-  const assetID = computed<Details>(() => {
+  /** The item's custom fields; URLs in values become links. */
+  const customFields = computed<Details>(() => {
     if (!item.value) {
       return [];
     }
 
-    if (item.value?.assetId === "000-000") {
-      return [];
-    }
-
-    return [
-      {
-        name: "items.asset_id",
-        text: item.value?.assetId,
-      },
-    ];
-  });
-
-  const itemDetails = computed<Details>(() => {
-    if (!item.value) {
-      return [];
-    }
-
-    const ret: Details = [
-      {
-        name: "items.quantity",
-        text: item.value?.quantity,
-        slot: "quantity",
-      },
-      {
-        name: "items.serial_number",
-        text: item.value?.serialNumber,
-        copyable: true,
-      },
-      {
-        name: "items.model_number",
-        text: item.value?.modelNumber,
-        copyable: true,
-      },
-      {
-        name: "items.manufacturer",
-        text: item.value?.manufacturer,
-        copyable: true,
-      },
-      {
-        name: "items.insured",
-        text: item.value?.insured ? "Yes" : "No",
-      },
-      {
-        name: "items.archived",
-        text: item.value?.archived ? "Yes" : "No",
-      },
-      {
-        name: "items.notes",
-        type: "markdown",
-        text: item.value?.notes,
-      },
-      ...assetID.value,
-      ...item.value.fields.map(field => {
-        /**
-         * Support Special URL Syntax
-         */
-        const url = maybeUrl(field.textValue);
-        if (url.isUrl) {
-          return {
-            type: "link",
-            name: field.name,
-            text: url.text,
-            href: url.url,
-          } as AnyDetail;
-        }
-
+    const ret: Details = item.value.fields.map(field => {
+      const url = maybeUrl(field.textValue);
+      if (url.isUrl) {
         return {
+          type: "link",
           name: field.name,
-          text: field.textValue,
-        };
-      }),
-    ];
+          text: url.text,
+          href: url.url,
+        } as AnyDetail;
+      }
+
+      return {
+        name: field.name,
+        text: field.textValue,
+      };
+    });
 
     if (!preferences.value.showEmpty) {
       return filterZeroValues(ret);
@@ -459,14 +461,6 @@
     });
   }
 
-  const currentUrl = computed(() => {
-    return window.location.href;
-  });
-
-  const currentPath = computed(() => {
-    return route.path;
-  });
-
   const tabs = computed(() => {
     return [
       {
@@ -553,14 +547,6 @@
     navigateTo(`/item/${data.id}`);
   }
 
-  function handleDuplicateClick(event: MouseEvent) {
-    if (event.shiftKey) {
-      openDialog(DialogID.DuplicateTemporarySettings);
-    } else {
-      duplicateItem();
-    }
-  }
-
   const confirm = useConfirm();
 
   async function deleteItem() {
@@ -627,10 +613,28 @@
       },
     });
   }
+
+  /** Purchase, warranty and sold details, each only when it has something to show. */
+  const detailBlocks = computed(() =>
+    [
+      showPurchase.value && { title: "items.purchase_details", details: purchaseDetails.value },
+      showWarranty.value && { title: "items.warranty_details", details: warrantyDetails.value },
+      showSold.value && { title: "items.sold_details", details: soldDetails.value },
+    ].filter((b): b is { title: string; details: Details } => !!b && b.details.length > 0)
+  );
+
+  usePageHeader(() => {
+    const parts = fullpath.value ?? [];
+    return [
+      { label: t("shell.items"), to: "/items" },
+      ...parts.slice(0, -1).map(part => ({ label: part.name, to: `/${part.type}/${part.id}` })),
+      { label: item.value?.name ?? "" },
+    ];
+  });
 </script>
 
 <template>
-  <BaseContainer v-if="item">
+  <div v-if="item" class="flex min-h-[calc(100svh-var(--header-height)-1rem)] flex-col">
     <!-- set page title -->
     <Title>{{ item.name }}</Title>
 
@@ -654,221 +658,197 @@
       </DialogContent>
     </Dialog>
 
-    <section>
-      <Card class="p-4 sm:p-5">
-        <header :class="{ 'mb-2': item.description }">
-          <div class="flex flex-wrap items-end gap-2">
-            <div class="mb-auto flex size-11 items-center justify-center rounded-lg bg-accent text-accent-foreground">
-              <MdiPackageVariant class="size-6" />
-            </div>
-            <div>
-              <Breadcrumb v-if="fullpath && fullpath.length > 0">
-                <BreadcrumbList>
-                  <BreadcrumbItem v-for="(part, idx) in fullpath" :key="part.id">
-                    <BreadcrumbLink
-                      v-if="idx < fullpath.length - 1"
-                      as-child
-                      class="text-muted-foreground hover:underline"
-                    >
-                      <NuxtLink :to="`/${part.type}/${part.id}`">
-                        {{ part.name }}
-                      </NuxtLink>
-                    </BreadcrumbLink>
-                    <template v-else>
-                      {{ part.name }}
-                    </template>
-                    <BreadcrumbSeparator v-if="idx < fullpath.length - 1" :key="`sep-${part.id}`" />
-                  </BreadcrumbItem>
-                </BreadcrumbList>
-              </Breadcrumb>
-              <h1 class="pb-1 text-2xl font-semibold tracking-tight text-wrap">
-                {{ item ? item.name : "" }}
-              </h1>
-              <div class="flex flex-wrap gap-2 pb-1">
-                <TagChip v-for="tag in itemTags" :key="tag.id" :tag="tag" size="sm" :ancestors="tag.ancestors" />
-              </div>
-              <div class="flex flex-wrap gap-1 text-xs text-wrap text-muted-foreground">
-                <div>
-                  {{ $t("items.created_at") }}
-                  <DateTime :date="item?.createdAt" />
-                </div>
-                -
-                <div>
-                  {{ $t("items.updated_at") }}
-                  <DateTime :date="item?.updatedAt" />
-                </div>
-              </div>
-            </div>
-            <div class="mt-2 ml-auto flex flex-wrap items-center justify-between gap-2">
-              <LabelTemplatePrintButton :id="item.id" type="item" />
-              <PageQRCode />
-              <Button class="w-9 md:w-auto" :aria-label="$t('global.create_subitem')" @click="createSubitem">
-                <MdiPlus />
-                <span class="hidden md:inline">{{ $t("global.create_subitem") }}</span>
-              </Button>
+    <!-- Toolbar: sub-pages on the left, list navigation and actions on the right -->
+    <div class="flex flex-wrap items-center gap-1 border-b border-border px-3 py-1.5 sm:px-4">
+      <nav class="flex items-center gap-0.5">
+        <NuxtLink
+          v-for="tab in tabs"
+          :key="tab.id"
+          :to="tab.to"
+          class="rounded-md px-2 py-1 text-sm text-muted-foreground hover:bg-accent hover:text-foreground"
+          :class="{ 'bg-accent font-medium text-foreground': tab.to === route.path }"
+          :aria-current="tab.to === route.path ? 'page' : undefined"
+        >
+          {{ $t(tab.name) }}
+        </NuxtLink>
+      </nav>
+      <div class="grow" />
 
-              <!-- More actions dropdown -->
-              <DropdownMenu>
-                <DropdownMenuTrigger as-child>
-                  <Button variant="outline" size="icon" :aria-label="$t('global.more_actions')">
-                    <MdiDotsVertical class="size-5" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" class="w-48">
-                  <DropdownMenuItem @click="handleDuplicateClick">
-                    <MdiPlusBoxMultipleOutline class="mr-2 size-4" />
-                    {{ $t("global.duplicate") }}
-                  </DropdownMenuItem>
-                  <DropdownMenuItem @click="saveAsTemplate">
-                    <MdiContentSaveEdit class="mr-2 size-4" />
-                    {{ $t("components.template.save_as_template") }}
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem class="text-destructive focus:text-destructive" @click="deleteItem">
-                    <MdiDelete class="mr-2 size-4" />
-                    {{ $t("global.delete") }}
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
-          </div>
-        </header>
-        <Separator v-if="item.description" />
-        <div v-if="item.description" class="prose max-w-full p-1">
-          <Markdown class="text-base" :source="item.description" />
-        </div>
-      </Card>
-
-      <div class="mt-3 mb-6 flex flex-wrap items-center justify-between">
-        <ButtonGroup>
-          <Button
-            v-for="tab in tabs"
-            :key="tab.id"
-            as-child
-            :variant="tab.to === currentPath ? 'default' : 'outline'"
-            size="sm"
-          >
-            <NuxtLink :to="tab.to">
-              {{ $t(tab.name) }}
-            </NuxtLink>
-          </Button>
-        </ButtonGroup>
+      <div v-if="neighbours && !hasNested" class="mr-1 hidden items-center gap-0.5 sm:flex">
+        <span class="mr-1 text-xs text-muted-foreground tabular-nums">
+          {{ t("shell.item_page.position", { index: neighbours.index + 1, total: neighbours.total }) }}
+        </span>
+        <Button
+          variant="ghost"
+          size="icon"
+          class="size-7"
+          :disabled="!neighbours.prev"
+          :aria-label="t('shell.item_page.previous')"
+          @click="go(neighbours.prev)"
+        >
+          <ChevronUp class="size-4" />
+        </Button>
+        <Button
+          variant="ghost"
+          size="icon"
+          class="size-7"
+          :disabled="!neighbours.next"
+          :aria-label="t('shell.item_page.next')"
+          @click="go(neighbours.next)"
+        >
+          <ChevronDown class="size-4" />
+        </Button>
       </div>
-    </section>
 
-    <section>
-      <div class="space-y-6">
-        <!-- this renders the other pages content -->
-        <NuxtPage :item="item" :page-key="itemId" />
+      <LabelTemplatePrintButton :id="item.id" type="item" variant="outline" />
+      <PageQRCode variant="ghost" />
+      <DropdownMenu>
+        <DropdownMenuTrigger as-child>
+          <Button variant="ghost" size="icon" class="size-8" :aria-label="t('shell.item_page.more')">
+            <Ellipsis class="size-4" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" class="w-60">
+          <DropdownMenuItem @select="createSubitem">
+            <Plus class="size-4" />
+            {{ $t("global.create_subitem") }}
+          </DropdownMenuItem>
+          <DropdownMenuItem @select="duplicateItem()">
+            <CopyPlus class="size-4" />
+            {{ $t("global.duplicate") }}
+            <ShortcutHint :hotkey="SHORTCUTS.itemDuplicate" class="ml-auto" />
+          </DropdownMenuItem>
+          <DropdownMenuItem @select="openDialog(DialogID.DuplicateTemporarySettings)">
+            <CopyPlus class="size-4 opacity-0" />
+            {{ $t("items.duplicate.temporary_title") }}…
+          </DropdownMenuItem>
+          <DropdownMenuItem @select="saveAsTemplate">
+            <LayoutTemplate class="size-4" />
+            {{ $t("components.template.save_as_template") }}
+          </DropdownMenuItem>
+          <DropdownMenuItem @select="copyLink">
+            <LinkIcon class="size-4" />
+            {{ t("shell.item_page.copy_link") }}
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuCheckboxItem v-model="preferences.showEmpty" @select.prevent>
+            {{ t("shell.item_page.show_empty") }}
+          </DropdownMenuCheckboxItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem class="text-destructive focus:text-destructive" @select="deleteItem">
+            <Trash2 class="size-4" />
+            {{ $t("global.delete") }}
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    </div>
 
-        <!-- anything in this is not rendered if on another page -->
-        <BaseCard v-if="!hasNested" collapsable>
-          <template #title> {{ $t("items.details") }} </template>
-          <template #title-actions>
-            <div class="mt-2 flex flex-wrap items-center justify-between gap-4">
-              <Label class="flex cursor-pointer items-center gap-2">
-                <Switch v-model="preferences.showEmpty" />
-                {{ $t("items.show_empty") }}
-              </Label>
-              <div class="space-x-1">
-                <CopyText :text="currentUrl" :icon-size="16" />
-              </div>
-            </div>
-          </template>
-          <DetailsSection :details="itemDetails">
-            <template #quantity="{ detail }">
-              <div class="flex items-center">
-                {{ detail.text }}
-                <span
-                  class="my-0 ml-4 inline-flex gap-2 opacity-10 transition-opacity duration-75 group-hover:opacity-100"
-                >
-                  <Button size="icon" variant="outline" class="size-8 rounded-full" @click="adjustQuantity(-1)">
-                    <MdiMinus class="size-3" />
-                  </Button>
-                  <Button size="icon" variant="outline" class="size-8 rounded-full" @click="adjustQuantity(1)">
-                    <MdiPlus class="size-3" />
-                  </Button>
-                </span>
-              </div>
-            </template>
-          </DetailsSection>
-        </BaseCard>
+    <!-- Maintenance and Edit -->
+    <div v-if="hasNested" class="px-3 py-4 sm:px-6">
+      <NuxtPage :item="item" :page-key="itemId" />
+    </div>
 
-        <!-- anything in this is not rendered if on another page -->
-        <template v-if="!hasNested">
-          <BaseCard v-if="photos && photos.length > 0">
-            <template #title> {{ $t("items.photos") }} </template>
-            <div class="scroll-bg container mx-auto flex max-h-125 flex-wrap gap-2 overflow-y-scroll border-t p-4">
-              <button v-for="(img, i) in photos" :key="i" @click="openImageDialog(img, item.id)">
-                <img class="max-h-50 rounded" :src="img.thumbnailSrc" :alt="$t('items.photo')" loading="lazy" />
-              </button>
-            </div>
-          </BaseCard>
+    <!-- Properties sit beside the content on wide screens and right below the title on narrow ones -->
+    <div v-else class="grid flex-1 lg:grid-cols-[minmax(0,1fr)_21rem]">
+      <div class="min-w-0 space-y-8 px-4 py-6 sm:px-8">
+        <header class="space-y-1">
+          <InlineText
+            :value="item.name"
+            :label="t('items.name')"
+            wrap
+            class="-mx-1.5 text-2xl font-semibold tracking-tight"
+            @save="name => name && update({ name })"
+          />
+          <InlineMarkdown
+            :value="item.description"
+            :label="t('items.description')"
+            :placeholder="t('shell.item_page.add_description')"
+            @save="description => update({ description })"
+          />
+        </header>
 
-          <BaseCard v-if="showAttachments" collapsable>
-            <template #title> {{ $t("items.attachments") }} </template>
+        <div v-if="!wide" class="-mx-4 border-y border-border px-3 py-4 sm:-mx-8 sm:px-6">
+          <PropertiesPanel
+            v-model:place-open="placePickerOpen"
+            :item="item"
+            @patch="patch"
+            @update="update"
+            @quantity="setQuantity"
+          />
+        </div>
+        <section v-if="photos.length > 0" :aria-label="t('items.photos')">
+          <div class="grid grid-cols-2 gap-2 sm:grid-cols-3 xl:grid-cols-4">
+            <button
+              v-for="img in photos"
+              :key="img.attachmentId"
+              type="button"
+              class="aspect-square overflow-hidden rounded-lg border border-border bg-muted transition-opacity hover:opacity-90"
+              @click="openImageDialog(img, item.id)"
+            >
+              <img class="size-full object-cover" :src="img.thumbnailSrc" :alt="$t('items.photo')" loading="lazy" />
+            </button>
+          </div>
+        </section>
+
+        <section>
+          <h2 class="mb-1 text-sm font-medium">{{ $t("items.notes") }}</h2>
+          <InlineMarkdown
+            :value="item.notes"
+            :label="t('items.notes')"
+            :placeholder="t('shell.item_page.add_notes')"
+            @save="notes => update({ notes })"
+          />
+        </section>
+
+        <section v-if="customFields.length > 0">
+          <h2 class="mb-2 text-sm font-medium">{{ t("shell.item_page.fields") }}</h2>
+          <div class="overflow-hidden rounded-lg border border-border [&>div]:border-t-0">
+            <DetailsSection :details="customFields" />
+          </div>
+        </section>
+
+        <section v-if="showAttachments">
+          <h2 class="mb-2 text-sm font-medium">{{ $t("items.attachments") }}</h2>
+          <div class="overflow-hidden rounded-lg border border-border [&>div]:border-t-0">
             <DetailsSection v-if="attachmentDetails.length > 0" :details="attachmentDetails">
               <template #manuals>
-                <ItemAttachmentsList
-                  v-if="attachments.manuals.length > 0"
-                  :attachments="attachments.manuals"
-                  :item-id="item.id"
-                />
+                <ItemAttachmentsList :attachments="attachments.manuals" :item-id="item.id" />
               </template>
               <template #attachments>
-                <ItemAttachmentsList
-                  v-if="attachments.attachments.length > 0"
-                  :attachments="attachments.attachments"
-                  :item-id="item.id"
-                />
+                <ItemAttachmentsList :attachments="attachments.attachments" :item-id="item.id" />
               </template>
               <template #warranty>
-                <ItemAttachmentsList
-                  v-if="attachments.warranty.length > 0"
-                  :attachments="attachments.warranty"
-                  :item-id="item.id"
-                />
+                <ItemAttachmentsList :attachments="attachments.warranty" :item-id="item.id" />
               </template>
               <template #receipts>
-                <ItemAttachmentsList
-                  v-if="attachments.receipts.length > 0"
-                  :attachments="attachments.receipts"
-                  :item-id="item.id"
-                />
+                <ItemAttachmentsList :attachments="attachments.receipts" :item-id="item.id" />
               </template>
             </DetailsSection>
-            <div v-else>
-              <p class="px-6 pb-4 text-foreground/70">{{ $t("items.no_attachments") }}</p>
-            </div>
-          </BaseCard>
+            <p v-else class="px-4 py-3 text-sm text-muted-foreground">{{ $t("items.no_attachments") }}</p>
+          </div>
+        </section>
 
-          <BaseCard v-if="showPurchase" collapsable>
-            <template #title> {{ $t("items.purchase_details") }} </template>
-            <DetailsSection :details="purchaseDetails" />
-          </BaseCard>
+        <section v-for="block in detailBlocks" :key="block.title">
+          <h2 class="mb-2 text-sm font-medium">{{ $t(block.title) }}</h2>
+          <div class="overflow-hidden rounded-lg border border-border [&>div]:border-t-0">
+            <DetailsSection :details="block.details" />
+          </div>
+        </section>
 
-          <BaseCard v-if="showWarranty" collapsable>
-            <template #title> {{ $t("items.warranty_details") }} </template>
-            <DetailsSection :details="warrantyDetails" />
-          </BaseCard>
-
-          <BaseCard v-if="showSold" collapsable>
-            <template #title> {{ $t("items.sold_details") }} </template>
-            <DetailsSection :details="soldDetails" />
-          </BaseCard>
-        </template>
+        <section v-if="items && items.length > 0">
+          <ItemViewSelectable :items="items" :title="t('shell.item_page.contents')" @refresh="refreshItemList" />
+        </section>
       </div>
-    </section>
 
-    <section v-if="items && items.length > 0" class="mt-6">
-      <ItemViewSelectable :items="items" @refresh="refreshItemList" />
-    </section>
-  </BaseContainer>
+      <aside v-if="wide" class="border-l border-border px-3 py-6">
+        <PropertiesPanel
+          v-model:place-open="placePickerOpen"
+          :item="item"
+          @patch="patch"
+          @update="update"
+          @quantity="setQuantity"
+        />
+      </aside>
+    </div>
+  </div>
 </template>
-
-<style lang="css" scoped>
-  /* Style dialog background */
-  dialog::backdrop {
-    background: rgba(0, 0, 0, 0.5);
-  }
-</style>

@@ -7,6 +7,8 @@
   import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
   import { useDialog } from "@/components/ui/dialog-provider";
 
+  const props = withDefaults(defineProps<{ variant?: "default" | "outline" | "ghost" }>(), { variant: "default" });
+
   const { openDialog } = useDialog();
 
   function getQRCodeUrl(): string {
@@ -30,7 +32,7 @@
 
   <Tooltip>
     <TooltipTrigger as-child>
-      <Button size="icon" @click="openDialog(DialogID.PageQRCode)">
+      <Button size="icon" :variant="props.variant" @click="openDialog(DialogID.PageQRCode)">
         <MdiQrcode name="mdi-qrcode" />
       </Button>
     </TooltipTrigger>

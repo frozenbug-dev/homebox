@@ -284,7 +284,6 @@
         <span v-if="show('place')" class="min-w-0">
           <PlaceCell
             :item="tableRows[vRow.index]!.original"
-            :places="places"
             :place-ids="placeIds"
             @move="p => movePlace(tableRows[vRow.index]!.original, p)"
           />

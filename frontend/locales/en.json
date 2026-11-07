@@ -1472,6 +1472,30 @@
         }
     },
     "shell": {
+        "item_page": {
+            "properties": "Properties",
+            "place": "Place",
+            "no_place": "No place",
+            "add_tags": "Add tags",
+            "add_description": "Add a description…",
+            "add_notes": "Add notes…",
+            "details": "Details",
+            "fields": "Custom fields",
+            "contents": "Contents",
+            "position": "{index} of {total}",
+            "previous": "Previous item",
+            "next": "Next item",
+            "more": "More actions",
+            "copy_link": "Copy link",
+            "link_copied": "Link copied",
+            "show_empty": "Show empty fields",
+            "move_to": "Move to place",
+            "in_container": "Inside {name}",
+            "created": "Created",
+            "updated": "Updated",
+            "yes": "Yes",
+            "no": "No"
+        },
         "items_page": {
             "filter_placeholder": "Filter by name, serial, model…",
             "select_all": "Select all",

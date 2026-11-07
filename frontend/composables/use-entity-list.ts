@@ -88,3 +88,30 @@ export function usePatchEntity() {
     onSettled: () => queryClient.invalidateQueries({ queryKey: ["entities"] }),
   });
 }
+
+/**
+ * The entities before and after `id` in the most recently loaded list that
+ * contains it, so a detail page can step through what the user was browsing.
+ * Only rows that list has already fetched count.
+ */
+export function useEntityNeighbours(id: MaybeRefOrGetter<string>) {
+  const queryClient = useQueryClient();
+
+  return computed(() => {
+    const target = toValue(id);
+    const lists = queryClient
+      .getQueryCache()
+      .findAll({ queryKey: ["entities", "list"] })
+      .sort((a, b) => b.state.dataUpdatedAt - a.state.dataUpdatedAt);
+
+    for (const list of lists) {
+      const data = list.state.data as InfiniteData<PaginationResultEntitySummary> | undefined;
+      const rows = data?.pages.flatMap(p => p.items) ?? [];
+      const index = rows.findIndex(r => r.id === target);
+      if (index >= 0) {
+        return { prev: rows[index - 1], next: rows[index + 1], index, total: data!.pages[0]?.total ?? rows.length };
+      }
+    }
+    return null;
+  });
+}
