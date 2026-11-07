@@ -57,7 +57,7 @@
     "@tailwindcss/typography": "^0.5.20",
     "@tailwindcss/vite": "^4.3.5",
     "@tanstack/vue-table": "^8.21.3",
-    "@vuepic/vue-datepicker": "^11.0.3",
+    "@vuepic/vue-datepicker": "^14.0.0",
     "@vueuse/core": "^15.0.0",
     "@vueuse/nuxt": "^15.0.0",
     "@vueuse/router": "^15.0.0",

@@ -7,10 +7,11 @@
         <Label class="cursor-pointer">{{ $t("collection.expires_at") }}</Label>
         <VueDatePicker
           v-model="form.expiresAt"
-          :enable-time-picker="true"
-          clearable
+          :time-config="{ enableTimePicker: true }"
+          :input-attrs="{ clearable: true }"
           :dark="isDark"
-          :format="formatDateTime"
+          :formats="{ input: formatDateTime }"
+          :week-start="1"
         />
       </div>
 
@@ -27,7 +28,7 @@
 
 <script setup lang="ts">
   import { useI18n } from "vue-i18n";
-  import VueDatePicker from "@vuepic/vue-datepicker";
+  import { VueDatePicker } from "@vuepic/vue-datepicker";
   import "@vuepic/vue-datepicker/dist/main.css";
   import { DialogID } from "@/components/ui/dialog-provider/utils";
   import { useDialog } from "~/components/ui/dialog-provider";

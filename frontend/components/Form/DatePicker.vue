@@ -1,16 +1,30 @@
 <template>
   <div v-if="!inline" class="flex w-full flex-col">
     <Label class="cursor-pointer"> {{ label }} </Label>
-    <VueDatePicker v-model="selected" :enable-time-picker="false" clearable :dark="isDark" :format="formatDate" />
+    <VueDatePicker
+      v-model="selected"
+      :time-config="{ enableTimePicker: false }"
+      :input-attrs="{ clearable: true }"
+      :dark="isDark"
+      :formats="{ input: formatDate }"
+      :week-start="1"
+    />
   </div>
   <div v-else class="sm:flex sm:items-start sm:gap-4">
     <Label class="flex w-full cursor-pointer px-1 py-2"> {{ label }} </Label>
-    <VueDatePicker v-model="selected" :enable-time-picker="false" clearable :dark="isDark" :format="formatDate" />
+    <VueDatePicker
+      v-model="selected"
+      :time-config="{ enableTimePicker: false }"
+      :input-attrs="{ clearable: true }"
+      :dark="isDark"
+      :formats="{ input: formatDate }"
+      :week-start="1"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
-  import VueDatePicker from "@vuepic/vue-datepicker";
+  import { VueDatePicker } from "@vuepic/vue-datepicker";
   import "@vuepic/vue-datepicker/dist/main.css";
   import { isDateOnlyString, parseDateOnly, toDateOnlyString } from "~/lib/datelib/dateOnly";
   import { Label } from "@/components/ui/label";
