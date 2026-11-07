@@ -1,6 +1,5 @@
 <script setup lang="ts">
   import type { EntityOut } from "~~/lib/api/types/data-contracts";
-  import BaseContainer from "@/components/Base/Container.vue";
   import MaintenanceListView from "~/components/Maintenance/ListView.vue";
 
   const props = defineProps<{
@@ -9,7 +8,5 @@
 </script>
 
 <template>
-  <BaseContainer class="flex flex-col gap-8">
-    <MaintenanceListView :current-item-id="props.item.id" />
-  </BaseContainer>
+  <MaintenanceListView :current-item-id="props.item.id" class="-mx-3 -my-4 sm:-mx-6" />
 </template>

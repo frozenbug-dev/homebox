@@ -1587,6 +1587,25 @@
             "previous_page": "Previous",
             "next_page": "Next"
         },
+        "tags_page": {
+            "new_tag": "New tag",
+            "filter": "Filter tags…",
+            "count": "{n, plural, one {# tag} other {# tags}}",
+            "sub_tags": "{n, plural, one {# sub-tag} other {# sub-tags}}",
+            "show_items": "Show items",
+            "delete": "{n, plural, one {Delete} other {Delete # tags}}",
+            "delete_confirm": "{n, plural, one {Delete this tag? Items keep their other tags.} other {Delete # tags? Items keep their other tags.}}",
+            "deleted": "{n, plural, one {Deleted # tag} other {Deleted # tags}}"
+        },
+        "maintenance_page": {
+            "count": "{n, plural, one {# entry} other {# entries}}",
+            "overdue": "Overdue",
+            "open_item": "Open item",
+            "complete": "{n, plural, one {Mark complete} other {Mark # complete}}",
+            "delete": "{n, plural, one {Delete} other {Delete # entries}}",
+            "delete_confirm": "{n, plural, one {Delete this entry? This can't be undone.} other {Delete # entries? This can't be undone.}}",
+            "empty": "Nothing here."
+        },
         "items_page": {
             "focus_search": "Filter the list",
             "add_item_row": "Add item or press",
