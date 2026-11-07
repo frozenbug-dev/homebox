@@ -799,12 +799,7 @@
           </div>
         </BaseCard>
 
-        <Card
-          ref="attDropZone"
-          class="overflow-visible shadow-xl"
-          @dragover.prevent
-          @drop.prevent="handleAttachmentCardDrop"
-        >
+        <Card ref="attDropZone" class="overflow-visible" @dragover.prevent @drop.prevent="handleAttachmentCardDrop">
           <div class="px-4 py-5 sm:px-6">
             <h3 class="text-lg leading-6 font-medium">{{ $t("items.attachments") }}</h3>
             <p class="text-xs">{{ $t("items.changes_persisted_immediately") }}</p>
@@ -909,7 +904,7 @@
           </div>
         </Card>
 
-        <Card v-if="preferences.editorAdvancedView" class="overflow-visible shadow-xl">
+        <Card v-if="preferences.editorAdvancedView" class="overflow-visible">
           <div class="px-4 py-5 sm:px-6">
             <h3 class="text-lg leading-6 font-medium">{{ $t("items.purchase_details") }}</h3>
           </div>
@@ -958,7 +953,7 @@
           </div>
         </Card>
 
-        <Card v-if="preferences.editorAdvancedView" class="overflow-visible shadow-xl">
+        <Card v-if="preferences.editorAdvancedView" class="overflow-visible">
           <div class="px-4 py-5 sm:px-6">
             <h3 class="text-lg leading-6 font-medium">{{ $t("items.warranty_details") }}</h3>
           </div>
@@ -1007,7 +1002,7 @@
           </div>
         </Card>
 
-        <Card v-if="preferences.editorAdvancedView" class="overflow-visible shadow-xl">
+        <Card v-if="preferences.editorAdvancedView" class="overflow-visible">
           <div class="px-4 py-5 sm:px-6">
             <h3 class="text-lg leading-6 font-medium">{{ $t("items.sold_details") }}</h3>
           </div>

@@ -1,11 +1,11 @@
 <template>
   <div class="border-t px-4 py-5 sm:p-0">
     <dl class="sm:divide-y">
-      <div v-for="detail in details" :key="detail.name" class="group py-4 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
-        <dt class="text-sm font-medium">
+      <div v-for="detail in details" :key="detail.name" class="group py-3 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-5">
+        <dt class="text-sm text-muted-foreground">
           {{ $t(detail.name) }}
         </dt>
-        <dd class="text-start text-sm sm:col-span-2">
+        <dd class="mt-1 text-start text-sm font-medium sm:col-span-2 sm:mt-0">
           <slot :name="detail.slot || detail.name" v-bind="{ detail }">
             <DateTime
               v-if="detail.type == 'date'"
@@ -56,7 +56,7 @@
                 <span v-else class="overflow-hidden break-all">{{ detail.text }}</span>
                 <span
                   v-if="detail.copyable"
-                  class="my-0 ml-4 shrink-0 opacity-0 transition-opacity duration-75 group-hover:opacity-100"
+                  class="ml-2 flex h-5 shrink-0 items-center opacity-0 transition-opacity duration-75 group-hover:opacity-100 focus-within:opacity-100"
                 >
                   <CopyText v-if="detail.text.toString()" :text="detail.text.toString()" :icon-size="16" />
                 </span>

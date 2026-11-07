@@ -243,19 +243,17 @@
         </div>
       </section>
 
-      <Card class="p-3">
+      <Card class="p-4 sm:p-5">
         <header :class="{ 'mb-2': location?.description }">
           <div class="flex flex-wrap items-end gap-2">
-            <div
-              class="mb-auto flex size-12 items-center justify-center rounded-full bg-secondary text-secondary-foreground"
-            >
-              <MdiPackageVariant class="size-7" />
+            <div class="mb-auto flex size-11 items-center justify-center rounded-lg bg-accent text-accent-foreground">
+              <MdiPackageVariant class="size-6" />
             </div>
             <div>
               <Breadcrumb v-if="location?.parent">
                 <BreadcrumbList>
                   <BreadcrumbItem>
-                    <BreadcrumbLink as-child class="text-foreground/70 hover:underline">
+                    <BreadcrumbLink as-child class="text-muted-foreground hover:underline">
                       <NuxtLink :to="`/location/${location.parent.id}`">
                         {{ location.parent.name }}
                       </NuxtLink>
@@ -265,14 +263,14 @@
                   <BreadcrumbItem> {{ location.name }} </BreadcrumbItem>
                 </BreadcrumbList>
               </Breadcrumb>
-              <h1 class="flex items-center gap-3 pb-1 text-2xl">
+              <h1 class="flex items-center gap-3 pb-1 text-2xl font-semibold tracking-tight">
                 {{ location ? location.name : "" }}
 
                 <Badge v-if="location && location.totalPrice" variant="secondary">
                   <Currency :amount="location.totalPrice" />
                 </Badge>
               </h1>
-              <div class="flex flex-wrap gap-1 text-xs">
+              <div class="flex flex-wrap gap-1 text-xs text-muted-foreground">
                 <div>
                   {{ $t("global.created") }}
                   <DateTime :date="location?.createdAt" />

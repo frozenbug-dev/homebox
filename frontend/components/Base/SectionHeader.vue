@@ -1,10 +1,10 @@
 <template>
   <div class="pb-3">
-    <CardTitle class="flex items-center">
+    <CardTitle class="flex items-center text-xl">
       <slot />
     </CardTitle>
     <slot name="subtitle" />
-    <CardDescription v-if="$slots.description">
+    <CardDescription v-if="$slots.description" class="mt-1 font-normal">
       <slot name="description" />
     </CardDescription>
     <div v-if="$slots.after">

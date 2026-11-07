@@ -473,12 +473,12 @@
     <div v-if="locations && tags">
       <div class="flex flex-wrap items-end gap-4 md:flex-nowrap">
         <div class="w-full">
-          <Input v-model:model-value="query" :placeholder="$t('global.search')" class="h-12" />
+          <Input v-model:model-value="query" :placeholder="$t('global.search')" class="h-10" />
           <div v-if="byAssetId" class="pt-2 pl-2 text-sm">
             <p>{{ $t("items.query_id", { id: parsedAssetId }) }}</p>
           </div>
         </div>
-        <Button class="mb-auto h-12 w-full md:w-auto" @click.prevent="submit">
+        <Button class="mb-auto h-10 w-full md:w-auto" @click.prevent="submit">
           <MdiLoading v-if="loading" class="animate-spin" />
           <MdiMagnify v-else />
           {{ $t("global.search") }}

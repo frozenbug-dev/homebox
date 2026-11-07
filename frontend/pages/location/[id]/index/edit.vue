@@ -476,7 +476,7 @@
           </div>
         </BaseCard>
 
-        <Card ref="attDropZone" class="overflow-visible shadow-xl">
+        <Card ref="attDropZone" class="overflow-visible">
           <div class="px-4 py-5 sm:px-6">
             <h3 class="text-lg leading-6 font-medium">{{ $t("items.attachments") }}</h3>
             <p class="text-xs">{{ $t("items.changes_persisted_immediately") }}</p>

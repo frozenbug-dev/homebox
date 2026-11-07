@@ -655,13 +655,11 @@
     </Dialog>
 
     <section>
-      <Card class="p-3">
+      <Card class="p-4 sm:p-5">
         <header :class="{ 'mb-2': item.description }">
           <div class="flex flex-wrap items-end gap-2">
-            <div
-              class="mb-auto flex size-12 items-center justify-center rounded-full bg-secondary text-secondary-foreground"
-            >
-              <MdiPackageVariant class="size-7" />
+            <div class="mb-auto flex size-11 items-center justify-center rounded-lg bg-accent text-accent-foreground">
+              <MdiPackageVariant class="size-6" />
             </div>
             <div>
               <Breadcrumb v-if="fullpath && fullpath.length > 0">
@@ -670,7 +668,7 @@
                     <BreadcrumbLink
                       v-if="idx < fullpath.length - 1"
                       as-child
-                      class="text-foreground/70 hover:underline"
+                      class="text-muted-foreground hover:underline"
                     >
                       <NuxtLink :to="`/${part.type}/${part.id}`">
                         {{ part.name }}
@@ -683,13 +681,13 @@
                   </BreadcrumbItem>
                 </BreadcrumbList>
               </Breadcrumb>
-              <h1 class="pb-1 text-2xl text-wrap">
+              <h1 class="pb-1 text-2xl font-semibold tracking-tight text-wrap">
                 {{ item ? item.name : "" }}
               </h1>
               <div class="flex flex-wrap gap-2 pb-1">
                 <TagChip v-for="tag in itemTags" :key="tag.id" :tag="tag" size="sm" :ancestors="tag.ancestors" />
               </div>
-              <div class="flex flex-wrap gap-1 text-xs text-wrap">
+              <div class="flex flex-wrap gap-1 text-xs text-wrap text-muted-foreground">
                 <div>
                   {{ $t("items.created_at") }}
                   <DateTime :date="item?.createdAt" />

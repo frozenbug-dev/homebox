@@ -90,9 +90,12 @@
       </template>
     </BaseSectionHeader>
 
-    <p v-if="externalPagination && pagination!.totalSize > 0" class="mb-4 flex items-center text-base font-medium">
+    <p
+      v-if="externalPagination && pagination!.totalSize > 0"
+      class="mb-4 flex items-center text-sm text-muted-foreground"
+    >
       {{ $t("items.results", { total: pagination!.totalSize }) }}
-      <span class="ml-auto text-base">
+      <span class="ml-auto">
         {{
           $t("items.pages", {
             page: pagination!.page,
