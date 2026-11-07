@@ -12,6 +12,7 @@
     <TagCreateModal />
     <LabelTemplatePrintDialog />
     <ItemBarcodeModal />
+    <ItemChangeDetailsDialog />
     <AppCommandPalette @scan="openScanner" />
     <AppShortcutsDialog />
     <AppScannerModal />
@@ -312,6 +313,7 @@
   import TagCreateModal from "~/components/Tag/CreateModal.vue";
   import LabelTemplatePrintDialog from "~/components/LabelTemplate/PrintDialog.vue";
   import ItemBarcodeModal from "~/components/Item/BarcodeModal.vue";
+  import ItemChangeDetailsDialog from "~/components/Item/ChangeDetailsDialog.vue";
   import AppCommandPalette from "~/components/App/CommandPalette.vue";
   import AppShortcutsDialog from "~/components/App/ShortcutsDialog.vue";
   import ShortcutHint from "~/components/App/ShortcutHint.vue";

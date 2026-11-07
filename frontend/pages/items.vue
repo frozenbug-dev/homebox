@@ -8,7 +8,7 @@
   import { DialogID } from "@/components/ui/dialog-provider/utils";
   import { useTagStore } from "~/stores/tags";
   import { useEntityTypeStore } from "~~/stores/entityTypes";
-  import ListTable, { type ItemColumn } from "~/components/Items/ListTable.vue";
+  import ItemList, { type ItemColumn } from "~/components/Items/List.vue";
   import FilterChip from "~/components/Items/FilterChip.vue";
   import ShortcutHint from "~/components/App/ShortcutHint.vue";
   import { Button } from "@/components/ui/button";
@@ -277,7 +277,8 @@
       </DropdownMenu>
     </div>
 
-    <ListTable
+    <ItemList
+      virtual
       :rows="rows"
       :total="total"
       :has-next-page="!!hasNextPage"
@@ -291,7 +292,7 @@
       <template #append>
         <button
           type="button"
-          class="flex h-10 w-full items-center gap-2 border-b border-border/60 px-4 text-left text-sm text-muted-foreground hover:bg-muted/40"
+          class="flex h-10 w-full items-center gap-2.5 rounded-md px-2.5 text-left text-sm text-muted-foreground hover:bg-muted/70"
           @click="openDialog(DialogID.CreateEntity, { params: { baseType: 'item' } })"
         >
           <Plus class="size-4 text-primary" aria-hidden="true" />
@@ -299,6 +300,6 @@
           <ShortcutHint :hotkey="SHORTCUTS.newItem" />
         </button>
       </template>
-    </ListTable>
+    </ItemList>
   </div>
 </template>

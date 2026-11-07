@@ -41,7 +41,7 @@
   import AppHeaderActions from "~/components/App/HeaderActions.vue";
   import DetailsSection from "~/components/global/DetailsSection/DetailsSection.vue";
   import ItemAttachmentsList from "~/components/Item/AttachmentsList.vue";
-  import ItemViewSelectable from "~/components/Item/View/Selectable.vue";
+  import ItemList from "~/components/Items/List.vue";
   import PropertiesPanel from "~/components/Item/PropertiesPanel.vue";
   import ShortcutHint from "~/components/App/ShortcutHint.vue";
   import InlineText from "~/components/Item/Inline/Text.vue";
@@ -771,7 +771,20 @@
         </section>
 
         <section v-if="items && items.length > 0">
-          <ItemViewSelectable :items="items" :title="t('shell.item_page.contents')" @refresh="refreshItemList" />
+          <h2 class="mb-1 text-[13px] font-semibold text-foreground/80">
+            {{ t("shell.item_page.contents") }}
+            <span class="ml-1 font-normal text-muted-foreground tabular-nums">{{ items.length }}</span>
+          </h2>
+          <!-- The page's own M / P / ↑↓ shortcuts act on this item, so the list doesn't register any. -->
+          <ItemList
+            class="-mx-1.5"
+            :rows="items"
+            :total="items.length"
+            :columns="{ asset: true, place: false, tags: true, quantity: true, price: true, added: false }"
+            :hotkeys="false"
+            bare
+            @changed="refreshItemList"
+          />
         </section>
       </div>
 

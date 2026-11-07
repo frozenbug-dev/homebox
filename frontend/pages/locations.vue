@@ -22,7 +22,7 @@
     DropdownMenuTrigger,
   } from "@/components/ui/dropdown-menu";
   import PlacesTree from "~/components/Places/Tree.vue";
-  import ListTable, { type ItemColumn } from "~/components/Items/ListTable.vue";
+  import ItemList, { type ItemColumn } from "~/components/Items/List.vue";
   import InlineText from "~/components/Item/Inline/Text.vue";
   import ShortcutHint from "~/components/App/ShortcutHint.vue";
   import AppHeaderActions from "~/components/App/HeaderActions.vue";
@@ -543,8 +543,9 @@
         </button>
       </div>
 
-      <ListTable
+      <ItemList
         ref="list"
+        virtual
         :rows="rows"
         :total="total"
         :has-next-page="!!hasNextPage"
@@ -553,11 +554,13 @@
         :columns="columns"
         :filtered="false"
         draggable-rows
-        hide-header
         @load-more="fetchNextPage()"
       >
         <template #append>
-          <form class="flex h-10 items-center gap-3 border-b border-border/60 px-3 sm:px-4" @submit.prevent="addItem">
+          <form
+            class="flex h-10 items-center gap-2.5 rounded-md px-2.5 focus-within:bg-muted/70"
+            @submit.prevent="addItem"
+          >
             <Plus class="size-4 shrink-0 text-primary" aria-hidden="true" />
             <input
               v-model="newItemName"
@@ -567,7 +570,7 @@
             />
           </form>
         </template>
-      </ListTable>
+      </ItemList>
       <p class="hidden px-5 pb-5 text-xs text-muted-foreground md:block">{{ t("shell.places_page.drag_hint") }}</p>
     </section>
   </div>

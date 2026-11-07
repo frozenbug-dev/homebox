@@ -16,7 +16,7 @@
   import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
   import BaseContainer from "@/components/Base/Container.vue";
   import SearchFilter from "~/components/Search/Filter.vue";
-  import ItemViewSelectable from "~/components/Item/View/Selectable.vue";
+  import ItemList from "~/components/Items/List.vue";
   import type { LocationQueryRaw } from "vue-router";
 
   const { t } = useI18n();
@@ -420,14 +420,7 @@
     await search();
   }
 
-  const pagination = proxyRefs({
-    page,
-    pageSize,
-    totalSize: total,
-    setPage: (newPage: number) => {
-      page.value = newPage;
-    },
-  });
+  const pageCount = computed(() => Math.max(1, Math.ceil(total.value / pageSize.value)));
 
   // saved search
 
@@ -657,14 +650,27 @@
     </div>
 
     <section>
-      <ItemViewSelectable
-        :title="$t('global.results')"
-        :items="items"
-        :location-flat-tree="locationFlatTree"
-        :pagination="pagination"
-        disable-sort
-        @refresh="async () => search()"
+      <h2 class="mt-6 mb-1 text-[13px] font-semibold text-foreground/80">
+        {{ $t("global.results") }}
+        <span class="ml-1 font-normal text-muted-foreground tabular-nums">{{ total }}</span>
+      </h2>
+      <ItemList
+        class="-mx-1.5"
+        :rows="items"
+        :total="total"
+        :columns="{ asset: true, place: true, tags: true, quantity: true, price: true, added: true }"
+        bare
+        @changed="search()"
       />
+      <nav v-if="pageCount > 1" class="flex items-center justify-end gap-2 py-3 text-sm text-muted-foreground">
+        <Button variant="outline" size="sm" :disabled="page <= 1" @click="page = page - 1">
+          {{ $t("shell.resource.previous_page") }}
+        </Button>
+        <span class="tabular-nums">{{ page }} / {{ pageCount }}</span>
+        <Button variant="outline" size="sm" :disabled="page >= pageCount" @click="page = page + 1">
+          {{ $t("shell.resource.next_page") }}
+        </Button>
+      </nav>
     </section>
   </BaseContainer>
 </template>

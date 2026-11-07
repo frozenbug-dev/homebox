@@ -1576,6 +1576,17 @@
             "yes": "Yes",
             "no": "No"
         },
+        "resource": {
+            "open": "Open",
+            "move_to": "Move to…",
+            "add_tags": "Add tags…",
+            "print_labels": "{n, plural, one {Print label} other {Print # labels}}",
+            "copy_link": "Copy link",
+            "link_copied": "Link copied",
+            "delete": "{n, plural, one {Delete} other {Delete # items}}",
+            "previous_page": "Previous",
+            "next_page": "Next"
+        },
         "items_page": {
             "focus_search": "Filter the list",
             "add_item_row": "Add item or press",
@@ -1596,7 +1607,7 @@
             "filter_photo_set": "Has a photo",
             "filter_archived": "Include archived",
             "display": "Display",
-            "columns": "Columns",
+            "columns": "Properties",
             "sort_by": "Sort by",
             "ascending": "Ascending",
             "descending": "Descending",
@@ -1681,6 +1692,9 @@
             "list_up": "Previous row",
             "list_open": "Open the focused row",
             "list_select": "Select or deselect the focused row",
+            "list_extend_down": "Extend the selection down",
+            "list_extend_up": "Extend the selection up",
+            "list_select_all": "Select all rows",
             "selection_move": "Move selected items",
             "selection_tag": "Tag selected items",
             "selection_print": "Print labels for selected items",

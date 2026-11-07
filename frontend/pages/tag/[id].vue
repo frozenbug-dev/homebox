@@ -21,7 +21,7 @@
   import DateTime from "~/components/global/DateTime.vue";
   import PageQRCode from "~/components/global/PageQRCode.vue";
   import Markdown from "~/components/global/Markdown.vue";
-  import ItemViewSelectable from "~/components/Item/View/Selectable.vue";
+  import ItemList from "~/components/Items/List.vue";
   import TagSingleSelector from "~/components/Tag/SingleSelector.vue";
   import TagChip from "~/components/Tag/Chip.vue";
   import type { TagOut } from "~~/lib/api/types/data-contracts";
@@ -313,7 +313,14 @@
       <Markdown v-if="tag && tag.description" class="mt-3 text-base" :source="tag.description" />
     </Card>
     <section v-if="tag && items">
-      <ItemViewSelectable :items="items.items" @refresh="refreshItemList" />
+      <ItemList
+        class="-mx-1.5 mt-4"
+        :rows="items.items"
+        :total="items.items.length"
+        :columns="{ asset: true, place: true, tags: true, quantity: true, price: true, added: false }"
+        bare
+        @changed="refreshItemList"
+      />
     </section>
   </BaseContainer>
 </template>
