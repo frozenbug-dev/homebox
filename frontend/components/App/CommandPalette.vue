@@ -267,7 +267,7 @@
       toast.error(t("shell.palette.move_failed"));
       return;
     }
-    toast.success(t("shell.palette.moved", { n: ids.length, place: target.name }, ids.length));
+    toast.success(t("shell.palette.moved", { n: ids.length, place: target.name }));
     closeDialog(DialogID.CommandPalette, { moved: ids.length });
   }
 
@@ -433,7 +433,7 @@
             <span class="flex items-center gap-1"><Kbd>↑</Kbd><Kbd>↓</Kbd> {{ t("shell.palette.navigate") }}</span>
             <span class="flex items-center gap-1"><Kbd>↵</Kbd> {{ t("shell.palette.select") }}</span>
             <Button size="sm" class="ml-auto h-7" :disabled="picked.size === 0 || moving" @click="moveSelected">
-              {{ t("shell.palette.move_button", { n: picked.size }, picked.size) }}
+              {{ t("shell.palette.move_button", { n: picked.size }) }}
               <ShortcutHint hotkey="Mod+Enter" />
             </Button>
           </template>

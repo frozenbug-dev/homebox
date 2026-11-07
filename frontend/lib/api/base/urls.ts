@@ -23,6 +23,11 @@ export function route(rest: string, params: Record<string, QueryValue> = {}): st
   const url = new URL(parts.prefix + rest, parts.host);
 
   for (const [key, value] of Object.entries(params)) {
+    // Optional params are often passed as undefined; sending "undefined" would
+    // be read by the API as a literal value (e.g. q=undefined).
+    if (value === undefined || value === null) {
+      continue;
+    }
     if (Array.isArray(value)) {
       for (const item of value) {
         url.searchParams.append(key, String(item));

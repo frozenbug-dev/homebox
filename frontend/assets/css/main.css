@@ -1191,8 +1191,8 @@
 }
 
 :root {
-  --header-height: 3.75rem;
-  --header-height-mobile: 6.25rem;
+  --header-height: 3.5rem;
+  --header-height-mobile: 3.5rem;
 }
 
 /* Non-scoped styles for regular text */
