@@ -2,16 +2,28 @@
   import { useI18n } from "vue-i18n";
   import { TreeItem as TreeRow, TreeRoot } from "reka-ui";
   import type { FlattenedItem } from "reka-ui";
-  import { ChevronRight, MapPin } from "@lucide/vue";
+  import { ChevronRight, ExternalLink, FolderInput, ListFilter, MapPin, Pencil, Plus, Printer } from "@lucide/vue";
   import type { TreeItem } from "~/lib/api/types/data-contracts";
   import { vDragSource, vDropTarget, type DragData } from "~/lib/dnd";
   import { canNest, type PlaceIndex } from "~/lib/place-tree";
+  import { SHORTCUTS } from "~/lib/shortcuts";
   import Currency from "~/components/global/Currency.vue";
+  import ShortcutHint from "~/components/App/ShortcutHint.vue";
+  import {
+    ContextMenu,
+    ContextMenuContent,
+    ContextMenuItem,
+    ContextMenuSeparator,
+    ContextMenuTrigger,
+  } from "@/components/ui/context-menu";
+
+  export type PlaceAction = "add-inside" | "rename" | "print" | "move-items-here" | "open-in-items" | "open-details";
 
   /**
    * The places tree: arrow keys move and open/close, Enter or a click selects.
    * Every row can be dragged onto another place, and accepts dropped places
-   * and items (the page's drop monitor does the move).
+   * and items (the page's drop monitor does the move). Right-click for the
+   * place's actions (the page runs them).
    */
   const props = defineProps<{
     tree: TreeItem[];
@@ -32,7 +44,21 @@
     select: [id: string];
     create: [name: string, parentId: string | null];
     cancelCreate: [];
+    action: [action: PlaceAction, id: string];
   }>();
+
+  /** Row whose context menu is open, highlighted like a hovered row. */
+  const menuFor = ref<string | null>(null);
+  /** Set when an action moves focus elsewhere (rename, add inside), so the closing menu doesn't take it back. */
+  let keepFocusAway = false;
+  const run = (action: PlaceAction, id: string) => {
+    keepFocusAway = action === "rename" || action === "add-inside" || action === "move-items-here";
+    emit("action", action, id);
+  };
+  function onMenuCloseFocus(e: Event) {
+    if (keepFocusAway) e.preventDefault();
+    keepFocusAway = false;
+  }
 
   const expanded = defineModel<string[]>("expanded", { default: () => [] });
 
@@ -92,7 +118,7 @@
     else emit("cancelCreate");
   }
 
-  const indent = (level: number) => ({ paddingLeft: `${(level - 1) * 18 + 16}px` });
+  const indent = (level: number) => ({ paddingLeft: `${(level - 1) * 18 + 10}px` });
 </script>
 
 <template>
@@ -104,52 +130,88 @@
     :get-children="node => (node.children?.length ? node.children : undefined)"
     :model-value="selectedNode"
     as="div"
-    class="flex flex-col text-sm select-none"
+    class="flex flex-col px-1.5 py-1 text-sm select-none"
     @update:model-value="node => node && !Array.isArray(node) && emit('select', node.id)"
   >
     <template v-for="(item, i) in flattenItems" :key="item._id">
-      <TreeRow
-        v-slot="{ isExpanded, handleToggle }"
-        v-drag-source="() => ({ kind: 'place', id: item.value.id })"
-        v-drop-target="dropRule(item.value.id)"
-        v-bind="item.bind"
-        as="div"
-        class="group grid h-[38px] cursor-pointer grid-cols-[minmax(0,1fr)_64px_84px] items-center border-b border-border/50 pr-4 outline-none hover:bg-muted/40 focus-visible:bg-muted/60 data-selected:bg-primary/10 data-selected:font-medium"
-        :class="{ 'bg-primary/10 ring-2 ring-primary/60 ring-inset': dropActiveId === item.value.id }"
-        @toggle="e => onToggle(e, expandedKeys.includes(item.value.id))"
-      >
-        <span class="flex min-w-0 items-center gap-1.5" :style="indent(item.level)">
-          <button
-            v-if="item.hasChildren"
-            type="button"
-            tabindex="-1"
-            class="flex size-4 shrink-0 items-center justify-center rounded text-muted-foreground/70 hover:text-foreground"
-            :aria-label="isExpanded ? t('shell.places_page.collapse') : t('shell.places_page.expand')"
-            @click.stop="handleToggle()"
+      <ContextMenu @update:open="open => (menuFor = open ? item.value.id : null)">
+        <ContextMenuTrigger as-child>
+          <TreeRow
+            v-slot="{ isExpanded, handleToggle }"
+            v-drag-source="() => ({ kind: 'place', id: item.value.id })"
+            v-drop-target="dropRule(item.value.id)"
+            v-bind="item.bind"
+            as="div"
+            class="group grid h-9 cursor-pointer grid-cols-[minmax(0,1fr)_64px_84px] items-center rounded-md pr-2.5 outline-none hover:bg-muted/70 focus-visible:bg-muted/70 data-selected:bg-primary/10 data-selected:font-medium"
+            :class="{
+              'bg-primary/10 ring-2 ring-primary/60 ring-inset': dropActiveId === item.value.id,
+              'bg-muted/70': menuFor === item.value.id,
+            }"
+            @toggle="e => onToggle(e, expandedKeys.includes(item.value.id))"
           >
-            <ChevronRight class="size-3.5 transition-transform" :class="{ 'rotate-90 text-primary': isExpanded }" />
-          </button>
-          <span v-else class="w-4 shrink-0" />
-          <MapPin
-            class="size-3.5 shrink-0"
-            :class="item.value.id === selectedId ? 'text-primary' : 'text-muted-foreground'"
-            aria-hidden="true"
-          />
-          <span class="truncate" :class="{ 'text-muted-foreground': !counts.get(item.value.id) }">
-            {{ item.value.name }}
-          </span>
-        </span>
-        <span class="text-right text-[13px] text-muted-foreground tabular-nums">
-          {{ counts.get(item.value.id) || "—" }}
-        </span>
-        <span class="truncate text-right text-[13px] text-muted-foreground tabular-nums">
-          <Currency v-if="values?.get(item.value.id)" :amount="values.get(item.value.id)!" />
-        </span>
-      </TreeRow>
+            <span class="flex min-w-0 items-center gap-1.5" :style="indent(item.level)">
+              <button
+                v-if="item.hasChildren"
+                type="button"
+                tabindex="-1"
+                class="flex size-4 shrink-0 items-center justify-center rounded text-muted-foreground/70 hover:text-foreground"
+                :aria-label="isExpanded ? t('shell.places_page.collapse') : t('shell.places_page.expand')"
+                @click.stop="handleToggle()"
+              >
+                <ChevronRight class="size-3.5 transition-transform" :class="{ 'rotate-90 text-primary': isExpanded }" />
+              </button>
+              <span v-else class="w-4 shrink-0" />
+              <MapPin
+                class="size-3.5 shrink-0"
+                :class="item.value.id === selectedId ? 'text-primary' : 'text-muted-foreground'"
+                aria-hidden="true"
+              />
+              <span class="truncate" :class="{ 'text-muted-foreground': !counts.get(item.value.id) }">
+                {{ item.value.name }}
+              </span>
+            </span>
+            <span class="text-right text-[13px] text-muted-foreground tabular-nums">
+              {{ counts.get(item.value.id) || "—" }}
+            </span>
+            <span class="truncate text-right text-[13px] text-muted-foreground tabular-nums">
+              <Currency v-if="values?.get(item.value.id)" :amount="values.get(item.value.id)!" />
+            </span>
+          </TreeRow>
+        </ContextMenuTrigger>
+        <ContextMenuContent class="w-56" @close-auto-focus="onMenuCloseFocus">
+          <ContextMenuItem @select="emit('select', item.value.id)">
+            <MapPin /> {{ t("shell.resource.open") }}
+          </ContextMenuItem>
+          <ContextMenuItem @select="run('open-in-items', item.value.id)">
+            <ListFilter /> {{ t("shell.places_page.open_in_items") }}
+          </ContextMenuItem>
+          <ContextMenuSeparator />
+          <ContextMenuItem @select="run('add-inside', item.value.id)">
+            <Plus /> {{ t("shell.places_page.add_inside") }}
+            <ShortcutHint :hotkey="SHORTCUTS.placeAddInside" class="ml-auto" />
+          </ContextMenuItem>
+          <ContextMenuItem @select="run('move-items-here', item.value.id)">
+            <FolderInput /> {{ t("shell.places_page.move_items_here") }}
+            <ShortcutHint :hotkey="SHORTCUTS.placeMoveItemsHere" class="ml-auto" />
+          </ContextMenuItem>
+          <ContextMenuItem @select="run('rename', item.value.id)">
+            <Pencil /> {{ t("shell.places_page.rename") }}
+            <ShortcutHint :hotkey="SHORTCUTS.placeRename" class="ml-auto" />
+          </ContextMenuItem>
+          <ContextMenuItem @select="run('print', item.value.id)">
+            <Printer /> {{ t("shell.places_page.print_label") }}
+            <ShortcutHint :hotkey="SHORTCUTS.placePrint" class="ml-auto" />
+          </ContextMenuItem>
+          <ContextMenuSeparator />
+          <ContextMenuItem @select="run('open-details', item.value.id)">
+            <ExternalLink /> {{ t("shell.places_page.open_details") }}
+          </ContextMenuItem>
+        </ContextMenuContent>
+      </ContextMenu>
 
       <div
         v-if="i === insertAfter(flattenItems)"
-        class="flex h-[38px] items-center gap-1.5 border-b border-border/50 bg-primary/5 pr-4"
+        class="flex h-9 items-center gap-1.5 rounded-md bg-primary/5 pr-2.5"
         :style="indent(newRowLevel(flattenItems))"
       >
         <span class="w-4 shrink-0" />

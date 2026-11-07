@@ -21,7 +21,7 @@
     DropdownMenuSeparator,
     DropdownMenuTrigger,
   } from "@/components/ui/dropdown-menu";
-  import PlacesTree from "~/components/Places/Tree.vue";
+  import PlacesTree, { type PlaceAction } from "~/components/Places/Tree.vue";
   import ItemList, { type ItemColumn } from "~/components/Items/List.vue";
   import InlineText from "~/components/Item/Inline/Text.vue";
   import ShortcutHint from "~/components/App/ShortcutHint.vue";
@@ -216,6 +216,26 @@
     if (selectedId.value) addingIn.value = selectedId.value;
   }
 
+  /** Actions from a tree row's context menu: select that place, then act on it. */
+  function onTreeAction(action: PlaceAction, id: string) {
+    if (action === "open-in-items") {
+      navigateTo({ path: "/items", query: { places: subtreeIds(index.value, id) } });
+      return;
+    }
+    if (action === "open-details") {
+      navigateTo(`/location/${id}`);
+      return;
+    }
+    select(id);
+    // Wait for the place header to show the newly selected place.
+    nextTick(() => {
+      if (action === "add-inside") addInside();
+      else if (action === "rename") startRename();
+      else if (action === "print") printLabel();
+      else if (action === "move-items-here") moveItemsHere();
+    });
+  }
+
   function printAllLabels() {
     openDialog(DialogID.PrintLabelTemplate, { params: { locationIds: [...index.value.byId.keys()] } });
   }
@@ -405,6 +425,7 @@
           @select="select"
           @create="createPlace"
           @cancel-create="addingIn = undefined"
+          @action="onTreeAction"
         />
         <div
           v-if="canMoveToTop"
