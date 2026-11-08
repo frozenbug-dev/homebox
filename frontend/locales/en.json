@@ -1664,9 +1664,9 @@
             "uses": "{n, plural, one {# use left} other {# uses left}}"
         },
         "items_page": {
-            "focus_search": "Filter the list",
-            "add_item_row": "Add item or press",
+            "focus_search": "Filter by text",
             "filter_placeholder": "Filter by name, serial, model…",
+            "text_matches": "Matches",
             "select_all": "Select all",
             "increase": "Increase quantity",
             "decrease": "Decrease quantity",
@@ -1738,6 +1738,8 @@
             "select": "select"
         },
         "search_or_add": "Search or add",
+        "bottom_nav": "Main",
+        "create_menu": "Create",
         "view": "View",
         "new_item": "New item",
         "new_place": "New place",

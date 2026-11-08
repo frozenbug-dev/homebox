@@ -86,15 +86,32 @@
     setTimeout(() => (tagPickerOpen.value = true));
   }
 
+  // Text search lives at the top of the filter menu and gets focus whenever the menu opens.
+  const filterMenuOpen = ref(false);
   const searchInput = useTemplateRef<HTMLInputElement>("searchInput");
-  useHotkey("/", () => searchInput.value?.focus(), {
+  useHotkey("/", () => (filterMenuOpen.value = true), {
     meta: { name: t("shell.items_page.focus_search"), group: "list" },
   });
-
-  const filterMenuOpen = ref(false);
   useHotkey("F", () => (filterMenuOpen.value = true), {
     meta: { name: t("shell.items_page.add_filter"), group: "list" },
   });
+
+  function focusSearch(e: Event) {
+    e.preventDefault();
+    nextTick(() => searchInput.value?.focus());
+  }
+
+  // The menu's typeahead would eat letters typed into the field. Arrows and Escape still reach
+  // the menu so you can move down into the options or close it; Enter applies and closes.
+  function onSearchKeydown(e: KeyboardEvent) {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      q.value = search.value;
+      filterMenuOpen.value = false;
+      return;
+    }
+    if (!["ArrowDown", "ArrowUp", "Escape", "Tab"].includes(e.key)) e.stopPropagation();
+  }
 
   // ----- Data -----
 
@@ -155,18 +172,27 @@
 <template>
   <div class="flex flex-col">
     <AppSubheader>
-      <label class="flex h-7 w-full items-center gap-1.5 text-[13px] text-muted-foreground sm:w-64">
-        <span class="sr-only">{{ t("shell.items_page.filter_placeholder") }}</span>
-        <Search class="size-3.5 shrink-0" aria-hidden="true" />
-        <input
-          ref="searchInput"
-          v-model="search"
-          :placeholder="t('shell.items_page.filter_placeholder')"
-          class="h-full min-w-0 flex-1 bg-transparent text-foreground outline-none placeholder:text-muted-foreground"
-          @keydown.esc="($event.target as HTMLInputElement).blur()"
-        />
-        <ShortcutHint v-if="!search" hotkey="/" />
-      </label>
+      <span
+        v-if="search"
+        class="inline-flex h-7 max-w-56 min-w-0 items-center rounded-md border border-border bg-background text-xs"
+      >
+        <button
+          type="button"
+          class="flex h-full min-w-0 items-center gap-1 rounded-l-md px-2 hover:bg-accent"
+          @click="filterMenuOpen = true"
+        >
+          <span class="shrink-0 text-muted-foreground">{{ t("shell.items_page.text_matches") }}</span>
+          <span class="truncate font-medium">“{{ search }}”</span>
+        </button>
+        <button
+          type="button"
+          class="flex h-full items-center rounded-r-md px-1.5 text-muted-foreground hover:bg-accent hover:text-foreground"
+          :aria-label="t('shell.items_page.remove_filter', { label: t('shell.items_page.text_matches') })"
+          @click="((search = ''), (q = ''))"
+        >
+          ×
+        </button>
+      </span>
 
       <FilterChip
         v-if="showPlaceChip"
@@ -220,7 +246,20 @@
             <ShortcutHint hotkey="F" />
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="start" class="w-52" @close-auto-focus.prevent>
+        <DropdownMenuContent align="start" class="w-64" @open-auto-focus="focusSearch" @close-auto-focus.prevent>
+          <label class="flex h-9 items-center gap-2 px-2 text-sm text-muted-foreground">
+            <span class="sr-only">{{ t("shell.items_page.filter_placeholder") }}</span>
+            <Search class="size-4 shrink-0" aria-hidden="true" />
+            <input
+              ref="searchInput"
+              v-model="search"
+              :placeholder="t('shell.items_page.filter_placeholder')"
+              class="h-full min-w-0 flex-1 bg-transparent text-foreground outline-none placeholder:text-muted-foreground"
+              @keydown="onSearchKeydown"
+            />
+            <ShortcutHint hotkey="/" />
+          </label>
+          <DropdownMenuSeparator />
           <DropdownMenuItem @select="addPlaceFilter">{{ t("shell.items_page.filter_place") }}…</DropdownMenuItem>
           <DropdownMenuItem @select="addTagFilter">{{ t("shell.items_page.filter_tag") }}…</DropdownMenuItem>
           <DropdownMenuSeparator />
@@ -297,7 +336,10 @@
           @click="openDialog(DialogID.CreateEntity, { params: { baseType: 'item' } })"
         >
           <Plus class="size-4 text-primary" aria-hidden="true" />
-          {{ t("shell.items_page.add_item_row") }}
+          <span>
+            {{ t("shell.items_page.add_row") }}
+            <span class="max-md:hidden">{{ t("shell.items_page.or_press") }}</span>
+          </span>
           <ShortcutHint :hotkey="SHORTCUTS.newItem" />
         </button>
       </template>

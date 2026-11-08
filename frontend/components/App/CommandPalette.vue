@@ -328,7 +328,7 @@
                   {{ resolvedPlace ? addSummary : t("shell.palette.add_needs_place") }}
                 </span>
               </span>
-              <Kbd class="ml-auto">↵</Kbd>
+              <Kbd class="ml-auto max-md:hidden">↵</Kbd>
             </CommandItem>
             <CommandItem
               value="full-form"
@@ -435,8 +435,10 @@
           class="flex flex-wrap items-center gap-x-4 gap-y-1 border-t border-border bg-muted/40 px-4 py-2 text-xs text-muted-foreground"
         >
           <template v-if="moveInto">
-            <span class="flex items-center gap-1"><Kbd>↑</Kbd><Kbd>↓</Kbd> {{ t("shell.palette.navigate") }}</span>
-            <span class="flex items-center gap-1"><Kbd>↵</Kbd> {{ t("shell.palette.select") }}</span>
+            <span class="flex items-center gap-1 max-md:hidden"
+              ><Kbd>↑</Kbd><Kbd>↓</Kbd> {{ t("shell.palette.navigate") }}</span
+            >
+            <span class="flex items-center gap-1 max-md:hidden"><Kbd>↵</Kbd> {{ t("shell.palette.select") }}</span>
             <Button size="sm" class="ml-auto h-7" :disabled="picked.size === 0 || moving" @click="moveSelected">
               {{ t("shell.palette.move_button", { n: picked.size }) }}
               <ShortcutHint hotkey="Mod+Enter" />

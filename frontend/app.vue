@@ -1,7 +1,10 @@
 <template>
   <DialogProvider>
     <ClientOnly>
-      <Toaster class="pointer-events-auto" />
+      <!-- Phones: clear the floating bottom nav --><Toaster
+        class="pointer-events-auto"
+        :mobile-offset="{ bottom: 'calc(var(--bottom-nav-space) + 0.5rem)' }"
+      />
     </ClientOnly>
 
     <NuxtLayout>

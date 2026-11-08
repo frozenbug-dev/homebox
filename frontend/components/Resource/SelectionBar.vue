@@ -20,7 +20,7 @@
     <div
       role="toolbar"
       :aria-label="t('shell.items_page.selected', { n: count })"
-      class="fixed bottom-6 left-1/2 z-30 flex max-w-[calc(100vw-2rem)] -translate-x-1/2 flex-wrap items-center gap-1 rounded-xl bg-foreground p-1.5 text-sm text-background shadow-2xl md:left-[calc(50%+var(--sidebar-width)/2)]"
+      class="fixed bottom-[calc(var(--bottom-nav-space)+1rem)] left-1/2 z-30 flex max-w-[calc(100vw-2rem)] -translate-x-1/2 flex-wrap items-center gap-1 rounded-xl bg-foreground p-1.5 text-sm text-background shadow-2xl md:bottom-6 md:left-[calc(50%+var(--sidebar-width)/2)]"
     >
       <span class="flex items-center gap-1 pr-1 pl-2.5 font-medium">
         {{ t("shell.items_page.selected", { n: count }) }}

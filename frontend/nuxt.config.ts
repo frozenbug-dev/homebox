@@ -45,6 +45,8 @@ export default defineNuxtConfig({
   app: {
     head: {
       script: [{ src: "/set-theme.js" }],
+      // viewport-fit=cover lets the bottom nav read the home-indicator inset
+      meta: [{ name: "viewport", content: "width=device-width, initial-scale=1, viewport-fit=cover" }],
     },
   },
 

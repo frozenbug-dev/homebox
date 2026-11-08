@@ -1193,6 +1193,14 @@
 :root {
   --header-height: 3.25rem;
   --header-height-mobile: 3.5rem;
+  /* Room the floating bottom nav (phones only) takes: its 4rem height plus its offset from the edge */
+  --bottom-nav-space: calc(4rem + max(1rem, env(safe-area-inset-bottom)) + 1rem);
+}
+
+@media (min-width: 768px) {
+  :root {
+    --bottom-nav-space: 0px;
+  }
 }
 
 /* Non-scoped styles for regular text */

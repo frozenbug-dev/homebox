@@ -578,7 +578,7 @@
 
     <!-- Footer -->
     <div
-      class="sticky bottom-0 mt-4 flex flex-wrap items-center justify-between gap-3 rounded-lg border bg-card px-4 py-3 shadow-xs"
+      class="sticky bottom-(--bottom-nav-space) mt-4 flex flex-wrap items-center justify-between gap-3 rounded-lg border bg-card px-4 py-3 shadow-xs"
     >
       <span class="text-sm text-muted-foreground">
         <template v-if="selectedIds.length">{{ summary }}</template>

@@ -119,7 +119,8 @@
                 <span>{{ $t("shell.collection_settings") }}</span>
               </SidebarMenuLink>
             </SidebarMenuItem>
-            <SidebarMenuItem>
+            <!-- No keyboard on phones -->
+            <SidebarMenuItem class="max-md:hidden">
               <SidebarMenuButton :tooltip="$t('shell.keyboard_shortcuts')" @click="openDialog(DialogID.Shortcuts)">
                 <Keyboard />
                 <span>{{ $t("shell.keyboard_shortcuts") }}</span>
@@ -166,7 +167,7 @@
       <SidebarInset class="min-h-dvh max-w-full min-w-0 bg-sidebar md:p-2 md:pl-0">
         <!-- The page lives in one bordered panel; its header stays at the top while the page scrolls. -->
         <div
-          class="relative flex min-h-dvh flex-col overflow-clip bg-background md:min-h-[calc(100dvh-1rem)] md:rounded-xl md:border md:border-border md:shadow-xs"
+          class="relative flex min-h-dvh flex-col overflow-clip bg-background pb-(--bottom-nav-space) md:min-h-[calc(100dvh-1rem)] md:rounded-xl md:border md:border-border md:shadow-xs"
         >
           <!-- IMPORTANT: if you change the height of this header, update --header-height(-mobile) in main.css;
                the item and location edit pages offset their sticky bars by it -->
@@ -205,10 +206,11 @@
             <!-- Pages put their own actions here (see components/App/HeaderActions.vue) -->
             <div id="page-header-actions" class="flex shrink-0 items-center gap-1.5 empty:hidden" />
             <template v-if="!hasPageActions">
+              <!-- On phones the bottom nav's create menu has these -->
               <Button
                 variant="outline"
                 size="sm"
-                class="h-[30px] text-[13px]"
+                class="hidden h-[30px] text-[13px] md:inline-flex"
                 :aria-label="$t('shell.scan')"
                 @click="openScanner"
               >
@@ -218,7 +220,7 @@
               </Button>
               <Button
                 size="sm"
-                class="h-[30px] text-[13px]"
+                class="hidden h-[30px] text-[13px] md:inline-flex"
                 @click="openDialog(DialogID.CreateEntity, { params: { baseType: 'item' } })"
               >
                 <Plus />
@@ -259,6 +261,7 @@
         </div>
       </SidebarInset>
     </SidebarProvider>
+    <AppBottomNav :tabs="bottomTabs" @scan="openScanner" />
   </div>
 </template>
 
@@ -320,6 +323,7 @@
   import ShortcutHint from "~/components/App/ShortcutHint.vue";
   import AppScannerModal from "~/components/App/ScannerModal.vue";
   import AppHeaderDecor from "~/components/App/HeaderDecor.vue";
+  import AppBottomNav, { type BottomNavTab } from "~/components/App/BottomNav.vue";
   import CollectionSelector from "~/components/Collection/Selector.vue";
   import CollectionCreateModal from "~/components/Collection/CreateModal.vue";
   import CollectionJoinModal from "~/components/Collection/JoinModal.vue";
@@ -432,6 +436,12 @@
       isActive: () => route.path === "/templates" || route.path.startsWith("/template/"),
     }),
   ];
+
+  const bottomTabs = computed<BottomNavTab[]>(() =>
+    nav
+      .filter(n => ["home", "items", "places"].includes(n.id))
+      .map(n => ({ id: n.id, icon: n.icon, name: n.name.value, to: n.to, active: n.active.value }))
+  );
 
   const tagStore = useTagStore();
   tagStore.ensureAllTagsFetched();
