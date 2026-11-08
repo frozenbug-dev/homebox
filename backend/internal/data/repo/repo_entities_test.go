@@ -1046,3 +1046,58 @@ func TestEntityRepository_QueryByGroup_TimestampOrderDefaultsDesc(t *testing.T) 
 	assert.Equal(t, []uuid.UUID{first.ID, third.ID, second.ID}, order("updatedAt", ""))
 	assert.Equal(t, []uuid.UUID{second.ID, third.ID, first.ID}, order("updatedAt", "asc"))
 }
+
+// The create dialog sets price and warranty up front instead of following
+// the create with an update.
+func TestEntityRepository_Create_WithPurchaseAndWarranty(t *testing.T) {
+	itemET := useItemEntityType(t)
+
+	e, err := tRepos.Entities.Create(context.Background(), tGroup.ID, EntityCreate{
+		Name:             "Cordless drill",
+		EntityTypeID:     itemET.ID,
+		PurchasePrice:    129.5,
+		WarrantyExpires:  types.DateFromString("2028-11-08"),
+		LifetimeWarranty: true,
+	})
+	require.NoError(t, err)
+	t.Cleanup(func() { _ = tRepos.Entities.Delete(context.Background(), e.ID) })
+
+	assert.InDelta(t, 129.5, e.PurchasePrice, 0.001)
+	assert.Equal(t, "2028-11-08", e.WarrantyExpires.String())
+	assert.True(t, e.LifetimeWarranty)
+
+	// Left out, they stay empty.
+	plain, err := tRepos.Entities.Create(context.Background(), tGroup.ID, EntityCreate{
+		Name:         "Plain",
+		EntityTypeID: itemET.ID,
+	})
+	require.NoError(t, err)
+	t.Cleanup(func() { _ = tRepos.Entities.Delete(context.Background(), plain.ID) })
+
+	assert.Zero(t, plain.PurchasePrice)
+	assert.True(t, plain.WarrantyExpires.Time().IsZero())
+	assert.False(t, plain.LifetimeWarranty)
+}
+
+func TestEntityRepository_CreateFromTemplate_WithPurchaseAndWarranty(t *testing.T) {
+	containerET := useContainerEntityType(t)
+
+	cf := containerFactory()
+	cf.EntityTypeID = containerET.ID
+	container, err := tRepos.Entities.Create(context.Background(), tGroup.ID, cf)
+	require.NoError(t, err)
+	t.Cleanup(func() { _ = tRepos.Entities.Delete(context.Background(), container.ID) })
+
+	out, err := tRepos.Entities.CreateFromTemplate(context.Background(), tGroup.ID, EntityCreateFromTemplate{
+		Name:            fk.Str(10),
+		Quantity:        1,
+		ParentID:        container.ID,
+		PurchasePrice:   42,
+		WarrantyExpires: types.DateFromString("2027-01-31"),
+	})
+	require.NoError(t, err)
+	t.Cleanup(func() { _ = tRepos.Entities.Delete(context.Background(), out.ID) })
+
+	assert.InDelta(t, 42.0, out.PurchasePrice, 0.001)
+	assert.Equal(t, "2027-01-31", out.WarrantyExpires.String())
+}

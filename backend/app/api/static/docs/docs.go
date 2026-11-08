@@ -5629,6 +5629,11 @@ const docTemplate = `{
                 "entityTypeId": {
                     "type": "string"
                 },
+                "lifetimeWarranty": {
+                    "type": "boolean",
+                    "x-nullable": true,
+                    "x-omitempty": true
+                },
                 "locationId": {
                     "description": "Only needed when ParentID is another item and this lives elsewhere (#1688).",
                     "type": "string",
@@ -5657,6 +5662,12 @@ const docTemplate = `{
                     "type": "string",
                     "x-nullable": true
                 },
+                "purchasePrice": {
+                    "description": "Purchase and warranty — optional at create time, so the create dialog\ncan set them without a follow-up update.",
+                    "type": "number",
+                    "x-nullable": true,
+                    "x-omitempty": true
+                },
                 "quantity": {
                     "type": "number"
                 },
@@ -5666,6 +5677,11 @@ const docTemplate = `{
                     "items": {
                         "type": "string"
                     }
+                },
+                "warrantyExpires": {
+                    "type": "string",
+                    "x-nullable": true,
+                    "x-omitempty": true
                 }
             }
         },
@@ -7538,6 +7554,11 @@ const docTemplate = `{
                     "description": "EntityTypeID is the entity type selected by the user. When set it takes\nprecedence; when empty the repository falls back to the group's default.",
                     "type": "string"
                 },
+                "lifetimeWarranty": {
+                    "type": "boolean",
+                    "x-nullable": true,
+                    "x-omitempty": true
+                },
                 "locationId": {
                     "type": "string",
                     "x-nullable": true,
@@ -7551,6 +7572,12 @@ const docTemplate = `{
                 "parentId": {
                     "type": "string"
                 },
+                "purchasePrice": {
+                    "description": "Set from the create dialog; the template has no defaults for these,\nexcept LifetimeWarranty, which overrides the template's when given.",
+                    "type": "number",
+                    "x-nullable": true,
+                    "x-omitempty": true
+                },
                 "quantity": {
                     "type": "number"
                 },
@@ -7559,6 +7586,11 @@ const docTemplate = `{
                     "items": {
                         "type": "string"
                     }
+                },
+                "warrantyExpires": {
+                    "type": "string",
+                    "x-nullable": true,
+                    "x-omitempty": true
                 }
             }
         },

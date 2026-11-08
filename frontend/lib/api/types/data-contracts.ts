@@ -899,6 +899,7 @@ export interface EntityCreate {
   /** @maxLength 1000 */
   description: string;
   entityTypeId: string;
+  lifetimeWarranty?: boolean | null;
   /** Only needed when ParentID is another item and this lives elsewhere (#1688). */
   locationId?: string | null;
   /** @maxLength 255 */
@@ -915,9 +916,15 @@ export interface EntityCreate {
    */
   name: string;
   parentId?: string | null;
+  /**
+   * Purchase and warranty — optional at create time, so the create dialog
+   * can set them without a follow-up update.
+   */
+  purchasePrice?: number | null;
   quantity: number;
   /** Edges */
   tagIds: string[];
+  warrantyExpires?: string | null;
 }
 
 export interface EntityFieldData {
@@ -1636,6 +1643,7 @@ export interface EntityTemplateCreateItemRequest {
    * precedence; when empty the repository falls back to the group's default.
    */
   entityTypeId: string;
+  lifetimeWarranty?: boolean | null;
   locationId?: string | null;
   /**
    * @minLength 1
@@ -1643,8 +1651,14 @@ export interface EntityTemplateCreateItemRequest {
    */
   name: string;
   parentId: string;
+  /**
+   * Set from the create dialog; the template has no defaults for these,
+   * except LifetimeWarranty, which overrides the template's when given.
+   */
+  purchasePrice?: number | null;
   quantity: number;
   tagIds: string[];
+  warrantyExpires?: string | null;
 }
 
 export interface ForgotPasswordRequest {

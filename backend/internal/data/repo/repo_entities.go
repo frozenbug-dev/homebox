@@ -109,6 +109,12 @@ type (
 		ModelNumber  string `json:"modelNumber"  validate:"max=255" extensions:"x-nullable,x-omitempty"`
 		Manufacturer string `json:"manufacturer" validate:"max=255" extensions:"x-nullable,x-omitempty"`
 
+		// Purchase and warranty — optional at create time, so the create dialog
+		// can set them without a follow-up update.
+		PurchasePrice    float64    `json:"purchasePrice"    extensions:"x-nullable,x-omitempty"`
+		WarrantyExpires  types.Date `json:"warrantyExpires"  extensions:"x-nullable,x-omitempty"`
+		LifetimeWarranty bool       `json:"lifetimeWarranty" extensions:"x-nullable,x-omitempty"`
+
 		// Edges
 		TagIDs []uuid.UUID `json:"tagIds"`
 	}
@@ -1303,8 +1309,14 @@ func (r *EntityRepository) Create(ctx context.Context, gid uuid.UUID, data Entit
 		SetDescription(data.Description).
 		SetModelNumber(data.ModelNumber).
 		SetManufacturer(data.Manufacturer).
+		SetPurchasePrice(data.PurchasePrice).
+		SetLifetimeWarranty(data.LifetimeWarranty).
 		SetGroupID(gid).
 		SetAssetID(int64(data.AssetID))
+
+	if t := data.WarrantyExpires.Time(); !t.IsZero() {
+		q.SetWarrantyExpires(t)
+	}
 
 	if parentID != uuid.Nil {
 		q.SetParentID(parentID)
@@ -1361,6 +1373,8 @@ type EntityCreateFromTemplate struct {
 	EntityTypeID     uuid.UUID
 	Insured          bool
 	LifetimeWarranty bool
+	PurchasePrice    float64
+	WarrantyExpires  types.Date
 }
 
 // CreateFromTemplate creates an entity with all template data in a single transaction.
@@ -1454,7 +1468,12 @@ func (r *EntityRepository) CreateFromTemplate(ctx context.Context, gid uuid.UUID
 		SetManufacturer(data.Manufacturer).
 		SetModelNumber(data.ModelNumber).
 		SetLifetimeWarranty(data.LifetimeWarranty).
-		SetWarrantyDetails(data.WarrantyDetails)
+		SetWarrantyDetails(data.WarrantyDetails).
+		SetPurchasePrice(data.PurchasePrice)
+
+	if t := data.WarrantyExpires.Time(); !t.IsZero() {
+		entityBuilder.SetWarrantyExpires(t)
+	}
 
 	if templateParentID != uuid.Nil {
 		entityBuilder.SetParentID(templateParentID)

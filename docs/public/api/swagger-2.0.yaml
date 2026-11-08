@@ -1314,6 +1314,10 @@ definitions:
         type: string
       entityTypeId:
         type: string
+      lifetimeWarranty:
+        type: boolean
+        x-nullable: true
+        x-omitempty: true
       locationId:
         description: Only needed when ParentID is another item and this lives elsewhere
           (#1688).
@@ -1340,6 +1344,13 @@ definitions:
       parentId:
         type: string
         x-nullable: true
+      purchasePrice:
+        description: |-
+          Purchase and warranty — optional at create time, so the create dialog
+          can set them without a follow-up update.
+        type: number
+        x-nullable: true
+        x-omitempty: true
       quantity:
         type: number
       tagIds:
@@ -1347,6 +1358,10 @@ definitions:
         items:
           type: string
         type: array
+      warrantyExpires:
+        type: string
+        x-nullable: true
+        x-omitempty: true
     required:
     - name
     type: object
@@ -2637,6 +2652,10 @@ definitions:
           EntityTypeID is the entity type selected by the user. When set it takes
           precedence; when empty the repository falls back to the group's default.
         type: string
+      lifetimeWarranty:
+        type: boolean
+        x-nullable: true
+        x-omitempty: true
       locationId:
         type: string
         x-nullable: true
@@ -2647,12 +2666,23 @@ definitions:
         type: string
       parentId:
         type: string
+      purchasePrice:
+        description: |-
+          Set from the create dialog; the template has no defaults for these,
+          except LifetimeWarranty, which overrides the template's when given.
+        type: number
+        x-nullable: true
+        x-omitempty: true
       quantity:
         type: number
       tagIds:
         items:
           type: string
         type: array
+      warrantyExpires:
+        type: string
+        x-nullable: true
+        x-omitempty: true
     required:
     - name
     - parentId
