@@ -1,7 +1,7 @@
 <template>
   <Card class="transition-colors hover:border-ring/50">
     <NuxtLink
-      :to="`/location/${location.id}`"
+      :to="`/locations?place=${location.id}`"
       class="flex items-center gap-3 rounded-lg"
       :class="{
         'p-4': !dense,

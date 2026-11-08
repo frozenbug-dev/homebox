@@ -85,7 +85,10 @@
   const subItemCreate = ref();
 
   const tagId = computed(() => (route.fullPath.includes("/tag/") ? route.params.id : null));
-  const locationId = computed(() => (route.fullPath.includes("/location/") ? route.params.id : null));
+  // On the Places page the selected place (?place=) is the default parent.
+  const locationId = computed(() =>
+    route.path === "/locations" && typeof route.query.place === "string" ? route.query.place : null
+  );
   const itemId = computed(() => (route.fullPath.includes("/item/") ? route.params.id : null));
 
   const nameInput = ref<HTMLInputElement | null>(null);
@@ -596,7 +599,7 @@
 
     if (close) {
       closeDialog(DialogID.CreateEntity);
-      navigateTo(createdLocation ? `/location/${data.id}` : `/item/${data.id}`);
+      navigateTo(createdLocation ? `/locations?place=${data.id}` : `/item/${data.id}`);
     } else {
       nameInput.value?.focus();
       if (!createdLocation) {

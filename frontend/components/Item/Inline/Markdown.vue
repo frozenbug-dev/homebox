@@ -1,6 +1,5 @@
 <script setup lang="ts">
   import Markdown from "~/components/global/Markdown.vue";
-  import { Textarea } from "@/components/ui/textarea";
 
   /**
    * Markdown that turns into a textarea on click. Blur or ⌘/Ctrl+Enter saves,
@@ -11,13 +10,13 @@
 
   const editing = ref(false);
   const draft = ref(props.value);
-  const textarea = useTemplateRef<InstanceType<typeof Textarea>>("textarea");
+  const textarea = useTemplateRef<HTMLTextAreaElement>("textarea");
 
   async function start() {
     draft.value = props.value;
     editing.value = true;
     await nextTick();
-    (textarea.value?.$el as HTMLTextAreaElement | undefined)?.focus();
+    textarea.value?.focus();
   }
 
   function save() {
@@ -33,11 +32,13 @@
 </script>
 
 <template>
-  <Textarea
+  <!-- Same box as the preview, no border or ring: editing only shows the caret -->
+  <textarea
     v-if="editing"
     ref="textarea"
     v-model="draft"
-    class="field-sizing-content min-h-24 text-sm"
+    class="-mx-2 block field-sizing-content min-h-[2lh] w-[calc(100%+1rem)] resize-none rounded-md bg-transparent px-2 py-1 text-sm leading-relaxed outline-none placeholder:text-muted-foreground"
+    :placeholder="placeholder"
     :aria-label="label"
     @blur="save"
     @keydown.meta.enter.prevent="save"
@@ -47,11 +48,11 @@
   <button
     v-else
     type="button"
-    class="-mx-2 block w-[calc(100%+1rem)] cursor-text rounded-md px-2 py-1 text-left hover:bg-accent/60"
+    class="-mx-2 block w-[calc(100%+1rem)] cursor-text rounded-md px-2 py-1 text-left hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:outline-none"
     :aria-label="label"
     @click="start"
   >
-    <Markdown v-if="value" class="prose max-w-none text-sm" :source="value" />
-    <span v-else class="text-sm text-muted-foreground">{{ placeholder }}</span>
+    <Markdown v-if="value" class="prose max-w-none text-sm leading-relaxed" :source="value" />
+    <span v-else class="text-sm leading-relaxed text-muted-foreground">{{ placeholder }}</span>
   </button>
 </template>

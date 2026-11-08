@@ -129,18 +129,24 @@
 <template>
   <div class="flex flex-1 flex-col">
     <AppHeaderActions>
-      <Button variant="outline" size="sm" class="h-8 gap-1.5" as-child>
+      <Button variant="outline" size="sm" class="h-[30px] text-[13px]" as-child>
         <NuxtLink to="/label-templates/batch">
-          <Printer class="size-4" />
+          <Printer />
           {{ $t("pages.label_templates.batch.title") }}
         </NuxtLink>
       </Button>
-      <Button variant="outline" size="sm" class="h-8 gap-1.5" :disabled="importing" @click="importInput?.click()">
-        <Upload class="size-4" />
+      <Button
+        variant="outline"
+        size="sm"
+        class="h-[30px] text-[13px]"
+        :disabled="importing"
+        @click="importInput?.click()"
+      >
+        <Upload />
         {{ $t("pages.label_templates.import_json") }}
       </Button>
-      <Button size="sm" class="h-8 gap-1.5" @click="openDialog(DialogID.CreateLabelTemplate)">
-        <Plus class="size-4" />
+      <Button size="sm" class="h-[30px] text-[13px]" @click="openDialog(DialogID.CreateLabelTemplate)">
+        <Plus />
         {{ $t("pages.label_templates.new_template") }}
       </Button>
     </AppHeaderActions>
@@ -178,7 +184,7 @@
       <p class="mb-1 font-medium">{{ $t("pages.label_templates.no_templates") }}</p>
       <p class="mb-4 max-w-md text-sm text-muted-foreground">{{ $t("pages.label_templates.empty_hint") }}</p>
       <Button @click="openDialog(DialogID.CreateLabelTemplate)">
-        <Plus class="size-4" />
+        <Plus />
         {{ $t("components.label_template.create_modal.title") }}
       </Button>
     </div>

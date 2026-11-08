@@ -6,6 +6,7 @@ import { computed, type HTMLAttributes } from 'vue'
 
 const props = withDefaults(defineProps<ComboboxRootProps & { class?: HTMLAttributes['class'] }>(), {
   open: true,
+  highlightOnHover: true,
   modelValue: '',
 })
 

@@ -159,6 +159,23 @@
               </SidebarMenuButton>
             </SidebarMenuItem>
           </SidebarMenu>
+          <p
+            v-if="status"
+            class="px-2 pt-1 text-[11px] leading-snug text-muted-foreground group-data-[collapsible=icon]:hidden [&_a]:hover:text-foreground"
+          >
+            <span
+              v-html="
+                DOMPurify.sanitize(
+                  $t('global.footer.version_link', {
+                    version: status.build.version.replace(/^v/, ''),
+                    build: status.build.commit,
+                  })
+                )
+              "
+            />
+            ·
+            <span v-html="DOMPurify.sanitize($t('global.footer.api_link'))" />
+          </p>
         </SidebarFooter>
 
         <SidebarRail />
@@ -184,16 +201,7 @@
                 <span v-if="i < pageHeader.crumbs.length - 1" class="text-border" aria-hidden="true">/</span>
               </template>
             </nav>
-            <button
-              type="button"
-              class="mx-auto hidden h-[34px] w-full max-w-140 min-w-0 flex-1 items-center gap-2 rounded-[9px] border border-border bg-muted/40 px-2.5 text-sm text-muted-foreground transition-colors hover:border-ring/40 hover:text-foreground md:flex"
-              @click="openDialog(DialogID.CommandPalette)"
-            >
-              <Search class="size-4 shrink-0" aria-hidden="true" />
-              <span class="truncate">{{ $t("shell.palette.placeholder") }}</span>
-              <ShortcutHint :hotkey="SHORTCUTS.commandPalette" class="ml-auto" />
-            </button>
-            <div class="flex-1 md:hidden" />
+            <div class="flex-1" />
             <Button
               variant="ghost"
               size="icon"
@@ -237,27 +245,10 @@
             <AppHeaderDecor class="-mt-10 hidden lg:block" />
           </div>
 
-          <!-- Pages fill the panel (flex-1 on their root) and the footer stays at the bottom -->
+          <!-- Pages fill the panel (flex-1 on their root) -->
           <div class="flex flex-1 flex-col">
             <slot />
           </div>
-
-          <footer v-if="status" class="w-full pb-4 text-center">
-            <p class="text-center text-xs text-muted-foreground">
-              <span
-                v-html="
-                  DOMPurify.sanitize(
-                    $t('global.footer.version_link', {
-                      version: status.build.version.replace(/^v/, ''),
-                      build: status.build.commit,
-                    })
-                  )
-                "
-              />
-              ~
-              <span v-html="DOMPurify.sanitize($t('global.footer.api_link'))" />
-            </p>
-          </footer>
         </div>
       </SidebarInset>
     </SidebarProvider>
@@ -419,7 +410,7 @@
       hotkey: SHORTCUTS.goItems,
     }),
     navItem("places", MapPin, () => t("shell.places"), "/locations", {
-      isActive: () => route.path === "/locations" || route.path.startsWith("/location/"),
+      isActive: () => route.path === "/locations",
       count: () => stats.value?.totalLocations,
       hotkey: SHORTCUTS.goPlaces,
     }),

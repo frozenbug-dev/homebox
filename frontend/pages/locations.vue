@@ -5,7 +5,7 @@
   import { useHotkey } from "@tanstack/vue-hotkeys";
   import { useRouteQuery } from "@vueuse/router";
   import { monitorForElements } from "@atlaskit/pragmatic-drag-and-drop/element/adapter";
-  import { ArrowLeft, Ellipsis, ExternalLink, Plus, Printer, Search } from "@lucide/vue";
+  import { ArrowLeft, Ellipsis, Link as LinkIcon, MapPin, Plus, Printer, Search, Trash2 } from "@lucide/vue";
   import { isDragData, vDropTarget, type DragData } from "~/lib/dnd";
   import { ancestors, filterTree, indexPlaces, subtreeIds } from "~/lib/place-tree";
   import { toEntityUpdate } from "~/lib/entity-update";
@@ -25,9 +25,14 @@
   import PlacesTree, { type PlaceAction } from "~/components/Places/Tree.vue";
   import ItemList, { type ItemColumn } from "~/components/Items/List.vue";
   import InlineText from "~/components/Item/Inline/Text.vue";
+  import InlineMarkdown from "~/components/Item/Inline/Markdown.vue";
+  import PlacePicker from "~/components/Item/Inline/PlacePicker.vue";
+  import TagPicker from "~/components/Item/Inline/TagPicker.vue";
+  import TagChip from "~/components/Tag/Chip.vue";
+  import PlaceDetails from "~/components/Places/PlaceDetails.vue";
+  import type { EntityOut, EntityUpdate } from "~/lib/api/types/data-contracts";
   import ShortcutHint from "~/components/App/ShortcutHint.vue";
   import AppHeaderActions from "~/components/App/HeaderActions.vue";
-  import Currency from "~/components/global/Currency.vue";
 
   definePageMeta({ middleware: ["auth"] });
 
@@ -40,6 +45,8 @@
   const { openDialog } = useDialog();
   const entityTypeStore = useEntityTypeStore();
   const locationStore = useLocationStore();
+  const tagStore = useTagStore();
+  const confirm = useConfirm();
 
   // ----- Data: the tree, item counts per place and value per place -----
 
@@ -90,12 +97,9 @@
   // ----- Tree view state -----
 
   const filter = ref("");
-  const hideEmpty = useLocalStorage("homebox/places/hide-empty", false);
   const expanded = useLocalStorage<string[]>("homebox/places/expanded", []);
 
-  const visibleTree = computed(() =>
-    filterTree(tree.value ?? [], filter.value, hideEmpty.value ? n => (counts.value.get(n.id) ?? 0) > 0 : undefined)
-  );
+  const visibleTree = computed(() => filterTree(tree.value ?? [], filter.value));
 
   /** Where the inline "new place" row is: a place id, null for top level, undefined when closed. */
   const addingIn = ref<string | null | undefined>(undefined);
@@ -125,18 +129,79 @@
     ...(selected.value ? [{ label: selected.value.name }] : []),
   ]);
 
+  // ----- The selected place itself: every field is edited in the pane -----
+
+  const placeKey = computed(() => ["entities", "place", selectedId.value]);
+  const { data: place } = useQuery({
+    queryKey: placeKey,
+    queryFn: async () => {
+      const { data, error } = await api.items.get(selectedId.value!);
+      if (error) throw new Error("Failed to load place");
+      return data;
+    },
+    enabled: () => !!selectedId.value,
+  });
+
+  /** A full PUT built from the loaded place, shown optimistically. */
+  async function updatePlace(changes: Partial<EntityUpdate>) {
+    const prev = place.value;
+    if (!prev) return;
+    const key = placeKey.value;
+    queryClient.setQueryData(key, { ...prev, ...changes } as EntityOut);
+    const { data, error } = await api.items.update(prev.id, toEntityUpdate(prev, changes));
+    if (error) {
+      queryClient.setQueryData(key, prev);
+      toast.error(t("items.toast.failed_save"));
+      return;
+    }
+    queryClient.setQueryData(key, data);
+    // Name and parent show in the tree, the sidebar and other pickers.
+    if ("name" in changes || "parentId" in changes) refreshPlaces();
+  }
+
+  function reloadPlace() {
+    queryClient.invalidateQueries({ queryKey: placeKey.value });
+  }
+
+  const placeTags = computed(() => tagStore.withAncestors(place.value?.tags ?? []));
+  const placeTagIds = computed({
+    get: () => place.value?.tags.map(t => t.id) ?? [],
+    set: tagIds => updatePlace({ tagIds }),
+  });
+  /** A place can't move inside itself or one of its sub-places. */
+  const notAParent = computed(() => (selectedId.value ? subtreeIds(index.value, selectedId.value) : []));
+  const parentPlace = computed(() => path.value.at(-1));
+
+  const tab = useRouteQuery<string>("tab", "contents", { mode: "replace" });
+
+  async function copyLink() {
+    if (!selectedId.value) return;
+    await navigator.clipboard.writeText(`${window.location.origin}/locations?place=${selectedId.value}`);
+    toast.success(t("shell.item_page.link_copied"));
+  }
+
+  async function deletePlace(id: string) {
+    const target = index.value.byId.get(id);
+    const { isCanceled } = await confirm.open(t("locations.location_items_delete_confirm"));
+    if (isCanceled) return;
+    const { error } = await api.items.delete(id);
+    if (error) {
+      toast.error(t("locations.toast.failed_delete_location"));
+      return;
+    }
+    toast.success(t("shell.places_page.deleted_place", { name: target?.name ?? "" }));
+    // Land on the parent, or the first place when it was top level.
+    if (id === selectedId.value) placeParam.value = index.value.parentOf.get(id) ?? "";
+    refreshPlaces();
+  }
+
   // ----- The selected place's contents (including its sub-places) -----
 
   const itemTypeIds = computed(() => entityTypeStore.itemTypes.map(et => et.id));
   const placeAndBelow = computed(() => (selectedId.value ? subtreeIds(index.value, selectedId.value) : []));
   const subPlaceCount = computed(() => Math.max(placeAndBelow.value.length - 1, 0));
-  /** Sum of quantities, which is what the tree and sidebar count. */
-  const units = computed(() => (selectedId.value ? (counts.value.get(selectedId.value) ?? 0) : 0));
-  const placeValue = computed(() => totals.value?.find(x => x.id === selectedId.value)?.total ?? 0);
   /** Value per place for the tree's Value column. */
   const values = computed(() => new Map((totals.value ?? []).map(x => [x.id, x.total])));
-
-  const openInItems = computed(() => ({ path: "/items", query: { places: placeAndBelow.value } }));
 
   const contentsQuery = computed(() => ({
     parentIds: placeAndBelow.value,
@@ -191,13 +256,8 @@
     select(data.id);
   }
 
-  async function rename(name: string) {
-    if (!name || !selectedId.value) return;
-    const { data: place, error } = await api.items.get(selectedId.value);
-    if (error) return toast.error(t("items.toast.failed_save"));
-    const res = await api.items.update(place.id, toEntityUpdate(place, { name }));
-    if (res.error) return toast.error(t("items.toast.failed_save"));
-    refreshPlaces();
+  function rename(name: string) {
+    if (name) updatePlace({ name });
   }
 
   const title = useTemplateRef<InstanceType<typeof InlineText>>("title");
@@ -223,8 +283,8 @@
       navigateTo({ path: "/items", query: { places: subtreeIds(index.value, id) } });
       return;
     }
-    if (action === "open-details") {
-      navigateTo(`/location/${id}`);
+    if (action === "delete") {
+      deletePlace(id);
       return;
     }
     select(id);
@@ -243,28 +303,6 @@
 
   function printLabel() {
     if (selectedId.value) openDialog(DialogID.PrintLabelTemplate, { params: { locationIds: [selectedId.value] } });
-  }
-
-  const newItemName = ref("");
-  async function addItem() {
-    const name = newItemName.value.trim();
-    const itemType = entityTypeStore.itemTypes[0];
-    if (!name || !itemType || !selectedId.value) return;
-    const { error } = await api.items.create({
-      name,
-      description: "",
-      parentId: selectedId.value,
-      quantity: 1,
-      tagIds: [],
-      entityTypeId: itemType.id,
-    });
-    if (error) {
-      toast.error(t("shell.places_page.failed_create"));
-      return;
-    }
-    newItemName.value = "";
-    toast.success(t("shell.places_page.created_item", { name }));
-    refreshPlaces();
   }
 
   // ----- Drag and drop: items or a place onto a place in the tree -----
@@ -341,10 +379,6 @@
     ...placesMeta("shell.shortcuts.place_add_inside"),
     enabled: hasSelection,
   });
-  useHotkey(SHORTCUTS.placeMoveItemsHere, moveItemsHere, {
-    ...placesMeta("shell.shortcuts.place_move_items_here"),
-    enabled: hasSelection,
-  });
   // The list's own P prints the hovered or selected rows; otherwise P prints this place's label.
   const list = useTemplateRef<{ hasTarget: boolean }>("list");
   useHotkey(SHORTCUTS.placePrint, printLabel, {
@@ -389,19 +423,6 @@
             class="min-w-0 flex-1 bg-transparent text-foreground outline-none placeholder:text-muted-foreground"
           />
         </label>
-        <button
-          type="button"
-          class="h-[26px] rounded-[7px] border px-2 text-xs transition-colors"
-          :class="
-            hideEmpty
-              ? 'border-primary/60 bg-primary/10 text-foreground'
-              : 'border-border bg-background text-foreground/80 hover:bg-muted'
-          "
-          :aria-pressed="hideEmpty"
-          @click="hideEmpty = !hideEmpty"
-        >
-          {{ t("shell.places_page.hide_empty") }}
-        </button>
       </AppSubheader>
       <div
         class="grid h-[30px] shrink-0 grid-cols-[minmax(0,1fr)_64px_84px] items-center border-b border-border/70 px-4 text-xs text-muted-foreground"
@@ -443,22 +464,6 @@
           {{ tree.length === 0 ? t("shell.places_page.no_places") : t("shell.places_page.no_match") }}
         </p>
       </div>
-
-      <div
-        class="hidden shrink-0 flex-wrap gap-x-3.5 gap-y-1 border-t border-border/70 px-4 py-2.5 text-xs text-muted-foreground md:flex"
-      >
-        <span class="inline-flex items-center gap-1">
-          <ShortcutHint hotkey="ArrowRight" /><ShortcutHint hotkey="ArrowLeft" />
-          {{ t("shell.places_page.hint_open_close") }}
-        </span>
-        <span class="inline-flex items-center gap-1">
-          <ShortcutHint :hotkey="SHORTCUTS.placeAddInside" />{{ t("shell.places_page.hint_add_inside") }}
-        </span>
-        <span class="inline-flex items-center gap-1">
-          <ShortcutHint :hotkey="SHORTCUTS.placeRename" />{{ t("shell.places_page.hint_rename") }}
-        </span>
-        <span>{{ t("shell.places_page.hint_drag") }}</span>
-      </div>
     </section>
 
     <!-- The selected place -->
@@ -484,17 +489,13 @@
           <div class="min-w-0 flex-1">
             <InlineText
               ref="title"
-              :value="selected.name"
+              :value="place?.name ?? selected.name"
               :label="t('shell.places_page.rename')"
               wrap
               class="-mx-1.5 text-2xl font-semibold tracking-tight"
               @save="rename"
             />
           </div>
-          <Button variant="outline" size="sm" class="h-[30px] text-[13px]" @click="startRename">
-            {{ t("shell.places_page.rename") }}
-            <ShortcutHint :hotkey="SHORTCUTS.placeRename" />
-          </Button>
           <Button variant="outline" size="sm" class="h-[30px] text-[13px] max-sm:hidden" @click="printLabel">
             {{ t("shell.places_page.print_label") }}
             <ShortcutHint :hotkey="SHORTCUTS.placePrint" />
@@ -515,85 +516,149 @@
                 <Printer class="size-4" />
                 {{ t("shell.places_page.print_label") }}
               </DropdownMenuItem>
+              <DropdownMenuItem @select="copyLink">
+                <LinkIcon class="size-4" />
+                {{ t("shell.item_page.copy_link") }}
+              </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem as-child>
-                <NuxtLink :to="`/location/${selected.id}`">
-                  <ExternalLink class="size-4" />
-                  {{ t("shell.places_page.open_details") }}
-                </NuxtLink>
+              <DropdownMenuItem class="text-destructive focus:text-destructive" @select="deletePlace(selected.id)">
+                <Trash2 class="size-4" />
+                {{ t("shell.places_page.delete_place") }}
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
 
-        <p class="flex flex-wrap items-center gap-x-[18px] gap-y-1 text-[13px] text-muted-foreground">
-          <span>
-            <b class="font-semibold text-foreground tabular-nums">{{ total }}</b>
-            {{ t("shell.places_page.stat_items", { n: total }) }}
-          </span>
-          <span v-if="units !== total">
-            <b class="font-semibold text-foreground tabular-nums">{{ units }}</b>
-            {{ t("shell.places_page.stat_units", { n: units }) }}
-          </span>
-          <span>
-            <b class="font-semibold text-foreground tabular-nums"><Currency :amount="placeValue" /></b>
-            {{ t("shell.places_page.stat_total") }}
-          </span>
-          <span>
-            <b class="font-semibold text-foreground tabular-nums">{{ subPlaceCount }}</b>
-            {{ t("shell.places_page.stat_places", { n: subPlaceCount }) }}
-          </span>
-        </p>
+        <template v-if="place">
+          <div class="-mt-1 max-w-160">
+            <InlineMarkdown
+              :value="place.description"
+              :label="$t('items.description')"
+              :placeholder="t('shell.item_page.add_description')"
+              @save="description => updatePlace({ description })"
+            />
+          </div>
+
+          <!-- Properties, each edited where it sits -->
+          <div class="flex flex-wrap items-center gap-1.5 text-[12.5px]">
+            <PlacePicker
+              :current-id="parentPlace?.id"
+              :exclude-ids="notAParent"
+              allow-top
+              @pick="p => updatePlace({ parentId: p.id })"
+              @top="updatePlace({ parentId: null, locationId: null })"
+            >
+              <button
+                type="button"
+                class="flex h-7 items-center gap-1.5 rounded-[7px] border border-border px-2 hover:bg-muted"
+              >
+                <span class="text-muted-foreground">{{ t("shell.places_page.inside") }}</span>
+                <MapPin v-if="parentPlace" class="size-3.5 text-primary" aria-hidden="true" />
+                <span class="font-medium">{{ parentPlace?.name ?? t("shell.places_page.top_level") }}</span>
+              </button>
+            </PlacePicker>
+            <DropdownMenu v-if="entityTypeStore.locationTypes.length > 1">
+              <DropdownMenuTrigger as-child>
+                <button
+                  type="button"
+                  class="flex h-7 items-center gap-1.5 rounded-[7px] border border-border px-2 hover:bg-muted"
+                >
+                  <span class="text-muted-foreground">{{ t("shell.places_page.type") }}</span>
+                  <span class="font-medium">{{ place.entityType?.name }}</span>
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" class="w-48">
+                <DropdownMenuItem
+                  v-for="type in entityTypeStore.locationTypes"
+                  :key="type.id"
+                  :class="{ 'font-medium': type.id === place.entityType?.id }"
+                  @select="type.id !== place.entityType?.id && updatePlace({ entityTypeId: type.id })"
+                >
+                  {{ type.name }}
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+            <span
+              class="flex h-7 items-center gap-1 rounded-[7px] border border-border pl-2 focus-within:ring-1 focus-within:ring-ring/40"
+            >
+              <span class="text-muted-foreground">{{ $t("items.asset_id") }}</span>
+              <InlineText
+                :value="place.assetId"
+                :label="$t('items.asset_id')"
+                class="min-w-10 py-0.5 font-mono font-medium focus-within:ring-0 hover:bg-transparent"
+                @save="assetId => updatePlace({ assetId })"
+              />
+            </span>
+            <span class="mx-1 h-4 w-px bg-border" aria-hidden="true" />
+            <TagChip v-for="tag in placeTags" :key="tag.id" :tag="tag" size="sm" :ancestors="tag.ancestors" />
+            <TagPicker v-model="placeTagIds">
+              <button
+                type="button"
+                class="inline-flex h-7 items-center gap-1 rounded-full border border-dashed border-border px-2 text-muted-foreground hover:bg-muted hover:text-foreground"
+                :aria-label="t('shell.item_page.add_tags')"
+              >
+                <Plus class="size-3.5" />
+                <span v-if="placeTags.length === 0">{{ t("shell.item_page.add_tags") }}</span>
+              </button>
+            </TagPicker>
+          </div>
+        </template>
       </header>
 
-      <AppSubheader class="flex-nowrap sm:px-5">
-        <span class="font-semibold">{{ t("shell.places_page.contents") }}</span>
-        <span class="truncate text-muted-foreground max-sm:hidden"
-          >· {{ t("shell.places_page.including_sub_places") }}</span
-        >
+      <AppSubheader class="flex-nowrap gap-4 py-0 sm:px-5">
+        <div role="tablist" :aria-label="t('shell.places_page.sections')" class="flex h-full items-stretch gap-4">
+          <button
+            v-for="tb in [
+              { id: 'contents', label: t('shell.places_page.contents'), count: total },
+              { id: 'details', label: t('shell.places_page.details'), count: undefined },
+            ]"
+            :key="tb.id"
+            type="button"
+            role="tab"
+            :aria-selected="tab === tb.id"
+            class="flex items-center gap-1.5 border-b-2 text-[13.5px] transition-colors"
+            :class="
+              tab === tb.id
+                ? 'border-foreground font-semibold text-foreground'
+                : 'border-transparent font-medium text-muted-foreground hover:text-foreground'
+            "
+            @click="tab = tb.id"
+          >
+            {{ tb.label }}
+            <span v-if="tb.count !== undefined" class="text-xs font-normal text-muted-foreground tabular-nums">{{
+              tb.count
+            }}</span>
+          </button>
+        </div>
         <span class="flex-1" />
-        <NuxtLink :to="openInItems" class="mr-1.5 shrink-0 font-medium text-primary hover:underline max-sm:hidden">
-          {{ t("shell.places_page.open_in_items") }}
-        </NuxtLink>
-        <button
-          type="button"
-          class="flex h-7 shrink-0 items-center gap-1.5 rounded-[7px] border border-primary bg-primary/10 px-2.5 font-medium text-foreground hover:bg-primary/15"
-          @click="moveItemsHere"
-        >
-          {{ t("shell.places_page.move_items_here") }}
-          <ShortcutHint :hotkey="SHORTCUTS.placeMoveItemsHere" class="max-sm:hidden" />
-        </button>
+        <template v-if="tab !== 'details'">
+          <button
+            type="button"
+            class="flex h-7 shrink-0 items-center gap-1.5 rounded-[7px] border border-primary bg-primary/10 px-2.5 font-medium text-foreground hover:bg-primary/15"
+            @click="moveItemsHere"
+          >
+            {{ t("shell.places_page.move_items_here") }}
+          </button>
+        </template>
       </AppSubheader>
 
-      <ItemList
-        ref="list"
-        virtual
-        :rows="rows"
-        :total="total"
-        :has-next-page="!!hasNextPage"
-        :is-fetching-next-page="isFetchingNextPage"
-        :is-loading="isLoading"
-        :columns="columns"
-        :filtered="false"
-        draggable-rows
-        @load-more="fetchNextPage()"
-      >
-        <template #append>
-          <form
-            class="flex h-10 items-center gap-2.5 rounded-md px-2.5 focus-within:bg-muted/70"
-            @submit.prevent="addItem"
-          >
-            <Plus class="size-4 shrink-0 text-primary" aria-hidden="true" />
-            <input
-              v-model="newItemName"
-              class="h-full min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
-              :placeholder="t('shell.places_page.add_item_placeholder', { name: selected.name })"
-              :aria-label="t('shell.places_page.add_item_placeholder', { name: selected.name })"
-            />
-          </form>
-        </template>
-      </ItemList>
-      <p class="hidden px-5 pb-5 text-xs text-muted-foreground md:block">{{ t("shell.places_page.drag_hint") }}</p>
+      <PlaceDetails v-if="tab === 'details' && place" :place="place" @update="updatePlace" @reload="reloadPlace" />
+      <template v-else-if="tab !== 'details'">
+        <ItemList
+          ref="list"
+          virtual
+          :rows="rows"
+          :total="total"
+          :has-next-page="!!hasNextPage"
+          :is-fetching-next-page="isFetchingNextPage"
+          :is-loading="isLoading"
+          :columns="columns"
+          :filtered="false"
+          draggable-rows
+          @load-more="fetchNextPage()"
+        >
+        </ItemList>
+      </template>
     </section>
   </div>
 </template>

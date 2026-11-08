@@ -106,11 +106,6 @@
       </template>
     </ResourceList>
 
-    <!-- e.g. an "add item" row that ends the list -->
-    <div v-if="!isLoading && $slots.append" class="px-1.5">
-      <slot name="append" />
-    </div>
-
     <div v-if="!bare" class="flex flex-col items-center gap-3 px-4 py-6 text-center text-sm text-muted-foreground">
       <template v-if="isLoading" />
       <template v-else-if="!rows.length">

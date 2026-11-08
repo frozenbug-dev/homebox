@@ -32,7 +32,7 @@
         </div>
         <div v-if="item.parent" class="absolute bottom-2 left-2 max-w-[calc(100%-1rem)]">
           <NuxtLink
-            :to="`/location/${item.parent.id}`"
+            :to="`/locations?place=${item.parent.id}`"
             class="flex items-center gap-1 truncate rounded-full bg-background/95 px-2 py-0.5 text-xs font-medium shadow-xs hover:underline"
           >
             <MapPin class="size-3 shrink-0" aria-hidden="true" />

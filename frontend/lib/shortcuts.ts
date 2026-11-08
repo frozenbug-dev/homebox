@@ -33,7 +33,6 @@ export const SHORTCUTS = {
   itemDuplicate: "D",
   // Places page
   placeAddInside: "A",
-  placeMoveItemsHere: "I",
   placeRename: "R",
   placePrint: "P",
 } as const;

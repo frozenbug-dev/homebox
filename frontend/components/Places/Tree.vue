@@ -2,7 +2,7 @@
   import { useI18n } from "vue-i18n";
   import { TreeItem as TreeRow, TreeRoot } from "reka-ui";
   import type { FlattenedItem } from "reka-ui";
-  import { ChevronRight, ExternalLink, FolderInput, ListFilter, MapPin, Pencil, Plus, Printer } from "@lucide/vue";
+  import { ChevronRight, FolderInput, ListFilter, MapPin, Pencil, Plus, Printer, Trash2 } from "@lucide/vue";
   import type { TreeItem } from "~/lib/api/types/data-contracts";
   import { vDragSource, vDropTarget, type DragData } from "~/lib/dnd";
   import { canNest, type PlaceIndex } from "~/lib/place-tree";
@@ -17,7 +17,7 @@
     ContextMenuTrigger,
   } from "@/components/ui/context-menu";
 
-  export type PlaceAction = "add-inside" | "rename" | "print" | "move-items-here" | "open-in-items" | "open-details";
+  export type PlaceAction = "add-inside" | "rename" | "print" | "move-items-here" | "open-in-items" | "delete";
 
   /**
    * The places tree: arrow keys move and open/close, Enter or a click selects.
@@ -192,7 +192,6 @@
           </ContextMenuItem>
           <ContextMenuItem @select="run('move-items-here', item.value.id)">
             <FolderInput /> {{ t("shell.places_page.move_items_here") }}
-            <ShortcutHint :hotkey="SHORTCUTS.placeMoveItemsHere" class="ml-auto" />
           </ContextMenuItem>
           <ContextMenuItem @select="run('rename', item.value.id)">
             <Pencil /> {{ t("shell.places_page.rename") }}
@@ -203,8 +202,11 @@
             <ShortcutHint :hotkey="SHORTCUTS.placePrint" class="ml-auto" />
           </ContextMenuItem>
           <ContextMenuSeparator />
-          <ContextMenuItem @select="run('open-details', item.value.id)">
-            <ExternalLink /> {{ t("shell.places_page.open_details") }}
+          <ContextMenuItem
+            class="text-destructive focus:text-destructive [&_svg]:text-destructive"
+            @select="run('delete', item.value.id)"
+          >
+            <Trash2 /> {{ t("shell.places_page.delete_place") }}
           </ContextMenuItem>
         </ContextMenuContent>
       </ContextMenu>

@@ -3,10 +3,7 @@
   import { useI18n } from "vue-i18n";
   import { useRouteQuery } from "@vueuse/router";
   import { useHotkey } from "@tanstack/vue-hotkeys";
-  import { ListFilter, Plus, Search, SlidersHorizontal } from "@lucide/vue";
-  import { SHORTCUTS } from "~/lib/shortcuts";
-  import { useDialog } from "@/components/ui/dialog-provider";
-  import { DialogID } from "@/components/ui/dialog-provider/utils";
+  import { ListFilter, Search, SlidersHorizontal } from "@lucide/vue";
   import { useTagStore } from "~/stores/tags";
   import { useEntityTypeStore } from "~~/stores/entityTypes";
   import ItemList, { type ItemColumn } from "~/components/Items/List.vue";
@@ -32,7 +29,6 @@
   usePageHeader(() => [{ label: t("shell.items") }]);
 
   const tagStore = useTagStore();
-  const { openDialog } = useDialog();
   const entityTypeStore = useEntityTypeStore();
   const places = useFlatLocations();
 
@@ -329,20 +325,6 @@
       @load-more="fetchNextPage()"
       @clear-filters="clearFilters"
     >
-      <template #append>
-        <button
-          type="button"
-          class="flex h-10 w-full items-center gap-2.5 rounded-md px-2.5 text-left text-sm text-muted-foreground hover:bg-muted/70"
-          @click="openDialog(DialogID.CreateEntity, { params: { baseType: 'item' } })"
-        >
-          <Plus class="size-4 text-primary" aria-hidden="true" />
-          <span>
-            {{ t("shell.items_page.add_row") }}
-            <span class="max-md:hidden">{{ t("shell.items_page.or_press") }}</span>
-          </span>
-          <ShortcutHint :hotkey="SHORTCUTS.newItem" />
-        </button>
-      </template>
     </ItemList>
   </div>
 </template>

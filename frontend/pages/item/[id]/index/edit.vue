@@ -156,7 +156,7 @@
 
     toast.success(t("items.toast.item_saved"));
     if (isConvertingToLocation) {
-      navigateTo("/location/" + itemId.value);
+      navigateTo(`/locations?place=${itemId.value}`);
     } else if (redirect) {
       navigateTo("/item/" + itemId.value);
     }

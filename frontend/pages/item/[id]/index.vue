@@ -4,10 +4,8 @@
   import { useHotkey } from "@tanstack/vue-hotkeys";
   import {
     CopyPlus,
-    ImagePlus,
     Ellipsis,
     LayoutTemplate,
-    Paperclip,
     Pencil,
     Printer,
     QrCode,
@@ -17,7 +15,9 @@
     Wrench,
   } from "@lucide/vue";
   import { toast } from "@/components/ui/sonner";
-  import type { AnyDetail, Detail, Details } from "~~/components/global/DetailsSection/types";
+  import FieldsEditor from "~/components/Item/FieldsEditor.vue";
+  import AddAttachmentTiles from "~/components/Entity/AddAttachmentTiles.vue";
+  import type { Detail, Details } from "~~/components/global/DetailsSection/types";
   import { filterZeroValues } from "~~/components/global/DetailsSection/types";
   import type { EntityPatch, EntityUpdate, ItemAttachment } from "~~/lib/api/types/data-contracts";
   import { templateField } from "~~/lib/api/template-fields";
@@ -259,36 +259,6 @@
     );
   });
 
-  /** The item's custom fields; URLs in values become links. */
-  const customFields = computed<Details>(() => {
-    if (!item.value) {
-      return [];
-    }
-
-    const ret: Details = item.value.fields.map(field => {
-      const url = maybeUrl(field.textValue);
-      if (url.isUrl) {
-        return {
-          type: "link",
-          name: field.name,
-          text: url.text,
-          href: url.url,
-        } as AnyDetail;
-      }
-
-      return {
-        name: field.name,
-        text: field.textValue,
-      };
-    });
-
-    if (!preferences.value.showEmpty) {
-      return filterZeroValues(ret);
-    }
-
-    return ret;
-  });
-
   // Only sections with content show; "Add photo / Attach file" covers the empty case.
   const showAttachments = computed(() => {
     return (
@@ -528,16 +498,21 @@
     ].filter((b): b is { title: string; details: Details } => !!b && b.details.length > 0)
   );
 
-  const addTiles = computed(() => [
-    { key: "photo", label: t("shell.item_page.add_photo"), icon: ImagePlus },
-    { key: "file", label: t("shell.item_page.attach_file"), icon: Paperclip },
-  ]);
+  const fieldsEditor = useTemplateRef<InstanceType<typeof FieldsEditor>>("fieldsEditor");
+
+  async function onUploaded() {
+    await refresh();
+    queryClient.invalidateQueries({ queryKey: ["entities"] });
+  }
 
   usePageHeader(() => {
     const parts = fullpath.value ?? [];
     return [
       { label: t("shell.items"), to: "/items" },
-      ...parts.slice(0, -1).map(part => ({ label: part.name, to: `/${part.type}/${part.id}` })),
+      ...parts.slice(0, -1).map(part => ({
+        label: part.name,
+        to: part.type === "location" ? `/locations?place=${part.id}` : `/${part.type}/${part.id}`,
+      })),
       ...(hasNested.value
         ? [
             { label: item.value?.name ?? "", to: `/item/${itemId.value}` },
@@ -701,8 +676,11 @@
             @quantity="setQuantity"
           />
         </div>
-        <!-- Photos, then quick ways to add more (uploads happen on the edit page) -->
-        <section class="flex flex-wrap gap-2.5" :aria-label="t('items.photos')">
+        <!-- Photos, then quick ways to add more. On narrow screens they lead the page. -->
+        <section
+          class="flex gap-2.5 *:shrink-0 max-lg:-order-1 max-lg:-mx-4 max-lg:overflow-x-auto max-lg:px-4 max-lg:pb-1 sm:max-lg:-mx-10 sm:max-lg:px-10 lg:flex-wrap"
+          :aria-label="t('items.photos')"
+        >
           <button
             v-for="img in photos"
             :key="img.attachmentId"
@@ -712,18 +690,10 @@
           >
             <img class="size-full object-cover" :src="img.thumbnailSrc" :alt="$t('items.photo')" loading="lazy" />
           </button>
-          <NuxtLink
-            v-for="tile in addTiles"
-            :key="tile.key"
-            :to="`/item/${item.id}/edit`"
-            class="flex h-[90px] w-30 flex-col items-center justify-center gap-1 rounded-[10px] border-[1.5px] border-dashed border-border text-xs text-muted-foreground transition-colors hover:border-primary/50 hover:text-foreground"
-          >
-            <component :is="tile.icon" class="size-4" aria-hidden="true" />
-            {{ tile.label }}
-          </NuxtLink>
+          <AddAttachmentTiles :entity-id="item.id" @uploaded="onUploaded" />
         </section>
 
-        <div class="h-px bg-border/70" />
+        <div class="h-px bg-border/70 max-lg:hidden" />
 
         <section>
           <h2 class="mb-1 text-[13px] font-semibold text-foreground/80">{{ $t("items.notes") }}</h2>
@@ -735,12 +705,16 @@
           />
         </section>
 
-        <section v-if="customFields.length > 0">
-          <h2 class="mb-2 text-[13px] font-semibold text-foreground/80">{{ t("shell.item_page.fields") }}</h2>
-          <div class="overflow-hidden rounded-lg border border-border [&>div]:border-t-0">
-            <DetailsSection :details="customFields" />
-          </div>
-        </section>
+        <div>
+          <FieldsEditor ref="fieldsEditor" :fields="item.fields" @save="fields => update({ fields })" />
+          <button
+            type="button"
+            class="mt-1.5 rounded-md px-1.5 py-1 text-[13px] font-medium text-primary hover:bg-muted"
+            @click="fieldsEditor?.add()"
+          >
+            + {{ t("shell.item_page.add_field") }}
+          </button>
+        </div>
 
         <section v-if="showAttachments">
           <h2 class="mb-2 text-[13px] font-semibold text-foreground/80">{{ $t("items.attachments") }}</h2>
@@ -788,14 +762,16 @@
         </section>
       </div>
 
-      <aside v-if="wide" class="border-l border-border/70 bg-muted/20 px-4 py-[18px]">
-        <PropertiesPanel
-          v-model:place-open="placePickerOpen"
-          :item="item"
-          @patch="patch"
-          @update="update"
-          @quantity="setQuantity"
-        />
+      <aside v-if="wide" class="border-l border-border/70 bg-muted/20">
+        <div class="sticky top-(--header-height) px-4 py-[18px]">
+          <PropertiesPanel
+            v-model:place-open="placePickerOpen"
+            :item="item"
+            @patch="patch"
+            @update="update"
+            @quantity="setQuantity"
+          />
+        </div>
       </aside>
     </div>
   </div>

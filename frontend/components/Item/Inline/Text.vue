@@ -44,14 +44,7 @@
     select-on-focus
     @submit="submit"
   >
-    <EditableArea
-      :class="
-        cn(
-          'min-w-0 rounded-md px-1.5 py-1 focus-within:bg-background focus-within:ring-1 focus-within:ring-ring/40 hover:bg-muted',
-          props.class
-        )
-      "
-    >
+    <EditableArea :class="cn('min-w-0 rounded-md px-1.5 py-1 hover:not-focus-within:bg-muted', props.class)">
       <EditablePreview
         class="block w-full cursor-text"
         :class="[wrap ? 'wrap-break-word' : 'truncate', { 'text-muted-foreground': !value }]"

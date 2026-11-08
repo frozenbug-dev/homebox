@@ -37,8 +37,8 @@
 <template>
   <div class="flex flex-1 flex-col">
     <AppHeaderActions>
-      <Button size="sm" class="h-8 gap-1.5" @click="create">
-        <Plus class="size-4" />
+      <Button size="sm" class="h-[30px] text-[13px]" @click="create">
+        <Plus />
         {{ t("shell.templates_page.new_template") }}
       </Button>
     </AppHeaderActions>
@@ -63,15 +63,9 @@
       </template>
     </ResourceList>
 
-    <div class="px-1.5">
-      <button
-        type="button"
-        class="flex h-10 w-full items-center gap-2.5 rounded-md px-2.5 text-left text-sm text-muted-foreground hover:bg-muted/70"
-        @click="create"
-      >
-        <Plus class="size-4 text-primary" aria-hidden="true" />
-        {{ templates?.length ? t("shell.templates_page.new_template") : t("pages.templates.no_templates") }}
-      </button>
-    </div>
+    <!-- Empty state; "New template" sits in the header -->
+    <p v-if="templates && !templates.length" class="px-4 py-6 text-center text-sm text-muted-foreground">
+      {{ t("pages.templates.no_templates") }}
+    </p>
   </div>
 </template>

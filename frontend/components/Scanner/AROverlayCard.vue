@@ -253,7 +253,7 @@
     if (props.entity?.item?.id) {
       navigateTo(`/item/${props.entity.item.id}`);
     } else if (props.entity?.location?.id) {
-      navigateTo(`/location/${props.entity.location.id}`);
+      navigateTo(`/locations?place=${props.entity.location.id}`);
     } else if (props.entity?.childItems && props.entity.childItems.length > 0) {
       navigateTo(`/assets/${props.entity.childItems[0]!.assetId}`);
     }
