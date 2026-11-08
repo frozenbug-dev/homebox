@@ -1,4 +1,5 @@
 <script setup lang="ts">
+  import AppSubheader from "~/components/App/Subheader.vue";
   import { useI18n } from "vue-i18n";
   import { useQuery, useQueryClient } from "@tanstack/vue-query";
   import { useHotkey } from "@tanstack/vue-hotkeys";
@@ -378,7 +379,7 @@
       :class="{ 'max-md:hidden': !!placeParam }"
       :aria-label="t('shell.places')"
     >
-      <div class="flex h-10 shrink-0 items-center gap-2 border-b border-border/70 px-4">
+      <AppSubheader class="flex-nowrap">
         <label class="flex flex-1 items-center gap-1.5 text-[13px] text-muted-foreground">
           <Search class="size-3.5 shrink-0" aria-hidden="true" />
           <input
@@ -401,7 +402,7 @@
         >
           {{ t("shell.places_page.hide_empty") }}
         </button>
-      </div>
+      </AppSubheader>
       <div
         class="grid h-[30px] shrink-0 grid-cols-[minmax(0,1fr)_64px_84px] items-center border-b border-border/70 px-4 text-xs text-muted-foreground"
       >
@@ -545,7 +546,7 @@
         </p>
       </header>
 
-      <div class="flex h-10 items-center gap-2 border-b border-border/70 px-4 text-[13px] sm:px-5">
+      <AppSubheader class="flex-nowrap sm:px-5">
         <span class="font-semibold">{{ t("shell.places_page.contents") }}</span>
         <span class="truncate text-muted-foreground max-sm:hidden"
           >· {{ t("shell.places_page.including_sub_places") }}</span
@@ -562,7 +563,7 @@
           {{ t("shell.places_page.move_items_here") }}
           <ShortcutHint :hotkey="SHORTCUTS.placeMoveItemsHere" class="max-sm:hidden" />
         </button>
-      </div>
+      </AppSubheader>
 
       <ItemList
         ref="list"

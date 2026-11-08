@@ -1,4 +1,5 @@
 <script setup lang="ts">
+  import AppSubheader from "~/components/App/Subheader.vue";
   import { useI18n } from "vue-i18n";
   import { Plus } from "@lucide/vue";
   import { MaintenanceFilterStatus } from "~~/lib/api/types/data-contracts";
@@ -95,7 +96,7 @@
   <section class="flex flex-col">
     <MaintenanceEditModal />
 
-    <div class="flex flex-wrap items-center gap-2 border-b border-border px-3 py-2 sm:px-4">
+    <AppSubheader>
       <div class="flex rounded-lg bg-muted p-0.5 text-xs" role="tablist">
         <button
           v-for="s in statuses"
@@ -119,7 +120,7 @@
         <Plus class="size-3.5" />
         {{ t("maintenance.list.new") }}
       </Button>
-    </div>
+    </AppSubheader>
 
     <ResourceList
       class="py-1.5"

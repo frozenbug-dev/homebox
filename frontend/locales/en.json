@@ -1474,10 +1474,6 @@
     "shell": {
         "labels": "Labels",
         "home": {
-            "stat_items": "{n, plural, one {item} other {items}}",
-            "stat_places": "{n, plural, one {place} other {places}}",
-            "stat_total": "total",
-            "stat_tags": "{n, plural, one {tag} other {tags}}",
             "added_to": "Added {name} to {place}",
             "added": "Added {name}",
             "view_all": "View all",

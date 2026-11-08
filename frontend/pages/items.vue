@@ -1,4 +1,5 @@
 <script setup lang="ts">
+  import AppSubheader from "~/components/App/Subheader.vue";
   import { useI18n } from "vue-i18n";
   import { useRouteQuery } from "@vueuse/router";
   import { useHotkey } from "@tanstack/vue-hotkeys";
@@ -153,7 +154,7 @@
 
 <template>
   <div class="flex flex-col">
-    <div class="flex flex-wrap items-center gap-2 border-b border-border px-3 py-2 sm:px-4">
+    <AppSubheader>
       <label class="flex h-7 w-full items-center gap-1.5 text-[13px] text-muted-foreground sm:w-64">
         <span class="sr-only">{{ t("shell.items_page.filter_placeholder") }}</span>
         <Search class="size-3.5 shrink-0" aria-hidden="true" />
@@ -275,7 +276,7 @@
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
-    </div>
+    </AppSubheader>
 
     <ItemList
       virtual

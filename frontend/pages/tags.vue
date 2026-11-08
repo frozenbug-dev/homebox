@@ -1,4 +1,5 @@
 <script setup lang="ts">
+  import AppSubheader from "~/components/App/Subheader.vue";
   import { useI18n } from "vue-i18n";
   import { useQuery } from "@tanstack/vue-query";
   import { Plus, Search } from "@lucide/vue";
@@ -112,7 +113,7 @@
       </Button>
     </AppHeaderActions>
 
-    <div class="flex items-center gap-2 border-b border-border px-3 py-2 sm:px-4">
+    <AppSubheader>
       <label class="flex h-7 w-full items-center gap-1.5 text-[13px] text-muted-foreground sm:w-64">
         <span class="sr-only">{{ t("shell.tags_page.filter") }}</span>
         <Search class="size-3.5 shrink-0" aria-hidden="true" />
@@ -127,7 +128,7 @@
       <span class="text-xs text-muted-foreground tabular-nums">{{
         t("shell.tags_page.count", { n: rows.length })
       }}</span>
-    </div>
+    </AppSubheader>
 
     <ResourceList
       class="py-1.5"

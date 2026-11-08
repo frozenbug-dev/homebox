@@ -3,7 +3,6 @@
   import { useQuery } from "@tanstack/vue-query";
   import { MaintenanceFilterStatus } from "~/lib/api/types/data-contracts";
   import { useEntityTypeStore } from "~~/stores/entityTypes";
-  import Currency from "~/components/global/Currency.vue";
 
   definePageMeta({ middleware: ["auth"] });
 
@@ -17,12 +16,6 @@
   const collection = computed(() => preferences.value.collectionId);
   const itemTypeIds = computed(() => entityTypeStore.itemTypes.map(et => et.id));
   const hasItemTypes = computed(() => itemTypeIds.value.length > 0);
-
-  // Same key as the sidebar counts, so both share one request.
-  const { data: stats } = useQuery({
-    queryKey: computed(() => ["stats", collection.value]),
-    queryFn: async () => (await api.stats.group()).data,
-  });
 
   const { data: recent } = useQuery({
     queryKey: computed(() => ["entities", "recent", collection.value, itemTypeIds.value]),
@@ -138,29 +131,6 @@
 
 <template>
   <div class="flex flex-1 flex-col">
-    <!-- Totals in one line, as in the design -->
-    <p
-      class="flex flex-wrap items-center gap-x-4 gap-y-1 border-b border-border px-4 py-3 text-[13px] text-muted-foreground"
-      :aria-label="t('home.quick_statistics')"
-    >
-      <span>
-        <b class="font-semibold text-foreground tabular-nums">{{ stats?.totalItems ?? 0 }}</b>
-        {{ t("shell.home.stat_items", { n: stats?.totalItems ?? 0 }) }}
-      </span>
-      <span>
-        <b class="font-semibold text-foreground tabular-nums">{{ stats?.totalLocations ?? 0 }}</b>
-        {{ t("shell.home.stat_places", { n: stats?.totalLocations ?? 0 }) }}
-      </span>
-      <span>
-        <b class="font-semibold text-foreground tabular-nums"><Currency :amount="stats?.totalItemPrice ?? 0" /></b>
-        {{ t("shell.home.stat_total") }}
-      </span>
-      <span>
-        <b class="font-semibold text-foreground tabular-nums">{{ stats?.totalTags ?? 0 }}</b>
-        {{ t("shell.home.stat_tags", { n: stats?.totalTags ?? 0 }) }}
-      </span>
-    </p>
-
     <div class="flex flex-1 flex-wrap">
       <!-- Recently added, styled like the design's activity list -->
       <section class="min-w-0 flex-[3_1_520px] border-border lg:border-r">

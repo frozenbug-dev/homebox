@@ -1,4 +1,5 @@
 <script setup lang="ts">
+  import AppSubheader from "~/components/App/Subheader.vue";
   import { useI18n } from "vue-i18n";
   import { Plus, Printer, Upload } from "@lucide/vue";
   import { toast } from "@/components/ui/sonner";
@@ -146,9 +147,9 @@
     <input ref="importInput" type="file" accept="application/json,.json" class="hidden" @change="handleImport" />
     <LabelTemplateCreateModal @created="handleRefresh" />
 
-    <p v-if="templates" class="border-b border-border px-4 py-2.5 text-xs text-muted-foreground">
+    <AppSubheader v-if="templates" class="text-xs text-muted-foreground">
       {{ $t("pages.label_templates.subtitle", { count: templates.length, shared: sharedCount }) }}
-    </p>
+    </AppSubheader>
 
     <div v-if="pending" class="px-4 py-12 text-center text-sm text-muted-foreground">{{ $t("global.loading") }}</div>
 
