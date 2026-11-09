@@ -17,6 +17,7 @@ import (
 	"github.com/samber/lo"
 	"github.com/sysadminsmedia/homebox/backend/internal/core/services"
 	"github.com/sysadminsmedia/homebox/backend/internal/sys/config"
+	"github.com/sysadminsmedia/homebox/backend/internal/sys/validate"
 	"golang.org/x/oauth2"
 )
 
@@ -28,6 +29,7 @@ type OIDCProvider struct {
 	provider     *oidc.Provider
 	verifier     *oidc.IDTokenVerifier
 	endpoint     oauth2.Endpoint
+	handoffs     *appHandoffStore
 }
 
 type OIDCClaims struct {
@@ -110,6 +112,7 @@ func NewOIDCProvider(service *services.UserService, config *config.OIDCConf, opt
 		provider:     provider,
 		verifier:     verifier,
 		endpoint:     provider.Endpoint(),
+		handoffs:     newAppHandoffStore(),
 	}, nil
 }
 
@@ -379,6 +382,14 @@ func (p *OIDCProvider) getOAuth2Config(baseURL string) oauth2.Config {
 
 // initiateOIDCFlow handles the initial OIDC authentication request by redirecting to the provider
 func (p *OIDCProvider) initiateOIDCFlow(w http.ResponseWriter, r *http.Request) (services.UserAuthTokenDetail, error) {
+	// A native app passes redirect_uri + code_challenge to get the session
+	// back through a handoff code instead of cookies (see oidc_app.go).
+	appHandoff, err := p.parseAppHandoff(r)
+	if err != nil {
+		log.Warn().Err(err).Str("redirect_uri", r.URL.Query().Get("redirect_uri")).Msg("rejected OIDC app sign-in request")
+		return services.UserAuthTokenDetail{}, validate.NewRequestError(err, http.StatusBadRequest)
+	}
+
 	// Generate state parameter for CSRF protection
 	state, err := generateSecureToken()
 	if err != nil {
@@ -444,6 +455,13 @@ func (p *OIDCProvider) initiateOIDCFlow(w http.ResponseWriter, r *http.Request) 
 		SameSite: http.SameSiteLaxMode,
 	})
 
+	if appHandoff != nil {
+		p.setAppHandoffCookies(w, r, domain, appHandoff)
+	} else {
+		// A browser sign-in must not inherit an abandoned app sign-in.
+		p.clearAppHandoffCookies(w, r, domain)
+	}
+
 	// Generate auth URL and redirect
 	authURL := p.GetAuthURL(baseURL, state, nonce, pkceVerifier)
 	http.Redirect(w, r, authURL, http.StatusFound)
@@ -495,6 +513,7 @@ func (p *OIDCProvider) handleCallback(w http.ResponseWriter, r *http.Request) (s
 			Path:     "/",
 			SameSite: http.SameSiteLaxMode,
 		})
+		p.clearAppHandoffCookies(w, r, domain)
 	}
 
 	// Check for OAuth error responses first

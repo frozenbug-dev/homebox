@@ -3334,6 +3334,46 @@ const docTemplate = `{
                 }
             }
         },
+        "/v1/users/login/oidc/exchange": {
+            "post": {
+                "description": "Completes an OIDC sign-in started by a native app. The app starts the flow with\nGET /v1/users/login/oidc?redirect_uri=\u003callowed app URI\u003e\u0026code_challenge=\u003cS256 challenge\u003e,\nreceives a single-use code on its redirect URI and exchanges it here together with\nthe PKCE code verifier. Codes expire after two minutes.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Authentication"
+                ],
+                "summary": "OIDC App Sign-In Exchange",
+                "parameters": [
+                    {
+                        "description": "Handoff code and verifier",
+                        "name": "payload",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/v1.OIDCExchangeRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/v1.TokenResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "code is invalid, expired, already used, or the verifier does not match",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
         "/v1/users/logout": {
             "post": {
                 "security": [
@@ -7868,10 +7908,29 @@ const docTemplate = `{
                 }
             }
         },
+        "v1.OIDCExchangeRequest": {
+            "type": "object",
+            "required": [
+                "code",
+                "codeVerifier"
+            ],
+            "properties": {
+                "code": {
+                    "type": "string"
+                },
+                "codeVerifier": {
+                    "type": "string"
+                }
+            }
+        },
         "v1.OIDCStatus": {
             "type": "object",
             "properties": {
                 "allowLocal": {
+                    "type": "boolean"
+                },
+                "appLogin": {
+                    "description": "AppLogin is true when native apps can sign in with OIDC through the\nredirect_uri + code_challenge handoff (see HandleOIDCExchange).",
                     "type": "boolean"
                 },
                 "autoRedirect": {

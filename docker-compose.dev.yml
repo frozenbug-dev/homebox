@@ -41,5 +41,18 @@ services:
       timeout: 5s
       retries: 30
 
+  # Mock OpenID Connect provider for testing SSO sign-in (web and mobile).
+  # Opt-in: `docker compose -f docker-compose.dev.yml --profile oidc up -d`.
+  # Its login page accepts any username; put claims like
+  # {"email": "oidc@example.com", "name": "OIDC User"} in the claims box.
+  oidc:
+    image: ghcr.io/navikt/mock-oauth2-server:2.1.10
+    profiles: [oidc]
+    environment:
+      SERVER_PORT: "8080"
+      JSON_CONFIG: '{"interactiveLogin": true}'
+    ports:
+      - 127.0.0.1:8080:8080
+
 volumes:
   postgres:

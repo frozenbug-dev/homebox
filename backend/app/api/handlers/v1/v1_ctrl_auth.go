@@ -12,6 +12,7 @@ import (
 	"github.com/hay-kot/httpkit/server"
 	"github.com/rs/zerolog/log"
 	"github.com/samber/lo"
+	"github.com/sysadminsmedia/homebox/backend/app/api/providers"
 	"github.com/sysadminsmedia/homebox/backend/internal/core/services"
 	"github.com/sysadminsmedia/homebox/backend/internal/sys/validate"
 	"go.opentelemetry.io/otel/attribute"
@@ -599,12 +600,34 @@ func (ctrl *V1Controller) HandleOIDCCallback() errchain.HandlerFunc {
 			return validate.NewRequestError(errors.New("OIDC provider not available"), http.StatusInternalServerError)
 		}
 
+		// Read before HandleCallback, which expires the flow's cookies.
+		appHandoff := ctrl.oidcProvider.AppHandoffFromCallback(r)
+		span.SetAttributes(attribute.Bool("oidc.app_handoff", appHandoff != nil))
+
 		newToken, err := ctrl.oidcProvider.HandleCallback(w, r.WithContext(spanCtx))
 		if err != nil {
 			recordCtrlSpanError(span, err)
 			span.SetAttributes(attribute.String("oidc.outcome", "callback_failed"))
 			log.Err(err).Msg("OIDC callback failed")
+			if appHandoff != nil {
+				http.Redirect(w, r, providers.AppRedirectURL(appHandoff.RedirectURI, map[string]string{"error": "oidc_auth_failed"}), http.StatusFound)
+				return nil
+			}
 			http.Redirect(w, r, "/?oidc_error=oidc_auth_failed", http.StatusFound)
+			return nil
+		}
+
+		if appHandoff != nil {
+			code, err := ctrl.oidcProvider.CreateAppHandoff(newToken, appHandoff.Challenge)
+			if err != nil {
+				recordCtrlSpanError(span, err)
+				span.SetAttributes(attribute.String("oidc.outcome", "handoff_failed"))
+				log.Err(err).Msg("OIDC app handoff failed")
+				http.Redirect(w, r, providers.AppRedirectURL(appHandoff.RedirectURI, map[string]string{"error": "oidc_auth_failed"}), http.StatusFound)
+				return nil
+			}
+			span.SetAttributes(attribute.String("oidc.outcome", "app_handoff"))
+			http.Redirect(w, r, providers.AppRedirectURL(appHandoff.RedirectURI, map[string]string{"code": code}), http.StatusFound)
 			return nil
 		}
 
@@ -615,5 +638,57 @@ func (ctrl *V1Controller) HandleOIDCCallback() errchain.HandlerFunc {
 		ctrl.setCookies(w, noPort(r.Host), newToken.Raw, newToken.ExpiresAt, true, newToken.AttachmentToken)
 		http.Redirect(w, r, "/home", http.StatusFound)
 		return nil
+	}
+}
+
+// OIDCExchangeRequest trades a handoff code from a native app sign-in for a session token.
+type OIDCExchangeRequest struct {
+	Code         string `json:"code"         validate:"required"`
+	CodeVerifier string `json:"codeVerifier" validate:"required"`
+}
+
+// HandleOIDCExchange godoc
+//
+//	@Summary		OIDC App Sign-In Exchange
+//	@Description	Completes an OIDC sign-in started by a native app. The app starts the flow with
+//	@Description	GET /v1/users/login/oidc?redirect_uri=<allowed app URI>&code_challenge=<S256 challenge>,
+//	@Description	receives a single-use code on its redirect URI and exchanges it here together with
+//	@Description	the PKCE code verifier. Codes expire after two minutes.
+//	@Tags			Authentication
+//	@Accept			application/json
+//	@Produce		json
+//	@Param			payload	body		OIDCExchangeRequest	true	"Handoff code and verifier"
+//	@Success		200		{object}	TokenResponse
+//	@Failure		401		{string}	string	"code is invalid, expired, already used, or the verifier does not match"
+//	@Router			/v1/users/login/oidc/exchange [POST]
+func (ctrl *V1Controller) HandleOIDCExchange() errchain.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) error {
+		_, span := startEntityCtrlSpan(r.Context(), "controller.V1.HandleOIDCExchange")
+		defer span.End()
+
+		if ctrl.oidcProvider == nil {
+			span.SetAttributes(attribute.String("oidc.outcome", "provider_unavailable"))
+			return validate.NewRequestError(errors.New("OIDC provider not available"), http.StatusInternalServerError)
+		}
+
+		var body OIDCExchangeRequest
+		if err := server.Decode(r, &body); err != nil {
+			span.SetAttributes(attribute.String("oidc.outcome", "decode_failed"))
+			return validate.NewRequestError(err, http.StatusBadRequest)
+		}
+
+		newToken, err := ctrl.oidcProvider.ExchangeAppHandoff(body.Code, body.CodeVerifier)
+		if err != nil {
+			span.SetAttributes(attribute.String("oidc.outcome", "exchange_failed"))
+			log.Warn().Err(err).Msg("OIDC app handoff exchange failed")
+			return validate.NewUnauthorizedError()
+		}
+
+		span.SetAttributes(attribute.String("oidc.outcome", "exchanged"))
+		return server.JSON(w, http.StatusOK, TokenResponse{
+			Token:           "Bearer " + newToken.Raw,
+			ExpiresAt:       newToken.ExpiresAt,
+			AttachmentToken: newToken.AttachmentToken,
+		})
 	}
 }
