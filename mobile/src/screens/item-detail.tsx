@@ -6,6 +6,7 @@ import { ActivityIndicator, RefreshControl, ScrollView, Text, View, useWindowDim
 import { StyleSheet, useUnistyles } from 'react-native-unistyles'
 
 import { ActionButton } from '@/components/action-button'
+import { CoverScrollView } from '@/components/cover-scroll-view'
 import { EmptyState } from '@/components/empty-state'
 import { HeaderMenu } from '@/components/header-button'
 import { PressableFeedback } from '@/components/pressable-feedback'
@@ -24,11 +25,11 @@ import { formatDate, formatPrice } from '@/lib/format'
 
 import { ItemAttachments } from './item-attachments'
 
-const PHOTO_HEIGHT = 280
 
 export default function ItemDetailScreen() {
   const { id, name } = useLocalSearchParams<{ id: string; name?: string }>()
   const { theme, rt } = useUnistyles()
+  const { width } = useWindowDimensions()
   const router = useRouter()
   const { api } = useSession()
   const item = useQuery(entityQuery(api, id))
@@ -107,24 +108,22 @@ export default function ItemDetailScreen() {
   }
 
 
-  return (
-    <ScrollView
-      style={styles.root}
-      contentInsetAdjustmentBehavior="automatic"
-      contentContainerStyle={{ paddingBottom: rt.insets.bottom + theme.spacing(8) }}
-      refreshControl={
-        <RefreshControl
-          refreshing={item.isRefetching}
-          onRefresh={() => {
-            item.refetch()
-            path.refetch()
-          }}
-          colors={[theme.colors.primary]}
-          tintColor={theme.colors.textMuted}
-          progressBackgroundColor={theme.colors.elevated}
-        />
-      }>
-      <Stack.Screen options={{ title: '' }} />
+  const coverHeight = Math.round(width * 0.95) + rt.insets.top
+  const refresh = (
+    <RefreshControl
+      refreshing={item.isRefetching}
+      onRefresh={() => {
+        item.refetch()
+        path.refetch()
+      }}
+      progressViewOffset={photos.length ? rt.insets.top + 56 : undefined}
+      colors={[theme.colors.primary]}
+      tintColor={theme.colors.textMuted}
+      progressBackgroundColor={theme.colors.elevated}
+    />
+  )
+
+  const toolbar = (
       <Stack.Toolbar placement="right">
         <HeaderMenu>
           <Stack.Toolbar.MenuAction onPress={() => editText('Name', e.name, (name) => ({ name }), 'text', true)}>
@@ -143,9 +142,10 @@ export default function ItemDetailScreen() {
           </Stack.Toolbar.MenuAction>
         </HeaderMenu>
       </Stack.Toolbar>
+  )
 
-      {photos.length ? <PhotoPager entityId={e.id!} photos={photos} /> : null}
-
+  const body = (
+    <>
       <View style={styles.head}>
         {containers.length ? (
           <View style={styles.breadcrumb}>
@@ -245,12 +245,39 @@ export default function ItemDetailScreen() {
           ))}
         </>
       ) : null}
+    </>
+  )
 
+  const paddingBottom = rt.insets.bottom + theme.spacing(8)
+
+  if (photos.length) {
+    return (
+      <CoverScrollView
+        cover={<PhotoPager entityId={e.id!} photos={photos} height={coverHeight} />}
+        coverHeight={coverHeight}
+        title={e.name ?? ''}
+        refreshControl={refresh}
+        contentPaddingBottom={paddingBottom}>
+        {toolbar}
+        {body}
+      </CoverScrollView>
+    )
+  }
+
+  return (
+    <ScrollView
+      style={styles.root}
+      contentInsetAdjustmentBehavior="automatic"
+      contentContainerStyle={{ paddingBottom }}
+      refreshControl={refresh}>
+      <Stack.Screen options={{ title: '' }} />
+      {toolbar}
+      {body}
     </ScrollView>
   )
 }
 
-function PhotoPager({ entityId, photos }: { entityId: string; photos: Attachment[] }) {
+function PhotoPager({ entityId, photos, height }: { entityId: string; photos: Attachment[]; height: number }) {
   const router = useRouter()
   const { width } = useWindowDimensions()
   const { session } = useSession()
@@ -273,7 +300,7 @@ function PhotoPager({ entityId, photos }: { entityId: string; photos: Attachment
             <Image
               source={attachmentSource(session, entityId, p.id!)}
               placeholder={p.thumbnail?.id ? attachmentSource(session, entityId, p.thumbnail.id) : undefined}
-              style={{ width, height: PHOTO_HEIGHT }}
+              style={{ width, height }}
               contentFit="cover"
               transition={150}
             />
