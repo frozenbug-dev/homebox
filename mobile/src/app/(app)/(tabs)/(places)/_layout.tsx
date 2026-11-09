@@ -1,6 +1,6 @@
 import { TabStack } from '@/components/tab-stack'
 
-export const unstable_settings = { initialRouteName: 'places' }
+export const unstable_settings = { anchor: 'places' }
 
 export default function Layout() {
   return <TabStack root="places" title="Places" />

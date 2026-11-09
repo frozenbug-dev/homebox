@@ -17,7 +17,7 @@ import { TagChip } from '@/components/tag-chip'
 import { confirmDelete, useDeleteEntity, useDuplicateEntity, usePatchEntity, type EntityPatch } from '@/lib/api/mutations'
 import { useSheets } from '@/lib/use-sheets'
 import type { Entity } from '@/lib/api/api'
-import { entityPathQuery, entityQuery } from '@/lib/api/queries'
+import { entityPathQuery, entityQuery, groupQuery } from '@/lib/api/queries'
 import { splitAttachments } from '@/lib/attachments'
 import { useSession } from '@/lib/auth/session'
 import { formatDate, formatPrice } from '@/lib/format'
@@ -33,6 +33,7 @@ export default function ItemDetailScreen() {
   const { api } = useSession()
   const item = useQuery(entityQuery(api, id))
   const path = useQuery(entityPathQuery(api, id))
+  const currency = useQuery(groupQuery(api)).data?.currency
   const patch = usePatchEntity(id)
   const remove = useDeleteEntity()
   const duplicate = useDuplicateEntity()
@@ -192,9 +193,9 @@ export default function ItemDetailScreen() {
         />
         <PropertyChip
           icon={icons.price}
-          label={formatPrice(e.purchasePrice) ?? 'Price'}
+          label={formatPrice(e.purchasePrice, currency) ?? 'Price'}
           empty={!e.purchasePrice}
-          accessibilityLabel={`Purchase price ${formatPrice(e.purchasePrice) ?? 'not set'}. Change`}
+          accessibilityLabel={`Purchase price ${formatPrice(e.purchasePrice, currency) ?? 'not set'}. Change`}
           onPress={() =>
             editText(
               'Purchase price',

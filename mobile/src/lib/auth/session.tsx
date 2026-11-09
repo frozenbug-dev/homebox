@@ -18,6 +18,8 @@ interface SessionContextValue {
   session: Session | null
   signIn: (session: Session) => Promise<void>
   signOut: () => Promise<void>
+  /** Switch collection; clears cached data from the previous one. */
+  setTenant: (tenantId: string) => Promise<void>
   /** Typed client for the signed-in server; a 401 signs out. Null while signed out. */
   api: ApiClient | null
 }
@@ -88,16 +90,27 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   const api = useMemo(
     () =>
       session
-        ? createApiClient(session.serverUrl, session.token, () => {
+        ? createApiClient(session.serverUrl, session.token, session.tenantId, () => {
             dropSession()
           })
         : null,
     [session, dropSession],
   )
 
+  const setTenant = useCallback(
+    async (tenantId: string) => {
+      if (!session || session.tenantId === tenantId) return
+      const next = { ...session, tenantId }
+      queryClient.clear()
+      await saveSession(next)
+      setSession(next)
+    },
+    [session],
+  )
+
   const value = useMemo(
-    () => ({ isLoading, session, signIn, signOut, api }),
-    [isLoading, session, signIn, signOut, api],
+    () => ({ isLoading, session, signIn, signOut, setTenant, api }),
+    [isLoading, session, signIn, signOut, setTenant, api],
   )
 
   return <SessionContext value={value}>{children}</SessionContext>

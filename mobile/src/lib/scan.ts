@@ -1,3 +1,5 @@
+import { queryOptions, skipToken } from '@tanstack/react-query'
+
 import { unwrap, type ApiClient, type EntitySummary, type Schemas } from '@/lib/api/api'
 
 export type BarcodeProduct = Schemas['repo.BarcodeProduct']
@@ -85,3 +87,14 @@ export async function resolveScan(api: ApiClient, target: ScanTarget, signal?: A
       }
   }
 }
+
+/** Resolves a typed or linked code (e.g. an asset ID deep link). */
+// The client is per session and the cache is cleared on sign-in and
+// collection switch, so it doesn't belong in the key.
+export const scanCodeQuery = (api: ApiClient | null, code: string) =>
+  // eslint-disable-next-line @tanstack/query/exhaustive-deps
+  queryOptions({
+    queryKey: ['scan-code', code],
+    queryFn: api ? ({ signal }) => resolveScan(api, parseScan(code), signal) : skipToken,
+    retry: false,
+  })

@@ -46,6 +46,29 @@
           "photosPermission": "$(PRODUCT_NAME) lets you attach photos from your library to items.",
           "microphonePermission": false
         }
+      ],
+      [
+        "expo-quick-actions",
+        {
+          "androidIcons": {
+            "shortcut_scan": {
+              "foregroundImage": "./assets/shortcuts/shortcut_scan.png",
+              "backgroundColor": "#5e6ad2"
+            },
+            "shortcut_item": {
+              "foregroundImage": "./assets/shortcuts/shortcut_item.png",
+              "backgroundColor": "#5e6ad2"
+            },
+            "shortcut_place": {
+              "foregroundImage": "./assets/shortcuts/shortcut_place.png",
+              "backgroundColor": "#5e6ad2"
+            },
+            "shortcut_tag": {
+              "foregroundImage": "./assets/shortcuts/shortcut_tag.png",
+              "backgroundColor": "#5e6ad2"
+            }
+          }
+        }
       ]
     ],
     "experiments": {

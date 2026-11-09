@@ -6,6 +6,11 @@ import { useUnistyles } from 'react-native-unistyles'
 
 import { useMaterialSymbol } from '@/lib/use-material-symbol'
 
+// The toolbar must always contain its items (it doesn't pick up ones that
+// appear later), so until the Android icon image is ready they render hidden
+// with a transparent placeholder (an undefined icon logs a warning).
+const BLANK = require('@/assets/images/blank.png')
+
 // Toolbar items render in the native header, outside the screen's React
 // tree, so a colour override has to come in as a prop (not context).
 function useToolbarIcon(sf: SFSymbol, md: AndroidSymbol, override?: string) {
@@ -27,9 +32,15 @@ interface HeaderButtonProps {
 /** Icon button for a screen's `Stack.Toolbar` (SF Symbol on iOS, Material Symbol on Android). */
 export function HeaderButton({ sf, md, label, onPress, tint: override }: HeaderButtonProps) {
   const { icon, tint } = useToolbarIcon(sf, md, override)
-  // Android needs the Material Symbol image; skip the button until it's ready.
-  if (!icon) return null
-  return <Stack.Toolbar.Button icon={icon} tintColor={tint} accessibilityLabel={label} onPress={onPress} />
+  return (
+    <Stack.Toolbar.Button
+      icon={icon ?? BLANK}
+      hidden={!icon}
+      tintColor={tint}
+      accessibilityLabel={label}
+      onPress={onPress}
+    />
+  )
 }
 
 /** Overflow ("more") menu for a screen's `Stack.Toolbar`. */
@@ -43,9 +54,8 @@ export function HeaderMenu({
   tint?: string
 }) {
   const { icon, tint } = useToolbarIcon('ellipsis.circle', 'more_vert', override)
-  if (!icon) return null
   return (
-    <Stack.Toolbar.Menu icon={icon} tintColor={tint} accessibilityLabel={label}>
+    <Stack.Toolbar.Menu icon={icon ?? BLANK} hidden={!icon} tintColor={tint} accessibilityLabel={label}>
       {children}
     </Stack.Toolbar.Menu>
   )

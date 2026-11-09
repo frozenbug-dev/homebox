@@ -11,8 +11,16 @@ export function formatDate(value?: string | null) {
   return d ? d.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' }) : null
 }
 
-export function formatPrice(value?: number | null) {
+/** Price in the collection's currency (ISO code), or a plain number without one. */
+export function formatPrice(value?: number | null, currency?: string) {
   if (!value) return null
+  if (currency) {
+    try {
+      return value.toLocaleString(undefined, { style: 'currency', currency, maximumFractionDigits: 2 })
+    } catch {
+      // Unknown currency code: fall through to a plain number.
+    }
+  }
   return value.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })
 }
 

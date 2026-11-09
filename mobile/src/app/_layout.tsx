@@ -1,5 +1,6 @@
 import { QueryClientProvider } from '@tanstack/react-query'
 import { DarkTheme, DefaultTheme, Stack, ThemeProvider } from 'expo-router'
+import * as QuickActions from 'expo-quick-actions'
 import * as SplashScreen from 'expo-splash-screen'
 import { useEffect } from 'react'
 import { GestureHandlerRootView } from 'react-native-gesture-handler'
@@ -37,6 +38,11 @@ function RootNavigator() {
   useEffect(() => {
     if (!isLoading) SplashScreen.hideAsync()
   }, [isLoading])
+
+  // Shortcuts only make sense while signed in; the app layout sets them.
+  useEffect(() => {
+    if (!isLoading && !session) QuickActions.setItems([]).catch(() => {})
+  }, [isLoading, session])
 
   // Mounting the navigator before the session is known would mount the
   // sign-in stack first and swap to the tabs a moment later, which makes

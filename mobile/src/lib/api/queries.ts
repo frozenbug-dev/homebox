@@ -35,7 +35,7 @@ export const selfQuery = (api: ApiClient | null) =>
   queryOptions({
     queryKey: ['self'],
     queryFn: api
-      ? async ({ signal }) => (await unwrap(api.GET('/v1/users/self', { signal }))).item as { name?: string; email?: string }
+      ? async ({ signal }) => (await unwrap(api.GET('/v1/users/self', { signal }))).item as { name?: string; email?: string; defaultGroupId?: string }
       : skipToken,
   })
 
@@ -106,6 +106,21 @@ export const tagsQuery = (api: ApiClient | null) =>
     queryKey: tagKeys.all,
     queryFn: api ? ({ signal }) => unwrap(api.GET('/v1/tags', { signal })) : skipToken,
     select: (tags) => [...tags].sort((a, b) => (a.name ?? '').localeCompare(b.name ?? '')),
+  })
+
+/** Collections the user belongs to. */
+export const groupsQuery = (api: ApiClient | null) =>
+  queryOptions({
+    queryKey: ['groups'],
+    queryFn: api ? ({ signal }) => unwrap(api.GET('/v1/groups/all', { signal })) : skipToken,
+  })
+
+/** The current collection (name, currency). */
+export const groupQuery = (api: ApiClient | null) =>
+  queryOptions({
+    queryKey: ['group'],
+    queryFn: api ? ({ signal }) => unwrap(api.GET('/v1/groups', { signal })) : skipToken,
+    staleTime: 5 * 60_000,
   })
 
 export const entityTypesQuery = (api: ApiClient | null) =>

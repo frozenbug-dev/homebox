@@ -26,11 +26,11 @@ export function isNil(id?: string | null) {
  * Typed client for one signed-in server. Cookies are never sent: the server
  * prefers its session cookie over the Authorization header.
  */
-export function createApiClient(serverUrl: string, token: string, onUnauthorized: () => void) {
+export function createApiClient(serverUrl: string, token: string, tenantId: string | undefined, onUnauthorized: () => void) {
   const client = createClient<paths>({
     baseUrl: `${serverUrl}/api`,
     credentials: 'omit',
-    headers: { Authorization: token },
+    headers: { Authorization: token, ...(tenantId ? { 'X-Tenant': tenantId } : {}) },
   })
   client.use({
     onResponse({ response }) {

@@ -122,7 +122,11 @@ async function upload(task: UploadTask) {
 
   const res = await fetch(apiUrl(session.serverUrl, `/entities/${task.entityId}/attachments`), {
     method: 'POST',
-    headers: { Authorization: session.token, Accept: 'application/json' },
+    headers: {
+      Authorization: session.token,
+      Accept: 'application/json',
+      ...(session.tenantId ? { 'X-Tenant': session.tenantId } : {}),
+    },
     body: form,
     credentials: 'omit',
   })

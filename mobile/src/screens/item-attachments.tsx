@@ -10,9 +10,8 @@ import { ListRow, RowSeparator } from '@/components/list-row'
 import { PressableFeedback } from '@/components/pressable-feedback'
 import { SectionHeader } from '@/components/section-header'
 import type { Attachment, Entity } from '@/lib/api/api'
-import { apiUrl } from '@/lib/api/client'
 import { confirmDelete, useDeleteAttachment } from '@/lib/api/mutations'
-import { attachmentSource, splitAttachments } from '@/lib/attachments'
+import { attachmentLink, attachmentSource, splitAttachments } from '@/lib/attachments'
 import { useSession } from '@/lib/auth/session'
 import { useAddPhotos } from '@/lib/use-add-photos'
 import { dismissUpload, enqueueUploads, retryUpload, useUploads, type AttachmentKind, type UploadTask } from '@/lib/uploads'
@@ -54,8 +53,7 @@ export function ItemAttachments({ entity }: { entity: Entity }) {
 
   const openFile = (a: Attachment) => {
     if (!session) return
-    const url = `${apiUrl(session.serverUrl, `/entities/${entity.id}/attachments/${a.id}`)}?access_token=${encodeURIComponent(session.attachmentToken)}`
-    WebBrowser.openBrowserAsync(url)
+    WebBrowser.openBrowserAsync(attachmentLink(session, entity.id!, a.id!))
   }
 
   const deleteFile = async (a: Attachment) => {
