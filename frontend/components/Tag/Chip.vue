@@ -1,6 +1,6 @@
 <script setup lang="ts">
+  import { ArrowUp } from "@lucide/vue";
   import type { TagOut, TagSummary } from "~~/lib/api/types/data-contracts";
-  import MdiArrowUp from "~icons/mdi/arrow-up";
   import { getContrastTextColor } from "~/lib/utils";
   import { getIconComponent } from "~/lib/icons";
 
@@ -31,7 +31,7 @@
 
 <template>
   <NuxtLink
-    class="group/tag-chip flex gap-2 rounded-full border shadow transition duration-300 hover:bg-accent/50"
+    class="group/tag-chip flex gap-2 rounded-full border shadow-sm transition duration-300 hover:bg-accent/50"
     :class="{
       'p-4 py-1 text-base': size === 'lg',
       'p-3 py-1 text-sm': size !== 'sm' && size !== 'lg',
@@ -44,7 +44,7 @@
         ? { backgroundColor: tag.color, color: getContrastTextColor(tag.color) }
         : { backgroundColor: 'hsl(var(--accent))' }
     "
-    :to="`/tag/${tag.id}`"
+    :to="`/tags?tag=${tag.id}`"
   >
     <template v-if="!hideIcon">
       <div class="relative">
@@ -54,7 +54,7 @@
           class="absolute inset-0 flex items-center justify-center transition-transform duration-300 group-hover/tag-chip:rotate-90"
         >
           <component :is="chipIcon" class="group-hover/tag-chip:hidden" />
-          <MdiArrowUp class="hidden group-hover/tag-chip:block" />
+          <ArrowUp class="hidden group-hover/tag-chip:block" />
         </div>
       </div>
     </template>

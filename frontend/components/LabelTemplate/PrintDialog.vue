@@ -1,5 +1,5 @@
 <template>
-  <BaseModal :dialog-id="DialogID.PrintLabelTemplate" hide-footer>
+  <BaseModal :dialog-id="DialogID.PrintLabelTemplate" content-class="max-w-3xl" hide-footer>
     <template #title>
       <div class="flex flex-col gap-0.5">
         <span>{{ $t("components.label_template.print_dialog.title") }}</span>
@@ -14,7 +14,9 @@
     </div>
 
     <div v-else-if="!templates || templates.length === 0" class="space-y-3 py-4 text-center">
-      <p class="text-sm text-muted-foreground">{{ $t("components.label_template.print_dialog.no_templates") }}</p>
+      <p class="text-sm text-muted-foreground">
+        {{ $t("components.label_template.print_dialog.no_templates") }}
+      </p>
       <Button variant="outline" as-child>
         <NuxtLink to="/label-templates" @click="closeDialog(DialogID.PrintLabelTemplate)">
           {{ $t("components.label_template.print_dialog.create_template") }}
@@ -23,7 +25,7 @@
     </div>
 
     <div v-else class="space-y-4">
-      <div class="grid gap-4 md:grid-cols-[260px_1fr]">
+      <div class="grid gap-4 md:grid-cols-[320px_1fr]">
         <!-- Template picker -->
         <div class="space-y-2">
           <div class="flex items-center justify-between">
@@ -50,7 +52,7 @@
               <img
                 :src="api.labelTemplates.getPreviewUrl(tpl.id)"
                 alt=""
-                class="h-10 w-20 shrink-0 rounded-sm bg-white object-cover object-left shadow"
+                class="h-10 w-20 shrink-0 rounded-sm bg-white object-cover object-left shadow-sm"
                 loading="lazy"
               />
               <span class="flex min-w-0 flex-col">
@@ -58,7 +60,8 @@
                 <span class="truncate text-xs text-muted-foreground">
                   {{ presetTitle(tpl.preset) || measurement.formatSize(tpl.width, tpl.height) }}
                   <template v-if="tpl.id === preferences.defaultTemplateId">
-                    · {{ $t("components.label_template.default").toLowerCase() }}</template
+                    ·
+                    {{ $t("components.label_template.default").toLowerCase() }}</template
                   >
                 </span>
               </span>
@@ -76,7 +79,7 @@
               v-else-if="previewUrl"
               :src="previewUrl"
               alt=""
-              class="max-h-48 max-w-full rounded-sm bg-white shadow"
+              class="max-h-48 max-w-full rounded-sm bg-white shadow-sm"
             />
             <div v-else class="flex h-36 items-center justify-center text-sm text-muted-foreground">
               {{ $t("components.label_template.print_dialog.select_placeholder") }}
@@ -87,7 +90,10 @@
                   size: measurement.formatSize(selectedTemplate.width, selectedTemplate.height),
                 })
               }}
-              <template v-if="isSheet"> · {{ $t("components.label_template.print_dialog.sheet_pdf_hint") }}</template>
+              <template v-if="isSheet">
+                ·
+                {{ $t("components.label_template.print_dialog.sheet_pdf_hint") }}</template
+              >
             </span>
           </div>
 
@@ -103,19 +109,20 @@
               <tr v-for="id in currentIds" :key="id" class="border-t">
                 <td class="truncate py-1.5 pr-2">{{ nameFor(id) }}</td>
                 <td class="w-20 py-1.5 text-right">
-                  <Input
+                  <NumberField
                     :model-value="getQuantity(id)"
-                    type="number"
-                    min="1"
-                    max="100"
+                    :min="1"
+                    :max="100"
                     class="h-8 w-16 text-center"
                     :aria-label="$t('components.label_template.print_dialog.copies')"
-                    @update:model-value="setQuantity(id, Number($event))"
+                    @update:model-value="v => setQuantity(id, v ?? 1)"
                   />
                 </td>
               </tr>
               <tr class="border-t">
-                <td class="py-1.5 text-muted-foreground">{{ $t("components.label_template.print_dialog.total") }}</td>
+                <td class="py-1.5 text-muted-foreground">
+                  {{ $t("components.label_template.print_dialog.total") }}
+                </td>
                 <td class="py-1.5 text-right font-semibold">
                   {{ totalLabels }}
                 </td>
@@ -158,7 +165,7 @@
       <!-- Actions -->
       <div class="flex flex-wrap items-center justify-between gap-2 border-t pt-3">
         <Button variant="outline" :disabled="!selectedTemplateId || isBusy" @click="handleDownload">
-          <MdiDownload class="mr-2 size-4" />
+          <Download class="mr-2 size-4" />
           {{
             isSheet || totalLabels > 1
               ? $t("components.label_template.print_dialog.download_pdf")
@@ -170,8 +177,8 @@
             {{ $t("global.cancel") }}
           </Button>
           <Button :disabled="!selectedTemplateId || isBusy" @click="handlePrint">
-            <MdiLoading v-if="isBusy" class="mr-2 size-4 animate-spin" />
-            <MdiPrinter v-else class="mr-2 size-4" />
+            <LoaderCircle v-if="isBusy" class="mr-2 size-4 animate-spin" />
+            <Printer v-else class="mr-2 size-4" />
             {{ printLabel }}
           </Button>
         </div>
@@ -181,15 +188,12 @@
 </template>
 
 <script setup lang="ts">
+  import { Download, LoaderCircle, Monitor, Printer } from "@lucide/vue";
   import { useI18n } from "vue-i18n";
   import { toast } from "@/components/ui/sonner";
-  import MdiDownload from "~icons/mdi/download";
-  import MdiPrinter from "~icons/mdi/printer";
-  import MdiLoading from "~icons/mdi/loading";
-  import MdiDesktopClassic from "~icons/mdi/desktop-classic";
   import { Button } from "@/components/ui/button";
   import { Label } from "@/components/ui/label";
-  import { Input } from "@/components/ui/input";
+  import { NumberField } from "@/components/ui/number-field";
   import { useDialog, DialogID } from "@/components/ui/dialog-provider/utils";
   import BaseModal from "@/components/App/CreateModal.vue";
 
@@ -275,7 +279,7 @@
       list.push({
         id: SERVER,
         label: t("components.label_template.print_dialog.label_printer"),
-        icon: MdiPrinter,
+        icon: Printer,
         disabled,
         disabledReason: disabled ? t("components.label_template.print_dialog.printer_not_for_sheets") : undefined,
         hint: disabled ? undefined : t("components.label_template.print_dialog.label_printer_hint"),
@@ -284,7 +288,7 @@
     list.push({
       id: BROWSER,
       label: t("components.label_template.print_dialog.this_browser"),
-      icon: MdiDesktopClassic,
+      icon: Monitor,
     });
     return list;
   });
@@ -303,10 +307,22 @@
   const isLoadingPreview = ref(false);
 
   async function renderBlob(format: "png" | "pdf", ids: string[]): Promise<Blob> {
-    const body = { format, pageSize: "Letter", showCutGuides: false, canvasData: "", skipLabels: 0 };
+    const body = {
+      format,
+      pageSize: "A4",
+      showCutGuides: false,
+      canvasData: "",
+      skipLabels: 0,
+    };
     return mode.value === "location"
-      ? api.labelTemplates.renderLocations(selectedTemplateId.value, { ...body, locationIds: ids })
-      : api.labelTemplates.render(selectedTemplateId.value, { ...body, itemIds: ids });
+      ? api.labelTemplates.renderLocations(selectedTemplateId.value, {
+          ...body,
+          locationIds: ids,
+        })
+      : api.labelTemplates.render(selectedTemplateId.value, {
+          ...body,
+          itemIds: ids,
+        });
   }
 
   async function updatePreview() {
@@ -386,14 +402,22 @@
   async function handleServerPrint() {
     isRendering.value = true;
     try {
-      const withQty = currentIds.value.map(id => ({ id, quantity: getQuantity(id) }));
+      const withQty = currentIds.value.map(id => ({
+        id,
+        quantity: getQuantity(id),
+      }));
       const result =
         mode.value === "location"
           ? await printLocationLabels(selectedTemplateId.value, withQty)
           : await printLabels(selectedTemplateId.value, withQty);
 
       if (result?.success) {
-        toast.success(result.message || t("components.label_template.toast.print_sent", { count: result.labelCount }));
+        toast.success(
+          result.message ||
+            t("components.label_template.toast.print_sent", {
+              count: result.labelCount,
+            })
+        );
         closeDialog(DialogID.PrintLabelTemplate);
       } else {
         toast.error(result?.message || t("components.label_template.toast.print_failed"));

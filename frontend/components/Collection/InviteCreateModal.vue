@@ -3,16 +3,13 @@
     <form class="flex min-w-0 flex-col gap-4" @submit.prevent="create">
       <FormTextField v-model="form.uses" :label="$t('collection.uses')" type="number" :required="true" />
 
-      <div class="flex w-full flex-col gap-1.5">
-        <Label class="cursor-pointer">{{ $t("collection.expires_at") }}</Label>
-        <VueDatePicker
-          v-model="form.expiresAt"
-          :enable-time-picker="true"
-          clearable
-          :dark="isDark"
-          :format="formatDateTime"
-        />
-      </div>
+      <FormDatePicker
+        :model-value="form.expiresAt"
+        :label="$t('collection.expires_at')"
+        time
+        :clearable="false"
+        @update:model-value="v => (form.expiresAt = v instanceof Date ? v : null)"
+      />
 
       <div class="mt-4 flex flex-row-reverse">
         <ButtonGroup>
@@ -27,17 +24,14 @@
 
 <script setup lang="ts">
   import { useI18n } from "vue-i18n";
-  import VueDatePicker from "@vuepic/vue-datepicker";
-  import "@vuepic/vue-datepicker/dist/main.css";
   import { DialogID } from "@/components/ui/dialog-provider/utils";
   import { useDialog } from "~/components/ui/dialog-provider";
   import BaseModal from "@/components/App/CreateModal.vue";
   import FormTextField from "~/components/Form/TextField.vue";
+  import FormDatePicker from "~/components/Form/DatePicker.vue";
   import { Button, ButtonGroup } from "~/components/ui/button";
-  import { Label } from "~/components/ui/label";
   import { toast } from "@/components/ui/sonner";
   import { useUserApi } from "~/composables/use-api";
-  import { darkThemes } from "~/lib/data/themes";
 
   const { t } = useI18n();
   const { activeDialog, closeDialog } = useDialog();
@@ -48,10 +42,6 @@
     uses: 1,
     expiresAt: defaultExpiry(),
   });
-
-  const isDark = useIsThemeInList(darkThemes);
-
-  const formatDateTime = (date: Date | string | number) => fmtDate(date, "human", "datetime");
 
   function defaultExpiry(): Date {
     return new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);

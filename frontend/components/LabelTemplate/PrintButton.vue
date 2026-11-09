@@ -1,9 +1,7 @@
 <script setup lang="ts">
+  import { ChevronDown, LoaderCircle, Printer } from "@lucide/vue";
   import { useI18n } from "vue-i18n";
   import { toast } from "@/components/ui/sonner";
-  import MdiPrinter from "~icons/mdi/printer";
-  import MdiChevronDown from "~icons/mdi/chevron-down";
-  import MdiLoading from "~icons/mdi/loading";
   import { Button, ButtonGroup } from "@/components/ui/button";
   import {
     DropdownMenu,
@@ -57,7 +55,9 @@
         openChooser();
       }
     } catch (e) {
-      toast.error(t("components.label_template.toast.print_failed"), { description: (e as Error).message });
+      toast.error(t("components.label_template.toast.print_failed"), {
+        description: (e as Error).message,
+      });
     } finally {
       busy.value = false;
     }
@@ -101,8 +101,8 @@
         :aria-label="$t('components.label_template.print_button.print_label')"
         @click="quickPrint"
       >
-        <MdiLoading v-if="busy" class="animate-spin" />
-        <MdiPrinter v-else />
+        <LoaderCircle v-if="busy" class="animate-spin" />
+        <Printer v-else />
         <span class="hidden md:inline">{{ $t("components.label_template.print_button.print_label") }}</span>
       </Button>
       <DropdownMenu>
@@ -113,14 +113,18 @@
             class="w-8 border-l border-l-white/30"
             :aria-label="$t('components.label_template.print_button.more')"
           >
-            <MdiChevronDown class="size-4" />
+            <ChevronDown class="size-4" />
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" class="w-80">
           <template v-if="isQuickPrintAvailable && defaultTemplate">
             <DropdownMenuItem class="flex-col items-start gap-0.5" @click="quickPrint">
               <span class="font-medium">
-                {{ $t("components.label_template.print_button.quick_with", { template: defaultTemplate.name }) }}
+                {{
+                  $t("components.label_template.print_button.quick_with", {
+                    template: defaultTemplate.name,
+                  })
+                }}
               </span>
               <span class="text-xs text-muted-foreground">
                 {{ $t("components.label_template.print_button.quick_hint") }}

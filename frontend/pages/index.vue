@@ -1,15 +1,8 @@
 <script setup lang="ts">
+  import { ArrowRight, Folder, Lock, LogIn, User, UserPlus } from "@lucide/vue";
+  import { DiscordIcon, GithubIcon, MastodonIcon } from "~/lib/brand-icons";
   import { useI18n } from "vue-i18n";
   import { toast } from "@/components/ui/sonner";
-  import MdiGithub from "~icons/mdi/github";
-  import MdiDiscord from "~icons/mdi/discord";
-  import MdiFolder from "~icons/mdi/folder";
-  import MdiAccount from "~icons/mdi/account";
-  import MdiAccountPlus from "~icons/mdi/account-plus";
-  import MdiLogin from "~icons/mdi/login";
-  import MdiArrowRight from "~icons/mdi/arrow-right";
-  import MdiLock from "~icons/mdi/lock";
-  import MdiMastodon from "~icons/mdi/mastodon";
   import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
   import { Button } from "@/components/ui/button";
   import LanguageSelector from "~/components/App/LanguageSelector.vue";
@@ -78,20 +71,6 @@
       loginWithOIDC();
     }
   });
-
-  const isEvilAccentTheme = useIsThemeInList([
-    "bumblebee",
-    "corporate",
-    "forest",
-    "pastel",
-    "wireframe",
-    "black",
-    "dracula",
-    "autumn",
-    "acid",
-  ]);
-  const isEvilForegroundTheme = useIsThemeInList(["light", "aqua", "fantasy", "autumn", "night"]);
-  const isLofiTheme = useIsThemeInList(["lofi"]);
 
   const route = useRoute();
   const router = useRouter();
@@ -237,35 +216,23 @@
       </svg>
     </div>
     <div class="relative z-10">
-      <header
-        class="mx-auto p-4 sm:flex sm:items-end sm:p-6 lg:p-14"
-        :class="{
-          'text-accent': !isEvilAccentTheme,
-          'text-white': isLofiTheme,
-        }"
-      >
+      <header class="mx-auto p-4 text-accent sm:flex sm:items-end sm:p-6 lg:p-14">
         <div class="z-10">
           <h2 class="mt-1 flex text-4xl font-bold tracking-tight sm:text-5xl lg:text-6xl">
             HomeB
             <AppLogo class="-mb-4 w-12" />
             x
           </h2>
-          <p
-            class="ml-1 text-lg"
-            :class="{
-              'text-foreground': !isEvilForegroundTheme,
-              'text-white': isLofiTheme,
-            }"
-          >
+          <p class="ml-1 text-lg text-foreground">
             {{ $t("index.tagline") }}
           </p>
         </div>
         <TooltipProvider :delay-duration="0">
-          <div class="z-10 ml-auto mt-6 flex items-center gap-4 sm:mt-0">
+          <div class="z-10 mt-6 ml-auto flex items-center gap-4 sm:mt-0">
             <Tooltip>
               <TooltipTrigger as-child>
-                <a href="https://github.com/sysadminsmedia/homebox" target="_blank" rel="noopener noreferrer">
-                  <MdiGithub class="size-8" />
+                <a href="https://github.com/frozenbug-dev/homebox" target="_blank" rel="noopener noreferrer">
+                  <GithubIcon class="size-8" />
                 </a>
               </TooltipTrigger>
               <TooltipContent>{{ $t("global.github") }}</TooltipContent>
@@ -274,7 +241,7 @@
             <Tooltip>
               <TooltipTrigger as-child>
                 <a href="https://noc.social/@sysadminszone" target="_blank" rel="noopener noreferrer">
-                  <MdiMastodon class="size-8" />
+                  <MastodonIcon class="size-8" />
                 </a>
               </TooltipTrigger>
               <TooltipContent>{{ $t("global.follow_dev") }}</TooltipContent>
@@ -283,7 +250,7 @@
             <Tooltip>
               <TooltipTrigger as-child>
                 <a href="https://discord.gg/aY4DCkpNA9" target="_blank" rel="noopener noreferrer">
-                  <MdiDiscord class="size-8" />
+                  <DiscordIcon class="size-8" />
                 </a>
               </TooltipTrigger>
               <TooltipContent>{{ $t("global.join_discord") }}</TooltipContent>
@@ -292,7 +259,7 @@
             <Tooltip>
               <TooltipTrigger as-child>
                 <a href="https://homebox.software/en/" target="_blank" rel="noopener noreferrer">
-                  <MdiFolder class="size-8" />
+                  <Folder class="size-8" />
                 </a>
               </TooltipTrigger>
               <TooltipContent>{{ $t("global.read_docs") }}</TooltipContent>
@@ -306,10 +273,10 @@
         <div>
           <Transition name="slide-fade">
             <form v-if="registerForm" id="register-form" name="register" method="post" @submit.prevent="registerUser">
-              <Card class="md:w-[500px]">
+              <Card class="md:w-125">
                 <CardHeader>
                   <CardTitle class="flex items-center gap-2">
-                    <MdiAccount class="mr-1 size-7" />
+                    <User class="mr-1 size-7" />
                     {{ $t("index.register") }}
                   </CardTitle>
                 </CardHeader>
@@ -333,7 +300,7 @@
                     :required="true"
                     data-testid="name-input"
                   />
-                  <div v-if="!(groupToken == '')" class="pb-1 pt-4 text-center">
+                  <div v-if="!(groupToken == '')" class="pt-4 pb-1 text-center">
                     <p>{{ $t("index.joining_group") }}</p>
                     <button type="button" class="text-xs underline" @click="groupToken = ''">
                       {{ $t("index.dont_join_group") }}
@@ -366,10 +333,10 @@
               </Card>
             </form>
             <form v-else id="login-form" name="login" method="post" @submit.prevent="login">
-              <Card class="md:w-[500px]">
+              <Card class="md:w-125">
                 <CardHeader>
                   <CardTitle class="flex items-center gap-2">
-                    <MdiAccount class="mr-1 size-7" />
+                    <User class="mr-1 size-7" />
                     {{ $t("index.login") }}
                   </CardTitle>
                 </CardHeader>
@@ -402,7 +369,7 @@
                     :required="true"
                   />
                   <div class="flex items-center justify-between">
-                    <div class="max-w-[140px]">
+                    <div class="max-w-35">
                       <FormCheckbox v-model="remember" :label="$t('index.remember_me')" />
                     </div>
                     <NuxtLink to="/forgot-password" class="text-sm hover:underline">
@@ -453,17 +420,17 @@
             >
               <div class="relative mx-2">
                 <div
-                  class="absolute inset-0 flex items-center justify-center transition-transform duration-300 group-hover:rotate-[360deg]"
+                  class="absolute inset-0 flex items-center justify-center transition-transform duration-300 group-hover:rotate-360"
                 >
-                  <MdiAccountPlus v-if="!registerForm" class="size-5 group-hover:hidden" />
-                  <MdiLogin v-else class="size-5 group-hover:hidden" />
-                  <MdiArrowRight class="hidden size-5 group-hover:block" />
+                  <UserPlus v-if="!registerForm" class="size-5 group-hover:hidden" />
+                  <LogIn v-else class="size-5 group-hover:hidden" />
+                  <ArrowRight class="hidden size-5 group-hover:block" />
                 </div>
               </div>
               {{ registerForm ? $t("index.login") : $t("index.register") }}
             </Button>
             <p v-else class="inline-flex items-center gap-2 text-sm italic">
-              <MdiLock class="inline-block size-4" />
+              <Lock class="inline-block size-4" />
               {{ $t("index.disabled_registration") }}
             </p>
           </div>

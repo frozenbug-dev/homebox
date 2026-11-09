@@ -1,4 +1,9 @@
-import type { LabelTemplateCreate, LabelTemplateOut, LabelTemplateUpdate } from "~~/lib/api/types/data-contracts";
+import type {
+  LabelTemplateCreate,
+  LabelTemplateOut,
+  LabelTemplateUpdate,
+  LabelmakerSheetLayout,
+} from "~~/lib/api/types/data-contracts";
 
 export function useLabelTemplates() {
   const api = useUserApi();
@@ -84,11 +89,17 @@ export function useBarcodeFormats() {
 export function useLabelTemplateActions() {
   const api = useUserApi();
 
+  // The list is shared under one key and stays mounted (the print dialog in the
+  // layout uses it), so a page that opens it later would get the stale copy.
+  // Reload it after every change.
+  const refreshList = () => refreshNuxtData("label-templates");
+
   async function create(body: LabelTemplateCreate): Promise<LabelTemplateOut | null> {
     const { data, error } = await api.labelTemplates.create(body);
     if (error) {
       throw new Error("Failed to create label template");
     }
+    await refreshList();
     return data;
   }
 
@@ -97,6 +108,7 @@ export function useLabelTemplateActions() {
     if (error) {
       throw new Error("Failed to update label template");
     }
+    await refreshList();
     return data;
   }
 
@@ -105,6 +117,7 @@ export function useLabelTemplateActions() {
     if (error) {
       throw new Error("Failed to delete label template");
     }
+    await refreshList();
   }
 
   async function duplicate(id: string): Promise<LabelTemplateOut | null> {
@@ -112,6 +125,7 @@ export function useLabelTemplateActions() {
     if (error) {
       throw new Error("Failed to duplicate label template");
     }
+    await refreshList();
     return data;
   }
 
@@ -119,7 +133,7 @@ export function useLabelTemplateActions() {
     id: string,
     itemIds: string[],
     format: string = "png",
-    pageSize: string = "Letter",
+    pageSize: string = "A4",
     showCutGuides: boolean = false,
     canvasData?: string
   ): Promise<Blob> {
@@ -137,7 +151,7 @@ export function useLabelTemplateActions() {
     id: string,
     locationIds: string[],
     format: string = "png",
-    pageSize: string = "Letter",
+    pageSize: string = "A4",
     showCutGuides: boolean = false
   ): Promise<Blob> {
     return api.labelTemplates.renderLocations(id, { locationIds, format, pageSize, showCutGuides, skipLabels: 0 });
@@ -167,6 +181,8 @@ export interface PresetInfo {
   kind: PresetKind;
   /** labels per sheet, for sheet presets */
   perSheet?: number;
+  /** where each label sits on the page, for sheet presets */
+  layout?: LabelmakerSheetLayout;
   width: number;
   height: number;
 }
@@ -188,6 +204,7 @@ export function useLabelPresetLookup() {
         name: p.name,
         kind,
         perSheet: p.sheetLayout ? p.sheetLayout.columns * p.sheetLayout.rows : undefined,
+        layout: p.sheetLayout ?? undefined,
         width: p.width,
         height: p.height,
       });

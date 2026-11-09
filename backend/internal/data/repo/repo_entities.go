@@ -109,6 +109,12 @@ type (
 		ModelNumber  string `json:"modelNumber"  validate:"max=255" extensions:"x-nullable,x-omitempty"`
 		Manufacturer string `json:"manufacturer" validate:"max=255" extensions:"x-nullable,x-omitempty"`
 
+		// Purchase and warranty — optional at create time, so the create dialog
+		// can set them without a follow-up update.
+		PurchasePrice    float64    `json:"purchasePrice"    extensions:"x-nullable,x-omitempty"`
+		WarrantyExpires  types.Date `json:"warrantyExpires"  extensions:"x-nullable,x-omitempty"`
+		LifetimeWarranty bool       `json:"lifetimeWarranty" extensions:"x-nullable,x-omitempty"`
+
 		// Edges
 		TagIDs []uuid.UUID `json:"tagIds"`
 	}
@@ -152,13 +158,14 @@ type (
 	}
 
 	EntityPatch struct {
-		ID           uuid.UUID   `json:"id"`
-		Quantity     *float64    `json:"quantity,omitempty" extensions:"x-nullable,x-omitempty"`
-		ImportRef    *string     `json:"-"                  extensions:"x-nullable,x-omitempty"`
-		ParentID     uuid.UUID   `json:"parentId"           extensions:"x-nullable,x-omitempty"`
-		LocationID   uuid.UUID   `json:"locationId"         extensions:"x-nullable,x-omitempty"`
-		EntityTypeID uuid.UUID   `json:"entityTypeId"       extensions:"x-nullable,x-omitempty"`
-		TagIDs       []uuid.UUID `json:"tagIds"             extensions:"x-nullable,x-omitempty"`
+		ID            uuid.UUID   `json:"id"`
+		Quantity      *float64    `json:"quantity,omitempty" extensions:"x-nullable,x-omitempty"`
+		PurchasePrice *float64    `json:"purchasePrice,omitempty" extensions:"x-nullable,x-omitempty"`
+		ImportRef     *string     `json:"-"                  extensions:"x-nullable,x-omitempty"`
+		ParentID      uuid.UUID   `json:"parentId"           extensions:"x-nullable,x-omitempty"`
+		LocationID    uuid.UUID   `json:"locationId"         extensions:"x-nullable,x-omitempty"`
+		EntityTypeID  uuid.UUID   `json:"entityTypeId"       extensions:"x-nullable,x-omitempty"`
+		TagIDs        []uuid.UUID `json:"tagIds"             extensions:"x-nullable,x-omitempty"`
 	}
 
 	EntitySummary struct {
@@ -1303,8 +1310,14 @@ func (r *EntityRepository) Create(ctx context.Context, gid uuid.UUID, data Entit
 		SetDescription(data.Description).
 		SetModelNumber(data.ModelNumber).
 		SetManufacturer(data.Manufacturer).
+		SetPurchasePrice(data.PurchasePrice).
+		SetLifetimeWarranty(data.LifetimeWarranty).
 		SetGroupID(gid).
 		SetAssetID(int64(data.AssetID))
+
+	if t := data.WarrantyExpires.Time(); !t.IsZero() {
+		q.SetWarrantyExpires(t)
+	}
 
 	if parentID != uuid.Nil {
 		q.SetParentID(parentID)
@@ -1361,6 +1374,8 @@ type EntityCreateFromTemplate struct {
 	EntityTypeID     uuid.UUID
 	Insured          bool
 	LifetimeWarranty bool
+	PurchasePrice    float64
+	WarrantyExpires  types.Date
 }
 
 // CreateFromTemplate creates an entity with all template data in a single transaction.
@@ -1454,7 +1469,12 @@ func (r *EntityRepository) CreateFromTemplate(ctx context.Context, gid uuid.UUID
 		SetManufacturer(data.Manufacturer).
 		SetModelNumber(data.ModelNumber).
 		SetLifetimeWarranty(data.LifetimeWarranty).
-		SetWarrantyDetails(data.WarrantyDetails)
+		SetWarrantyDetails(data.WarrantyDetails).
+		SetPurchasePrice(data.PurchasePrice)
+
+	if t := data.WarrantyExpires.Time(); !t.IsZero() {
+		entityBuilder.SetWarrantyExpires(t)
+	}
 
 	if templateParentID != uuid.Nil {
 		entityBuilder.SetParentID(templateParentID)
@@ -1813,6 +1833,10 @@ func (r *EntityRepository) UpdateByGroup(ctx context.Context, gid uuid.UUID, dat
 		recordSpanError(span, err)
 		return EntityOut{}, err
 	}
+	if err := r.assertNoParentCycle(ctx, data.ID, parentID); err != nil {
+		recordSpanError(span, err)
+		return EntityOut{}, err
+	}
 	span.SetAttributes(attribute.Bool("entity.location_override.set", locationOverride != uuid.Nil))
 
 	q := r.db.Entity.Update().Where(entity.ID(data.ID), entity.HasGroupWith(group.ID(gid))).
@@ -2104,6 +2128,7 @@ func (r *EntityRepository) Patch(ctx context.Context, gid, id uuid.UUID, data En
 			attribute.String("entity.id", id.String()),
 			attribute.Bool("patch.import_ref.set", data.ImportRef != nil),
 			attribute.Bool("patch.quantity.set", data.Quantity != nil),
+			attribute.Bool("patch.purchase_price.set", data.PurchasePrice != nil),
 			attribute.Bool("patch.parent_id.set", data.ParentID != uuid.Nil),
 			attribute.Bool("patch.entity_type_id.set", data.EntityTypeID != uuid.Nil),
 			attribute.Bool("patch.tag_ids.set", data.TagIDs != nil),
@@ -2124,6 +2149,14 @@ func (r *EntityRepository) Patch(ctx context.Context, gid, id uuid.UUID, data En
 	}
 	if data.TagIDs != nil {
 		if err := assertTagsInGroup(ctx, r.db.Tag, gid, data.TagIDs); err != nil {
+			recordSpanError(span, err)
+			return err
+		}
+	}
+	// Checked before the transaction opens; a location-only patch can make the
+	// location the parent, so it gets the same check.
+	for _, candidate := range []uuid.UUID{data.ParentID, data.LocationID} {
+		if err := r.assertNoParentCycle(ctx, id, candidate); err != nil {
 			recordSpanError(span, err)
 			return err
 		}
@@ -2160,6 +2193,15 @@ func (r *EntityRepository) Patch(ctx context.Context, gid, id uuid.UUID, data En
 		}
 
 		q.SetQuantity(*data.Quantity)
+	}
+
+	if data.PurchasePrice != nil {
+		if p := *data.PurchasePrice; math.IsNaN(p) || math.IsInf(p, 0) || p < 0 {
+			err := fmt.Errorf("patch entity: invalid purchase price: must be a finite, non-negative number")
+			recordSpanError(span, err)
+			return err
+		}
+		q.SetPurchasePrice(*data.PurchasePrice)
 	}
 
 	switch {
@@ -2951,6 +2993,12 @@ func (r *EntityRepository) UpdateContainer(ctx context.Context, gid, id uuid.UUI
 			validateSpan.End()
 			recordSpanError(span, wrapped)
 			return EntityOut{}, wrapped
+		}
+		if err := r.assertNoParentCycle(validateCtx, id, data.ParentID); err != nil {
+			recordSpanError(validateSpan, err)
+			validateSpan.End()
+			recordSpanError(span, err)
+			return EntityOut{}, err
 		}
 		validateSpan.End()
 	}

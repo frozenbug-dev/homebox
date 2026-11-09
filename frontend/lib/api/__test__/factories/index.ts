@@ -39,11 +39,18 @@ function user(): UserRegistration {
   };
 }
 
-function location(parentId: string | null = null): Partial<EntityCreate> & { name: string; description: string } {
+/**
+ * location builds a create request for a location. entityTypeId must be the
+ * group's location type; without it the backend creates an item instead.
+ */
+function location(entityTypeId: string, parentId: string | null = null): EntityCreate {
   return {
     parentId,
+    entityTypeId,
     name: faker.location.city(),
     description: faker.lorem.sentence(),
+    quantity: 1,
+    tagIds: [],
   };
 }
 
@@ -52,6 +59,7 @@ function tag(): TagCreate {
     name: faker.lorem.word(),
     description: faker.lorem.sentence(),
     color: faker.color.rgb(),
+    icon: "",
   };
 }
 

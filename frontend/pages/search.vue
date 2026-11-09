@@ -1,13 +1,11 @@
 <script setup lang="ts">
+  import { LoaderCircle, SearchIcon, Trash2 } from "@lucide/vue";
   import { useI18n } from "vue-i18n";
   import { toast } from "@/components/ui/sonner";
   import { Input } from "~/components/ui/input";
   import type { EntitySummary, EntityTypeSummary, TagSummary } from "~~/lib/api/types/data-contracts";
   import { useTagStore } from "~/stores/tags";
   import { useLocationStore } from "~~/stores/locations";
-  import MdiLoading from "~icons/mdi/loading";
-  import MdiMagnify from "~icons/mdi/magnify";
-  import MdiDelete from "~icons/mdi/delete";
   import { Button } from "@/components/ui/button";
   import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
   import { Label } from "@/components/ui/label";
@@ -16,7 +14,7 @@
   import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
   import BaseContainer from "@/components/Base/Container.vue";
   import SearchFilter from "~/components/Search/Filter.vue";
-  import ItemViewSelectable from "~/components/Item/View/Selectable.vue";
+  import ItemList from "~/components/Items/List.vue";
   import type { LocationQueryRaw } from "vue-router";
 
   const { t } = useI18n();
@@ -420,14 +418,7 @@
     await search();
   }
 
-  const pagination = proxyRefs({
-    page,
-    pageSize,
-    totalSize: total,
-    setPage: (newPage: number) => {
-      page.value = newPage;
-    },
-  });
+  const pageCount = computed(() => Math.max(1, Math.ceil(total.value / pageSize.value)));
 
   // saved search
 
@@ -473,14 +464,14 @@
     <div v-if="locations && tags">
       <div class="flex flex-wrap items-end gap-4 md:flex-nowrap">
         <div class="w-full">
-          <Input v-model:model-value="query" :placeholder="$t('global.search')" class="h-12" />
-          <div v-if="byAssetId" class="pl-2 pt-2 text-sm">
+          <Input v-model:model-value="query" :placeholder="$t('global.search')" class="h-10" />
+          <div v-if="byAssetId" class="pt-2 pl-2 text-sm">
             <p>{{ $t("items.query_id", { id: parsedAssetId }) }}</p>
           </div>
         </div>
-        <Button class="mb-auto h-12 w-full md:w-auto" @click.prevent="submit">
-          <MdiLoading v-if="loading" class="animate-spin" />
-          <MdiMagnify v-else />
+        <Button class="mb-auto h-10 w-full md:w-auto" @click.prevent="submit">
+          <LoaderCircle v-if="loading" class="animate-spin" />
+          <SearchIcon v-else />
           {{ $t("global.search") }}
         </Button>
       </div>
@@ -497,7 +488,9 @@
             <Label class="flex cursor-pointer items-center">
               <Switch v-model="includeArchived" class="ml-auto" />
               <div class="grow" />
-              <span class="text-right"> {{ $t("items.include_archive") }} </span>
+              <span class="text-right">
+                {{ $t("items.include_archive") }}
+              </span>
             </Label>
             <Label class="flex cursor-pointer items-center">
               <Switch v-model="fieldSelector" class="ml-auto" />
@@ -517,12 +510,16 @@
             <Label class="flex cursor-pointer items-center">
               <Switch v-model="onlyWithoutPhoto" class="ml-auto" />
               <div class="grow" />
-              <span class="text-right"> {{ $t("items.only_without_photo") }} </span>
+              <span class="text-right">
+                {{ $t("items.only_without_photo") }}
+              </span>
             </Label>
             <Label class="flex cursor-pointer items-center">
               <Switch v-model="onlyWithPhoto" class="ml-auto" />
               <div class="grow" />
-              <span class="text-right"> {{ $t("items.only_with_photo") }} </span>
+              <span class="text-right">
+                {{ $t("items.only_with_photo") }}
+              </span>
             </Label>
             <Label class="flex cursor-pointer flex-col gap-2">
               <span class="text-right">
@@ -535,14 +532,30 @@
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="name"> {{ $t("items.name") }} </SelectItem>
-                  <SelectItem value="createdAt"> {{ $t("items.created_at") }} </SelectItem>
-                  <SelectItem value="updatedAt"> {{ $t("items.updated_at") }} </SelectItem>
-                  <SelectItem value="assetId"> {{ $t("items.asset_id") }} </SelectItem>
-                  <SelectItem value="purchasePrice"> {{ $t("items.purchase_price") }} </SelectItem>
-                  <SelectItem value="location"> {{ $t("items.location") }} </SelectItem>
-                  <SelectItem value="quantity"> {{ $t("items.quantity") }} </SelectItem>
-                  <SelectItem value="insured"> {{ $t("items.insured") }} </SelectItem>
-                  <SelectItem value="archived"> {{ $t("items.archived") }} </SelectItem>
+                  <SelectItem value="createdAt">
+                    {{ $t("items.created_at") }}
+                  </SelectItem>
+                  <SelectItem value="updatedAt">
+                    {{ $t("items.updated_at") }}
+                  </SelectItem>
+                  <SelectItem value="assetId">
+                    {{ $t("items.asset_id") }}
+                  </SelectItem>
+                  <SelectItem value="purchasePrice">
+                    {{ $t("items.purchase_price") }}
+                  </SelectItem>
+                  <SelectItem value="location">
+                    {{ $t("items.location") }}
+                  </SelectItem>
+                  <SelectItem value="quantity">
+                    {{ $t("items.quantity") }}
+                  </SelectItem>
+                  <SelectItem value="insured">
+                    {{ $t("items.insured") }}
+                  </SelectItem>
+                  <SelectItem value="archived">
+                    {{ $t("items.archived") }}
+                  </SelectItem>
                 </SelectContent>
               </Select>
             </Label>
@@ -578,7 +591,7 @@
                   {{ saved.name }}
                 </Button>
                 <Button variant="destructive" size="icon" @click="deleteSavedSearch(saved.id)">
-                  <MdiDelete />
+                  <Trash2 />
                 </Button>
               </div>
               <p v-if="preferences.savedSearches.length === 0" class="text-sm text-muted-foreground">
@@ -592,7 +605,9 @@
                 :placeholder="$t('items.saved_search_name')"
                 @keydown.enter="saveCurrentSearch"
               />
-              <Button class="h-10" @click="saveCurrentSearch"> {{ $t("global.save") }} </Button>
+              <Button class="h-10" @click="saveCurrentSearch">
+                {{ $t("global.save") }}
+              </Button>
             </div>
           </PopoverContent>
         </Popover>
@@ -629,7 +644,9 @@
                 <SelectValue :placeholder="$t('items.select_field')" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem v-for="field in allFields" :key="field" :value="field"> {{ field }} </SelectItem>
+                <SelectItem v-for="field in allFields" :key="field" :value="field">
+                  {{ field }}
+                </SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -647,7 +664,7 @@
             </Select>
           </div>
           <Button variant="destructive" type="button" size="icon" class="my-auto" @click="fieldTuples.splice(idx, 1)">
-            <MdiDelete />
+            <Trash2 />
           </Button>
         </div>
         <Button type="button" size="sm" class="mt-2" @click="() => fieldTuples.push(['', ''])">
@@ -657,14 +674,34 @@
     </div>
 
     <section>
-      <ItemViewSelectable
-        :title="$t('global.results')"
-        :items="items"
-        :location-flat-tree="locationFlatTree"
-        :pagination="pagination"
-        disable-sort
-        @refresh="async () => search()"
+      <h2 class="mt-6 mb-1 text-[13px] font-semibold text-foreground/80">
+        {{ $t("global.results") }}
+        <span class="ml-1 font-normal text-muted-foreground tabular-nums">{{ total }}</span>
+      </h2>
+      <ItemList
+        class="-mx-1.5"
+        :rows="items"
+        :total="total"
+        :columns="{
+          asset: true,
+          place: true,
+          tags: true,
+          quantity: true,
+          price: true,
+          added: true,
+        }"
+        bare
+        @changed="search()"
       />
+      <nav v-if="pageCount > 1" class="flex items-center justify-end gap-2 py-3 text-sm text-muted-foreground">
+        <Button variant="outline" size="sm" :disabled="page <= 1" @click="page = page - 1">
+          {{ $t("shell.resource.previous_page") }}
+        </Button>
+        <span class="tabular-nums">{{ page }} / {{ pageCount }}</span>
+        <Button variant="outline" size="sm" :disabled="page >= pageCount" @click="page = page + 1">
+          {{ $t("shell.resource.next_page") }}
+        </Button>
+      </nav>
     </section>
   </BaseContainer>
 </template>

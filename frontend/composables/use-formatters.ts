@@ -1,5 +1,6 @@
 import { format, formatDistance } from "date-fns";
 import { reactive } from "vue";
+import { useI18n } from "vue-i18n";
 /* eslint import/namespace: ['error', { allowComputed: true }] */
 import * as Locales from "date-fns/locale";
 import { isDateOnlyString, parseDateOnly } from "~/lib/datelib/dateOnly";
@@ -43,6 +44,13 @@ export async function useFormatCurrency() {
 
 export type DateTimeFormat = "relative" | "long" | "short" | "human";
 export type DateTimeType = "date" | "time" | "datetime";
+
+/** Reactive locale for formatting dates/numbers: the format override, else the UI language. */
+export function useFormatLocale() {
+  const { locale } = useI18n();
+  const preferences = useViewPreferences();
+  return computed(() => preferences.value.overrideFormatLocale || (locale.value as string) || "en-US");
+}
 
 export function getLocaleCode() {
   const { $i18nGlobal } = useNuxtApp();

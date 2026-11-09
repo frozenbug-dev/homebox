@@ -351,7 +351,7 @@
         "follow_dev": "Geliştiriciyi takip edin",
         "footer": {
             "api_link": "'<a href=\"https://homebox.software/en/api/\" target=\"_blank\">'API'</a>'",
-            "version_link": "'<'a href=\"https://github.com/sysadminsmedia/homebox/releases/tag/{ version }\" target=\"_blank\"'>' Sürüm: { version } Yapı: { build }'</a>"
+            "version_link": "'<'a href=\"https://github.com/frozenbug-dev/homebox/releases/tag/{ version }\" target=\"_blank\"'>' Sürüm: { version } Yapı: { build }'</a>"
         },
         "github": "GitHub Projesi",
         "insured": "Sigortalı",
@@ -633,7 +633,6 @@
         "delete_account_confirm": "Hesabınızı silmek istediğinizden emin misiniz? Grubunuzun son üyesiyseniz tüm verileriniz silinir. Bu işlem geri alınamaz.",
         "delete_account_sub": "Hesabınızı ve ona bağlı tüm verileri silin. Bu işlem geri alınamaz.",
         "delete_notifier_confirm": "Bu uyarıcıyı silmek istediğinizden emin misiniz?",
-        "display_legacy_header": "{ currentValue, select, true {Eski Başlığı Devre Dışı Bırak} false {Eski Başlığı Etkinleştir} other {Vurulmadı}}",
         "enabled": "Etkinleştirildi",
         "example": "Örnek",
         "group_settings": "Grup Ayarları",
@@ -649,8 +648,6 @@
         "notifiers_sub": "Yaklaşan bakım hatırlatmaları için bildirimler alın",
         "override_locale": "Tarih ve Para Birimi Dilini Geçersiz Kıl",
         "test": "Test",
-        "theme_settings": "Tema Ayarları",
-        "theme_settings_sub": "Tema ayarları tarayıcınızın yerel depolama alanında saklanır. Temayı istediğiniz zaman değiştirebilirsiniz. \nTemanızı ayarlamakta sorun yaşıyorsanız, tarayıcınızı yenilemeyi deneyin.",
         "toast": {
             "account_deleted": "Hesabınız silindi.",
             "failed_change_password": "Şifre değiştirilemedi.",

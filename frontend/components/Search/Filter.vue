@@ -3,11 +3,11 @@
     <PopoverTrigger as-child>
       <Button size="sm" variant="outline" class="group/filter">
         {{ label }} {{ len }}
-        <MdiChevronDown class="transition-transform group-data-[state=open]/filter:rotate-180" />
+        <ChevronDown class="transition-transform group-data-[state=open]/filter:rotate-180" />
       </Button>
     </PopoverTrigger>
     <PopoverContent class="z-40 p-0">
-      <div class="p-4 shadow-sm">
+      <div class="p-4 shadow-xs">
         <Input v-model="search" type="text" :placeholder="$t('components.search.filter.search_placeholder')" />
       </div>
       <div class="max-h-72 divide-y overflow-y-auto">
@@ -42,7 +42,7 @@
 </template>
 
 <script setup lang="ts">
-  import MdiChevronDown from "~icons/mdi/chevron-down";
+  import { ChevronDown } from "@lucide/vue";
   import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
   import { Button } from "@/components/ui/button";
   import { Checkbox } from "@/components/ui/checkbox";

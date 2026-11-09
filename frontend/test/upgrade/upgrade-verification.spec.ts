@@ -299,68 +299,6 @@ test.describe("HomeBox Upgrade Verification", () => {
     }
   });
 
-  test("verify theme can be adjusted", async ({ page }) => {
-    const firstUser = testData.users?.[0];
-    if (!firstUser) {
-      throw new Error("No users found in test data");
-    }
-
-    await page.goto("/");
-    await page.fill("input[type='text']", firstUser.email);
-    await page.fill("input[type='password']", firstUser.password);
-    await page.click("button[type='submit']");
-    await expect(page).toHaveURL("/home", { timeout: 10000 });
-
-    await page.waitForSelector("body", { state: "visible" });
-
-    // Look for theme toggle (usually a sun/moon icon or settings)
-    // Common selectors for theme toggles
-    const themeToggle = page
-      .locator(
-        "button[aria-label*='theme'], button[aria-label*='Theme'], " +
-          "button:has-text('Dark'), button:has-text('Light'), " +
-          "[data-theme-toggle], .theme-toggle"
-      )
-      .first();
-
-    if ((await themeToggle.count()) > 0) {
-      // Get initial theme state (could be from class, attribute, or computed style)
-      const bodyBefore = page.locator("body");
-      const classNameBefore = (await bodyBefore.getAttribute("class")) || "";
-
-      // Click theme toggle
-      await themeToggle.click();
-      // Wait for theme change to complete
-      await page.waitForTimeout(500);
-
-      // Get theme state after toggle
-      const classNameAfter = (await bodyBefore.getAttribute("class")) || "";
-
-      // Verify that something changed
-      expect(classNameBefore).not.toBe(classNameAfter);
-
-      console.log(`✓ Theme toggle working (${classNameBefore} -> ${classNameAfter})`);
-    } else {
-      // Try to find theme in settings
-      const settingsLink = page.locator("a[href*='setting'], a[href*='profile']").first();
-
-      if ((await settingsLink.count()) > 0) {
-        await settingsLink.click();
-        await page.waitForLoadState("networkidle");
-
-        const themeOption = page.locator("select[name*='theme'], button:has-text('Theme')").first();
-
-        if ((await themeOption.count()) > 0) {
-          console.log("✓ Theme settings found");
-        } else {
-          console.log("! Could not find theme toggle - feature may not be easily accessible");
-        }
-      } else {
-        console.log("! Could not find theme controls");
-      }
-    }
-  });
-
   test("verify data counts match expectations", async ({ page }) => {
     const firstUser = testData.users?.[0];
     if (!firstUser) {

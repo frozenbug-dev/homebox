@@ -1,7 +1,7 @@
 <template>
   <div
     ref="cardRef"
-    class="absolute left-0 top-0 z-10 w-[250px] cursor-pointer rounded-lg border border-border bg-background/85 p-2 shadow-lg backdrop-blur-sm"
+    class="absolute top-0 left-0 z-10 w-[250px] cursor-pointer rounded-lg border border-border bg-background/85 p-2 shadow-lg backdrop-blur-xs"
     :style="cardStyle"
     @click="handleClick"
   >
@@ -253,7 +253,7 @@
     if (props.entity?.item?.id) {
       navigateTo(`/item/${props.entity.item.id}`);
     } else if (props.entity?.location?.id) {
-      navigateTo(`/location/${props.entity.location.id}`);
+      navigateTo(`/locations?place=${props.entity.location.id}`);
     } else if (props.entity?.childItems && props.entity.childItems.length > 0) {
       navigateTo(`/assets/${props.entity.childItems[0]!.assetId}`);
     }

@@ -150,7 +150,7 @@
         "follow_dev": "Sledi razvijjalcu",
         "footer": {
             "api_link": "'<a href=\"https://homebox.software/en/api/\" target=\"_blank\">'API'</a>'",
-            "version_link": "'<'a href=\"https://github.com/sysadminsmedia/homebox/releases/tag/{ version }\" target=\"_blank\"'>' Verzija: { version } Gradnja: { build } '</a>'"
+            "version_link": "'<'a href=\"https://github.com/frozenbug-dev/homebox/releases/tag/{ version }\" target=\"_blank\"'>' Verzija: { version } Gradnja: { build } '</a>'"
         },
         "github": "GitHub projekt",
         "insured": "Zavarovano",
@@ -417,7 +417,6 @@
         "delete_account_confirm": "Ste prepričani, da želite izbrisati svoj račun? Če ste zadnji član v svoji skupini, bodo vsi vaši podatki izbrisani. Tega dejanja ni mogoče razveljaviti.",
         "delete_account_sub": "Izbrišite svoj račun in vse z njim povezane podatke. Tega ni mogoče razveljaviti.",
         "delete_notifier_confirm": "Ali ste prepričani, da želite izbrisati to obveščanje?",
-        "display_legacy_header": "{ currentValue, select, true {Onemogoči staro glavo strani} false {Omogoči staro glavo strani} other {Ni pritisnjeno}}",
         "enabled": "Omogočeno",
         "example": "Primer",
         "group_settings": "Nastavitve skupine",
@@ -432,8 +431,6 @@
         "notifiers_sub": "Prejemajte obvestila za prihajajoče opomnike o vzdrževanju",
         "override_locale": "Spremeni jezik datuma in valute",
         "test": "Preizkus",
-        "theme_settings": "Nastavitve teme",
-        "theme_settings_sub": "Nastavitve teme so shranjene v lokalni shrambi vašega brskalnika. Temo lahko kadar koli spremenite. Če\n imate težave z nastavitvijo teme, poskusite osvežiti brskalnik.",
         "toast": {
             "account_deleted": "Vaš račun je bil izbrisan.",
             "failed_change_password": "Sprememba gesla ni uspela.",
@@ -464,7 +461,7 @@
             "input_placeholder": "Vnesite tukaj",
             "instruction_1": "Homebox Generator Nalepk je orodje za pomoč pri tiskanju nalepk za vaš Homebox inventar. Te so namenjene za\n tisk vnaprej, da imate več nalepk pripravljenih za uporabo",
             "instruction_2": "Te nalepke delujejo z uporabo URL naslovne QR kode in ID sredstva na nalepki. Če ste onemogočili\nIDje sredstev v vaših Homebox nastavitvah lahko to orodje še vedno uporabljate, vendar se IDji sredstev ne bodo nanašali na noben predmet",
-            "instruction_3": "Ta funkcija je v zgodnjih stopnjah razvoja in se lahko spremeni v prihodnjih verzijah. Če želite podati mnenje \nga prosimo podajte v '<a href=\"https://github.com/sysadminsmedia/homebox/discussions/53\">'GitHub razpravah'</a>'",
+            "instruction_3": "Ta funkcija je v zgodnjih stopnjah razvoja in se lahko spremeni v prihodnjih verzijah. Če želite podati mnenje \nga prosimo podajte v '<a href=\"https://github.com/frozenbug-dev/homebox/discussions\">'GitHub razpravah'</a>'",
             "label_height": "Višina nalepke",
             "label_width": "Širina nalepke",
             "measure_type": "Merska enota",

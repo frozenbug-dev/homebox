@@ -1,11 +1,14 @@
 <template>
   <DialogProvider>
     <ClientOnly>
-      <Toaster class="pointer-events-auto" />
+      <!-- Phones: clear the floating bottom nav --><Toaster
+        class="pointer-events-auto"
+        :mobile-offset="{ bottom: 'calc(var(--bottom-nav-space) + 0.5rem)' }"
+      />
     </ClientOnly>
 
     <NuxtLayout>
-      <Html :lang="locale" :data-theme="theme || 'homebox'" />
+      <Html :lang="locale" />
       <Link rel="icon" type="image/svg" href="/favicon.svg" />
       <Link rel="apple-touch-icon" href="/apple-touch-icon.png" size="180x180" />
       <Link rel="mask-icon" href="/mask-icon.svg" color="#5b7f67" />
@@ -20,8 +23,6 @@
   import { useI18n } from "vue-i18n";
   import { DialogProvider } from "@/components/ui/dialog-provider";
   import { Toaster } from "@/components/ui/sonner";
-
-  const { theme } = useTheme();
 
   const { locale } = useI18n();
 

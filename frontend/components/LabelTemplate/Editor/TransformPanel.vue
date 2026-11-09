@@ -1,6 +1,6 @@
 <script setup lang="ts">
-  import { Input } from "@/components/ui/input";
-  import { Label } from "@/components/ui/label";
+  import { RotateCw } from "@lucide/vue";
+  import { NumberField } from "@/components/ui/number-field";
 
   export type EditorUnit = "mm" | "in";
 
@@ -98,89 +98,55 @@
 </script>
 
 <template>
-  <div v-if="objectProps" class="space-y-4">
-    <div class="grid grid-cols-2 gap-2">
-      <div class="space-y-1">
-        <Label for="tp-left" class="text-xs text-muted-foreground">X</Label>
-        <div class="flex items-center gap-1">
-          <Input
-            id="tp-left"
-            type="number"
-            :step="step"
-            :model-value="objectProps.left"
-            class="h-8"
-            @change="handlePositionChange('left', ($event.target as HTMLInputElement).value)"
-          />
-          <span class="w-6 shrink-0 text-xs text-muted-foreground">{{ unit }}</span>
-        </div>
-      </div>
-      <div class="space-y-1">
-        <Label for="tp-top" class="text-xs text-muted-foreground">Y</Label>
-        <div class="flex items-center gap-1">
-          <Input
-            id="tp-top"
-            type="number"
-            :step="step"
-            :model-value="objectProps.top"
-            class="h-8"
-            @change="handlePositionChange('top', ($event.target as HTMLInputElement).value)"
-          />
-          <span class="w-6 shrink-0 text-xs text-muted-foreground">{{ unit }}</span>
-        </div>
-      </div>
-      <div class="space-y-1">
-        <Label for="tp-width" class="text-xs text-muted-foreground">
-          {{ $t("components.label_template.form.width") }}
-        </Label>
-        <div class="flex items-center gap-1">
-          <Input
-            id="tp-width"
-            type="number"
-            :step="step"
-            :model-value="objectProps.width"
-            class="h-8"
-            :disabled="!canResizeWidth"
-            @change="handleSizeChange('width', ($event.target as HTMLInputElement).value)"
-          />
-          <span class="w-6 shrink-0 text-xs text-muted-foreground">{{ unit }}</span>
-        </div>
-      </div>
-      <div class="space-y-1">
-        <Label for="tp-height" class="text-xs text-muted-foreground">
-          {{ $t("components.label_template.form.height") }}
-        </Label>
-        <div class="flex items-center gap-1">
-          <Input
-            id="tp-height"
-            type="number"
-            :step="step"
-            :model-value="objectProps.height"
-            class="h-8"
-            :disabled="!canResizeHeight"
-            @change="handleSizeChange('height', ($event.target as HTMLInputElement).value)"
-          />
-          <span class="w-6 shrink-0 text-xs text-muted-foreground">{{ unit }}</span>
-        </div>
-      </div>
-    </div>
-
-    <div class="space-y-1">
-      <Label for="tp-angle" class="text-xs text-muted-foreground">
-        {{ $t("components.label_template.editor.properties.rotation") }}
-      </Label>
-      <div class="flex items-center gap-1">
-        <Input
-          id="tp-angle"
-          type="number"
-          :model-value="objectProps.angle"
-          class="h-8 w-28"
-          min="0"
-          max="360"
-          step="1"
-          @change="handleAngleChange(($event.target as HTMLInputElement).value)"
-        />
-        <span class="text-xs text-muted-foreground">°</span>
-      </div>
-    </div>
+  <div v-if="objectProps" class="grid grid-cols-2 gap-1.5">
+    <NumberField
+      :step="step"
+      :model-value="Number(objectProps.left)"
+      aria-label="X"
+      @update:model-value="v => handlePositionChange('left', String(v ?? ''))"
+    >
+      <template #prefix>X</template>
+      <template #suffix>{{ unit }}</template>
+    </NumberField>
+    <NumberField
+      :step="step"
+      :model-value="Number(objectProps.top)"
+      aria-label="Y"
+      @update:model-value="v => handlePositionChange('top', String(v ?? ''))"
+    >
+      <template #prefix>Y</template>
+      <template #suffix>{{ unit }}</template>
+    </NumberField>
+    <NumberField
+      :step="step"
+      :model-value="Number(objectProps.width)"
+      :aria-label="$t('components.label_template.form.width')"
+      :disabled="!canResizeWidth"
+      @update:model-value="v => handleSizeChange('width', String(v ?? ''))"
+    >
+      <template #prefix>W</template>
+      <template #suffix>{{ unit }}</template>
+    </NumberField>
+    <NumberField
+      :step="step"
+      :model-value="Number(objectProps.height)"
+      :aria-label="$t('components.label_template.form.height')"
+      :disabled="!canResizeHeight"
+      @update:model-value="v => handleSizeChange('height', String(v ?? ''))"
+    >
+      <template #prefix>H</template>
+      <template #suffix>{{ unit }}</template>
+    </NumberField>
+    <NumberField
+      :model-value="objectProps.angle"
+      :min="0"
+      :max="360"
+      :step="1"
+      :aria-label="$t('components.label_template.editor.properties.rotation')"
+      @update:model-value="v => handleAngleChange(String(v ?? ''))"
+    >
+      <template #prefix><RotateCw class="size-3.5" /></template>
+      <template #suffix>°</template>
+    </NumberField>
   </div>
 </template>

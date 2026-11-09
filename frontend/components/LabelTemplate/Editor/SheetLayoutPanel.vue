@@ -1,6 +1,6 @@
 <script setup lang="ts">
   import { Button } from "@/components/ui/button";
-  import { Input } from "@/components/ui/input";
+  import { NumberField } from "@/components/ui/number-field";
   import { Label } from "@/components/ui/label";
   import { Switch } from "@/components/ui/switch";
   import LabelTemplateMeasurementInput from "@/components/LabelTemplate/MeasurementInput.vue";
@@ -31,10 +31,10 @@
     },
   });
 
-  // A Letter sheet filled with as many labels as fit inside 10 mm margins
+  // An A4 sheet filled with as many labels as fit inside 10 mm margins
   function defaultLayout(): LabelmakerSheetLayout {
-    const pageWidth = 215.9;
-    const pageHeight = 279.4;
+    const pageWidth = 210;
+    const pageHeight = 297;
     const margin = 10;
     const fit = (page: number, label: number) => Math.max(1, Math.floor((page - 2 * margin) / Math.max(label, 1)));
     return {
@@ -118,22 +118,22 @@
         </div>
         <div class="space-y-1">
           <Label class="text-xs">{{ $t("components.label_template.editor.sheet.columns") }}</Label>
-          <Input
+          <NumberField
             :model-value="layout.columns"
-            type="number"
-            min="1"
-            step="1"
-            @update:model-value="v => setCount('columns', v)"
+            :min="1"
+            step-snapping
+            class="h-9"
+            @update:model-value="v => setCount('columns', v ?? 1)"
           />
         </div>
         <div class="space-y-1">
           <Label class="text-xs">{{ $t("components.label_template.editor.sheet.rows") }}</Label>
-          <Input
+          <NumberField
             :model-value="layout.rows"
-            type="number"
-            min="1"
-            step="1"
-            @update:model-value="v => setCount('rows', v)"
+            :min="1"
+            step-snapping
+            class="h-9"
+            @update:model-value="v => setCount('rows', v ?? 1)"
           />
         </div>
         <div class="space-y-1">

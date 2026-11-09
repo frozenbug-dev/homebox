@@ -1,11 +1,11 @@
 <template>
   <div class="border-t px-4 py-5 sm:p-0">
     <dl class="sm:divide-y">
-      <div v-for="detail in details" :key="detail.name" class="group py-4 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
-        <dt class="text-sm font-medium">
+      <div v-for="detail in details" :key="detail.name" class="group py-3 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-5">
+        <dt class="text-sm text-muted-foreground">
           {{ $t(detail.name) }}
         </dt>
-        <dd class="text-start text-sm sm:col-span-2">
+        <dd class="mt-1 text-start text-sm font-medium sm:col-span-2 sm:mt-0">
           <slot :name="detail.slot || detail.name" v-bind="{ detail }">
             <DateTime
               v-if="detail.type == 'date'"
@@ -24,7 +24,7 @@
                       :class="badgeVariants()"
                       class="gap-1"
                     >
-                      <MdiOpenInNew />
+                      <ExternalLink />
                       {{ detail.text }}
                     </a>
                   </TooltipTrigger>
@@ -37,14 +37,14 @@
             <template v-else-if="detail.type === 'markdown'">
               <ClientOnly>
                 <!-- eslint-disable-next-line tailwindcss/no-custom-classname -->
-                <div class="markdown-container w-full overflow-hidden break-words">
+                <div class="markdown-container w-full overflow-hidden wrap-break-word">
                   <Markdown :source="detail.text" />
                 </div>
               </ClientOnly>
             </template>
             <template v-else>
               <!-- Fixed version with improved overflow handling -->
-              <span class="flex w-full items-center break-words">
+              <span class="flex w-full items-center wrap-break-word">
                 <a
                   v-if="maybeUrl(detail.text.toString()).isUrl"
                   :href="maybeUrl(detail.text.toString()).url"
@@ -56,7 +56,7 @@
                 <span v-else class="overflow-hidden break-all">{{ detail.text }}</span>
                 <span
                   v-if="detail.copyable"
-                  class="my-0 ml-4 shrink-0 opacity-0 transition-opacity duration-75 group-hover:opacity-100"
+                  class="ml-2 flex h-5 shrink-0 items-center opacity-0 transition-opacity duration-75 group-hover:opacity-100 focus-within:opacity-100"
                 >
                   <CopyText v-if="detail.text.toString()" :text="detail.text.toString()" :icon-size="16" />
                 </span>
@@ -70,8 +70,8 @@
 </template>
 
 <script setup lang="ts">
+  import { ExternalLink } from "@lucide/vue";
   import type { AnyDetail, Detail } from "./types";
-  import MdiOpenInNew from "~icons/mdi/open-in-new";
   import { badgeVariants } from "~/components/ui/badge";
   import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
   import DateTime from "@/components/global/DateTime.vue";
@@ -88,8 +88,9 @@
 </script>
 
 <style>
-  /* Use :deep to target elements inside the markdown container */
-  :deep(.markdown-container) {
+  /* This block is unscoped, so a plain selector reaches the rendered markdown.
+     (:deep() only works in <style scoped>; here it made browsers drop the rule.) */
+  .markdown-container {
     /* General container styles */
     width: 100%;
     overflow-wrap: break-word;

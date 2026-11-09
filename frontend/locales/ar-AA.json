@@ -376,7 +376,7 @@
         "follow_dev": "تابع المطوّر",
         "footer": {
             "api_link": "'<a href=\"https://homebox.software/en/api/\" target=\"_blank\">'واجهة API'</a>'",
-            "version_link": "'<'a href=\"https://github.com/sysadminsmedia/homebox/releases/tag/v{ version }\" target=\"_blank\"'>' الإصدار: { version } البناء: { build } '</a>'"
+            "version_link": "'<'a href=\"https://github.com/frozenbug-dev/homebox/releases/tag/v{ version }\" target=\"_blank\"'>' الإصدار: { version } البناء: { build } '</a>'"
         },
         "github": "مشروع GitHub",
         "insured": "مؤمّن",
@@ -721,7 +721,6 @@
         "delete_account_confirm": "هل أنت متأكد من رغبتك في حذف حسابك؟ إذا كنت آخر عضو في مجموعتك، فسيتم حذف جميع بياناتك. لا يمكن التراجع عن هذا الإجراء.",
         "delete_account_sub": "احذف حسابك وجميع البيانات المرتبطة به. لا يمكن التراجع عن ذلك.",
         "delete_notifier_confirm": "هل أنت متأكد من رغبتك في حذف وسيلة الإشعار هذه؟",
-        "display_legacy_header": "{ currentValue, select, true {تعطيل الرأس القديم} false {تفعيل الرأس القديم} other {غير مطابق}}",
         "enabled": "مفعّل",
         "example": "مثال",
         "group_settings": "إعدادات المجموعة",
@@ -744,8 +743,6 @@
         "notifiers_sub": "استلم إشعارات لتذكيرات الصيانة القادمة",
         "override_locale": "تجاوز لغة التاريخ والعملة",
         "test": "اختبار",
-        "theme_settings": "إعدادات السمة",
-        "theme_settings_sub": "تُخزّن إعدادات السمة في التخزين المحلي لمتصفحك. يمكنك تغيير السمة في أي وقت. إذا واجهت مشكلة في تعيين السمة، فجرّب تحديث المتصفح.",
         "toast": {
             "account_deleted": "تم حذف حسابك.",
             "api_key_created": "تم إنشاء مفتاح API.",
@@ -780,7 +777,7 @@
             "input_placeholder": "اكتب هنا",
             "instruction_1": "مولّد تسميات HomeBox هو أداة تساعدك على طباعة تسميات لمخزون HomeBox. هذه التسميات مخصصة للطباعة المسبقة، بحيث يمكنك طباعة العديد منها وتجهيزها للاستخدام.",
             "instruction_2": "لذلك تعمل هذه التسميات عبر طباعة رمز QR للرابط ومعلومات معرف الأصل على التسمية. إذا عطّلت معرفات الأصول في إعدادات HomeBox، فلا يزال بإمكانك استخدام هذه الأداة، لكن معرفات الأصول لن تشير إلى أي عنصر.",
-            "instruction_3": "هذه الميزة في مراحل التطوير المبكرة وقد تتغير في الإصدارات المستقبلية. إذا كانت لديك ملاحظات، يُرجى تقديمها في '<a href=\"https://github.com/sysadminsmedia/homebox/discussions/53\">'نقاش GitHub'</a>'",
+            "instruction_3": "هذه الميزة في مراحل التطوير المبكرة وقد تتغير في الإصدارات المستقبلية. إذا كانت لديك ملاحظات، يُرجى تقديمها في '<a href=\"https://github.com/frozenbug-dev/homebox/discussions\">'نقاش GitHub'</a>'",
             "label_height": "ارتفاع التسمية",
             "label_width": "عرض التسمية",
             "measure_type": "نوع القياس",

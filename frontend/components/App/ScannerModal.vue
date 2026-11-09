@@ -10,7 +10,7 @@
           class="mb-5 flex items-center gap-2 rounded-md border border-destructive bg-destructive/10 p-4 text-destructive"
           role="alert"
         >
-          <MdiAlertCircleOutline class="text-destructive" />
+          <CircleAlert class="text-destructive" />
           <span class="text-sm font-medium">{{ errorMessage }}</span>
         </div>
         <div
@@ -19,9 +19,10 @@
           role="alert"
         >
           <div class="flex">
-            <MdiBarcode class="mr-2" />
+            <BarcodeIcon class="mr-2" />
             <span class="flex-1 text-center text-sm font-medium">
-              {{ detectedBarcodeType }} {{ $t("scanner.barcode_detected_message") }}:
+              {{ detectedBarcodeType }}
+              {{ $t("scanner.barcode_detected_message") }}:
               <strong>{{ detectedBarcode }}</strong>
             </span>
           </div>
@@ -33,7 +34,7 @@
           </ButtonGroup>
         </div>
         <!-- eslint-disable-next-line tailwindcss/no-custom-classname -->
-        <video ref="video" class="aspect-video w-full rounded-lg bg-muted shadow" poster="data:image/gif,AAAA" />
+        <video ref="video" class="aspect-video w-full rounded-lg bg-muted shadow-sm" poster="data:image/gif,AAAA" />
         <div class="mt-4 flex flex-col gap-3">
           <Select v-model="selectedSource">
             <SelectTrigger class="w-full">
@@ -46,7 +47,7 @@
             </SelectContent>
           </Select>
           <Button variant="outline" class="w-full" @click="openArMode">
-            <MdiCameraOutline class="mr-2" />
+            <Camera class="mr-2" />
             {{ t("scanner_ar.ar_mode") }}
           </Button>
         </div>
@@ -56,6 +57,7 @@
 </template>
 
 <script setup lang="ts">
+  import { BarcodeIcon, Camera, CircleAlert } from "@lucide/vue";
   import { computed, ref, watch } from "vue";
   import { BarcodeFormat, BrowserMultiFormatReader, NotFoundException } from "@zxing/library";
   import { useI18n } from "vue-i18n";
@@ -63,9 +65,6 @@
   import { Dialog, DialogHeader, DialogScrollContent, DialogTitle } from "@/components/ui/dialog";
   import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
   import { Button, ButtonGroup } from "@/components/ui/button";
-  import MdiBarcode from "~icons/mdi/barcode";
-  import MdiAlertCircleOutline from "~icons/mdi/alert-circle-outline";
-  import MdiCameraOutline from "~icons/mdi/camera-outline";
   import { useDialog } from "@/components/ui/dialog-provider";
 
   const { t } = useI18n();
@@ -89,7 +88,9 @@
   };
 
   const handleButtonClick = () => {
-    openDialog(DialogID.ProductImport, { params: { barcode: detectedBarcode.value } });
+    openDialog(DialogID.ProductImport, {
+      params: { barcode: detectedBarcode.value },
+    });
   };
 
   const openArMode = () => {

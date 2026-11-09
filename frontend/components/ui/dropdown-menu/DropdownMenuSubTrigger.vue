@@ -1,5 +1,5 @@
 <script setup lang="ts">
-  import { ChevronRight } from "lucide-vue-next";
+  import { ChevronRight } from "@lucide/vue";
   import { DropdownMenuSubTrigger, type DropdownMenuSubTriggerProps, useForwardProps } from "reka-ui";
   import { computed, type HTMLAttributes } from "vue";
   import { cn } from "@/lib/utils";
@@ -20,7 +20,7 @@
     v-bind="forwardedProps"
     :class="
       cn(
-        'flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none focus:bg-accent data-[state=open]:bg-accent',
+        'flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-hidden focus:bg-accent data-[state=open]:bg-accent',
         props.class
       )
     "

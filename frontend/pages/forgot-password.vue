@@ -1,8 +1,7 @@
 <script setup lang="ts">
+  import { ArrowLeft, Mail } from "@lucide/vue";
   import { useI18n } from "vue-i18n";
   import { toast } from "@/components/ui/sonner";
-  import MdiEmailOutline from "~icons/mdi/email-outline";
-  import MdiArrowLeft from "~icons/mdi/arrow-left";
   import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
   import { Button } from "@/components/ui/button";
   import AppLogo from "~/components/App/Logo.vue";
@@ -50,10 +49,10 @@
       x
     </div>
 
-    <Card class="md:w-[460px]">
+    <Card class="md:w-115">
       <CardHeader>
         <CardTitle class="flex items-center gap-2">
-          <MdiEmailOutline class="size-6" />
+          <Mail class="size-6" />
           {{ $t("index.forgot_password_title") }}
         </CardTitle>
       </CardHeader>
@@ -63,7 +62,9 @@
           <p class="text-sm">{{ $t("index.forgot_password_check_email") }}</p>
         </template>
         <template v-else>
-          <p class="mb-4 text-sm text-muted-foreground">{{ $t("index.forgot_password_subtitle") }}</p>
+          <p class="mb-4 text-sm text-muted-foreground">
+            {{ $t("index.forgot_password_subtitle") }}
+          </p>
           <form id="forgot-password-form" @submit.prevent="submit">
             <FormTextField
               id="forgot-email"
@@ -90,7 +91,7 @@
         </Button>
         <NuxtLink to="/" class="text-sm text-muted-foreground hover:underline">
           <span class="inline-flex items-center gap-1">
-            <MdiArrowLeft class="size-4" />
+            <ArrowLeft class="size-4" />
             {{ $t("index.back_to_login") }}
           </span>
         </NuxtLink>

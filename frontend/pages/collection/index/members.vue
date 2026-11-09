@@ -1,10 +1,12 @@
 <script setup lang="ts">
   import { useI18n } from "vue-i18n";
-  import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-  import { Button } from "@/components/ui/button";
-  import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-  import MdiDelete from "~icons/mdi/delete";
+  import { Copy, Plus, UserMinus } from "@lucide/vue";
   import { toast } from "@/components/ui/sonner";
+  import { Button } from "@/components/ui/button";
+  import { DropdownMenuItem, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
+  import SettingsSection from "~/components/Settings/Section.vue";
+  import SettingsGroup from "~/components/Settings/Group.vue";
+  import SettingsListRow from "~/components/Settings/ListRow.vue";
   import type { UserSummary } from "~~/lib/api/types/data-contracts";
 
   definePageMeta({
@@ -13,44 +15,31 @@
 
   const { t } = useI18n();
 
-  useHead({ title: `HomeBox | ${t("collection.tabs.members")}` });
-
   const api = useUserApi();
   const auth = useAuthContext();
   const confirm = useConfirm();
 
-  const loading = ref(true);
-  const members = ref<UserSummary[]>([]);
-  const error = ref<string | null>(null);
+  const { members: membersData } = useCollectionSettingsData();
+  const members = computed(() => membersData.data.value);
+  const loading = computed(() => membersData.status.value === "pending" && !members.value.length);
   const removing = ref<Record<string, boolean>>({});
 
   const currentUserId = computed(() => auth.user?.id ?? "");
 
   const isLastMember = computed(() => members.value.length <= 1);
 
-  const loadMembers = async () => {
-    loading.value = true;
-    error.value = null;
+  const initials = (name: string) =>
+    name
+      .split(/\s+/)
+      .filter(Boolean)
+      .slice(0, 2)
+      .map(part => part[0]!.toUpperCase())
+      .join("") || "?";
 
-    try {
-      const res = await api.group.getMembers();
-      if (res.error) {
-        const msg = t("errors.api_failure") + String(res.error);
-        error.value = msg;
-        members.value = [];
-        toast.error(msg);
-      } else {
-        members.value = res.data ?? [];
-      }
-    } catch (e) {
-      const msg = (e as Error).message ?? String(e);
-      error.value = msg;
-      members.value = [];
-      toast.error(msg);
-    } finally {
-      loading.value = false;
-    }
-  };
+  async function copyEmail(user: UserSummary) {
+    await navigator.clipboard.writeText(user.email);
+    toast.success(t("shell.members_page.email_copied"));
+  }
 
   const handleRemove = async (user: UserSummary) => {
     if (!user?.id) return;
@@ -73,7 +62,7 @@
         const msg = t("errors.api_failure") + String(res.error);
         toast.error(msg);
       } else {
-        members.value = members.value.filter(m => m.id !== user.id);
+        membersData.data.value = members.value.filter(m => m.id !== user.id);
         toast.success(t("collection.members.removed"));
       }
     } catch (e) {
@@ -83,62 +72,50 @@
       removing.value = { ...removing.value, [user.id]: false };
     }
   };
-
-  onMounted(() => {
-    loadMembers();
-  });
 </script>
 
 <template>
-  <div class="space-y-4">
-    <div v-if="loading" class="rounded-md border bg-card p-4 text-sm text-muted-foreground">
-      {{ $t("global.loading") }}
-    </div>
+  <SettingsSection :title="t('collection.settings.nav.members')" :description="t('collection.settings.members_sub')">
+    <template #actions>
+      <Button size="sm" as-child>
+        <NuxtLink to="/collection/invites"><Plus /> {{ t("collection.settings.invite_people") }}</NuxtLink>
+      </Button>
+    </template>
 
-    <div v-else>
-      <div v-if="!members.length" class="rounded-md border bg-card p-4 text-sm text-muted-foreground">
-        {{ $t("collection.members.empty") }}
-      </div>
+    <p v-if="loading" class="text-sm text-muted-foreground">{{ t("global.loading") }}</p>
+    <p v-else-if="!members.length" class="text-sm text-muted-foreground">{{ t("collection.members.empty") }}</p>
 
-      <div v-else class="scroll-bg overflow-x-auto rounded-md border bg-card">
-        <Table class="min-w-[480px]">
-          <TableHeader>
-            <TableRow>
-              <TableHead>{{ $t("collection.members.name") }}</TableHead>
-              <TableHead>{{ $t("collection.members.email") }}</TableHead>
-              <TableHead class="w-32 text-right"></TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            <TableRow v-for="user in members" :key="user.id">
-              <TableCell>{{ user.name }}</TableCell>
-              <TableCell>{{ user.email }}</TableCell>
-              <TableCell>
-                <div class="ml-auto">
-                  <TooltipProvider :delay-duration="0">
-                    <Tooltip>
-                      <TooltipTrigger as-child>
-                        <Button
-                          variant="destructive"
-                          size="icon"
-                          :aria-label="$t('global.delete')"
-                          :disabled="removing[user.id] || (isLastMember && user.id === currentUserId)"
-                          @click="handleRemove(user)"
-                        >
-                          <MdiDelete class="size-4" />
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        {{ $t("global.delete") }}
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                </div>
-              </TableCell>
-            </TableRow>
-          </TableBody>
-        </Table>
-      </div>
-    </div>
-  </div>
+    <SettingsGroup v-else>
+      <SettingsListRow v-for="m in members" :key="m.id" :subtitle="m.email">
+        <template #leading>
+          <span
+            class="flex size-8 shrink-0 items-center justify-center rounded-full bg-accent text-xs font-semibold text-accent-foreground"
+            aria-hidden="true"
+          >
+            {{ initials(m.name) }}
+          </span>
+        </template>
+        <template #title>
+          <span class="truncate">{{ m.name }}</span>
+          <span
+            v-if="m.id === currentUserId"
+            class="shrink-0 rounded-full bg-muted px-2 py-0.5 text-[11px] font-medium text-muted-foreground"
+          >
+            {{ t("shell.members_page.you") }}
+          </span>
+        </template>
+        <template #menu>
+          <DropdownMenuItem @select="copyEmail(m)"><Copy /> {{ t("shell.members_page.copy_email") }}</DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem
+            class="text-destructive focus:text-destructive"
+            :disabled="removing[m.id] || (isLastMember && m.id === currentUserId)"
+            @select="handleRemove(m)"
+          >
+            <UserMinus /> {{ t("shell.members_page.remove") }}
+          </DropdownMenuItem>
+        </template>
+      </SettingsListRow>
+    </SettingsGroup>
+  </SettingsSection>
 </template>

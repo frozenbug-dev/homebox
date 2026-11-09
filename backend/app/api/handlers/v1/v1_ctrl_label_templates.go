@@ -459,10 +459,10 @@ func sheetLayoutFor(template repo.LabelTemplateOut, templateData *labelmaker.Tem
 // without a sheet layout use the plain grid, shifted by the print offset.
 func pdfOptionsFor(template repo.LabelTemplateOut, pageSize string, showCutGuides bool, skipLabels int) labelmaker.PDFRenderOptions {
 	pdfOpts := labelmaker.DefaultPDFOptions()
-	if pageSize == "A4" {
-		pdfOpts.PageSize = labelmaker.PDFPageA4
-	} else {
+	if pageSize == "Letter" {
 		pdfOpts.PageSize = labelmaker.PDFPageLetter
+	} else {
+		pdfOpts.PageSize = labelmaker.PDFPageA4
 	}
 	pdfOpts.ShowCutGuides = showCutGuides
 	pdfOpts.SkipLabels = skipLabels

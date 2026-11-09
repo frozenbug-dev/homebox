@@ -22,4 +22,15 @@
 **/secrets.dev.yaml
 **/values.dev.yaml
 README.md
-!Dockerfile.rootless
+
+# Local frontend build/test output (rebuilt inside the image)
+frontend/.nuxt
+frontend/.output
+frontend/.data
+frontend/dist
+frontend/playwright-report
+frontend/test-results
+
+# Locally embedded frontend build; the image embeds a fresh one
+backend/app/api/static/public/*
+!backend/app/api/static/public/.gitkeep

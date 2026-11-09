@@ -26,7 +26,7 @@
           </span>
         </Button>
       </PopoverTrigger>
-      <PopoverContent class="w-[--reka-popper-anchor-width] p-0">
+      <PopoverContent class="w-(--reka-popper-anchor-width) p-0">
         <Command :ignore-filter="true">
           <CommandInput
             v-model="search"
@@ -42,7 +42,7 @@
                 :value="location.id"
                 @select="selectLocation(location as unknown as EntitySummary)"
               >
-                <Check :class="cn('mr-2 h-4 w-4', value?.id === location.id ? 'opacity-100' : 'opacity-0')" />
+                <Check :class="cn('mr-2 size-4', value?.id === location.id ? 'opacity-100' : 'opacity-0')" />
                 <div>
                   <div class="flex w-full">
                     {{ location.name }}
@@ -61,7 +61,7 @@
 </template>
 
 <script setup lang="ts">
-  import { Check, ChevronsUpDown, X } from "lucide-vue-next";
+  import { Check, ChevronsUpDown, X } from "@lucide/vue";
   import fuzzysort from "fuzzysort";
   import { Button } from "~/components/ui/button";
   import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "~/components/ui/command";
@@ -102,7 +102,7 @@
 
   const filteredLocations = computed(() => {
     const keys = ["name", "treeString"];
-    const filtered = fuzzysort.go(search.value, locations.value, { keys, all: true }).map(i => i.obj);
+    const filtered = fuzzysort.go(search.value, locations.value, { keys, limit: 0, threshold: 0 }).map(i => i.obj);
 
     return filtered;
   });

@@ -376,7 +376,7 @@
         "follow_dev": "Seuraa kehittäjää",
         "footer": {
             "api_link": "'<a href=\"https://homebox.software/en/api/\" target=\"_blank\">'API'</a>'",
-            "version_link": "'<'a href=\"https://github.com/sysadminsmedia/homebox/releases/tag/v{ version }\" target=\"_blank\"'>' Versio: { version } Build: { build } '</a>'"
+            "version_link": "'<'a href=\"https://github.com/frozenbug-dev/homebox/releases/tag/v{ version }\" target=\"_blank\"'>' Versio: { version } Build: { build } '</a>'"
         },
         "github": "GitHub Projekti",
         "insured": "Vakuutettu",
@@ -689,7 +689,6 @@
         "delete_account_confirm": "Haluatko varmasti poistaa tilisi? Jos olet ryhmän viimeinen jäsen, kaikki data poistetaan. Tätä toimintoa ei voi perua.",
         "delete_account_sub": "Poista tilisi ja kaikki siihen liittyvät tiedot. Tätä toimintoa ei voi perua.",
         "delete_notifier_confirm": "Haluatko varmasti poistaa tämän ilmoitustyökalun?",
-        "display_legacy_header": "{ currentValue, select, true {Poista vanha banneri käytöstä} false {Ota vanha banneri käyttöön} other {Not Hit}}",
         "enabled": "Käytössä",
         "example": "Esimerkki",
         "group_settings": "Ryhmän asetukset",
@@ -711,8 +710,6 @@
         "notifiers_sub": "Vastaanota ilmoituksia tulevista huoltomuistutuksista",
         "override_locale": "Yliaja päivämäärä- ja valuutta-asetusten kieli",
         "test": "Testi",
-        "theme_settings": "Teeman asetukset",
-        "theme_settings_sub": "Teeman asetukset tallennetaan selaimesi paikalliseen tallennustilaan. Voit vaihtaa teemaa milloin tahansa. Jos sinulla on ongelmia teeman asettamisessa, yritä päivittää sivu.",
         "toast": {
             "account_deleted": "Tilisi on poistettu.",
             "failed_change_password": "Salasanan vaihtaminen epäonnistui.",
@@ -743,7 +740,7 @@
             "input_placeholder": "Kirjoita tähän",
             "instruction_1": "HomeBox Label Generator on työkalu, joka auttaa tulostamaan tarroja HomeBox-varastollesi.\n Tarrat on tarkoitettu etukäteen tulostettaviksi, jotta voit tulostaa monta tarraa ja pitää ne valmiina liitettäväksi kohteisiin",
             "instruction_2": "Näin ollen nämä tarrat toimivat siten, että niihin tulostetaan URL-osoitteen QR-koodi ja resurssitunnus-tiedot.\nJos olet poistanut resurssitunnukset käytöstä HomeBox-asetuksissasi, voit silti käyttää tätä työkalua, mutta resurssitunnukset eivät viittaa mihinkään kohteeseen.",
-            "instruction_3": "Tämä ominaisuus on kehityksen alkuvaiheessa, ja se saattaa muuttua tulevissa julkaisuissa. Jos sinulla on palautetta,\nlähetä se '<a href=\"https://github.com/sysadminsmedia/homebox/discussions/53\">GitHub Discussion</a>' -keskusteluun",
+            "instruction_3": "Tämä ominaisuus on kehityksen alkuvaiheessa, ja se saattaa muuttua tulevissa julkaisuissa. Jos sinulla on palautetta,\nlähetä se '<a href=\"https://github.com/frozenbug-dev/homebox/discussions\">GitHub Discussion</a>' -keskusteluun",
             "label_height": "Tarran korkeus",
             "label_width": "Tarran leveys",
             "measure_type": "Mittayksikkö",

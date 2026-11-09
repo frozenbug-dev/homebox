@@ -1,12 +1,10 @@
 <script setup lang="ts">
+  import { Download, LoaderCircle, Printer } from "@lucide/vue";
   import { useI18n } from "vue-i18n";
   import { toast } from "@/components/ui/sonner";
-  import MdiDownload from "~icons/mdi/download";
-  import MdiLoading from "~icons/mdi/loading";
-  import MdiPrinter from "~icons/mdi/printer";
   import { Button } from "@/components/ui/button";
-  import { Input } from "@/components/ui/input";
   import { Label } from "@/components/ui/label";
+  import { NumberField } from "@/components/ui/number-field";
   import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
   import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
   import { Checkbox } from "@/components/ui/checkbox";
@@ -47,7 +45,7 @@
   const startAssetId = ref(1);
   const endAssetId = ref(30);
   const skip = ref(0);
-  const pageSize = ref<"Letter" | "A4">("Letter");
+  const pageSize = ref<"Letter" | "A4">("A4");
   const showCutGuides = ref(false);
   const isRendering = ref(false);
 
@@ -132,8 +130,12 @@
 <template>
   <BaseContainer>
     <div class="mb-6">
-      <h1 class="text-2xl font-semibold">{{ $t("reports.label_generator.title") }}</h1>
-      <p class="text-muted-foreground">{{ $t("reports.label_generator.description") }}</p>
+      <h1 class="text-2xl font-semibold">
+        {{ $t("reports.label_generator.title") }}
+      </h1>
+      <p class="text-muted-foreground">
+        {{ $t("reports.label_generator.description") }}
+      </p>
     </div>
 
     <Card class="mb-6">
@@ -142,7 +144,9 @@
         <CardDescription>{{ $t("reports.label_generator.template_hint") }}</CardDescription>
       </CardHeader>
       <CardContent>
-        <div v-if="templatesPending" class="text-muted-foreground">{{ $t("global.loading") }}</div>
+        <div v-if="templatesPending" class="text-muted-foreground">
+          {{ $t("global.loading") }}
+        </div>
         <div v-else-if="!templates || templates.length === 0" class="text-muted-foreground">
           {{ $t("pages.label_templates.batch.no_templates") }}
           <NuxtLink to="/label-templates" class="text-primary underline">
@@ -162,7 +166,11 @@
             </SelectContent>
           </Select>
           <p v-if="sheetCapacity" class="text-sm text-muted-foreground">
-            {{ $t("reports.label_generator.sheet_capacity", { count: sheetCapacity }) }}
+            {{
+              $t("reports.label_generator.sheet_capacity", {
+                count: sheetCapacity,
+              })
+            }}
           </p>
         </div>
       </CardContent>
@@ -177,18 +185,41 @@
         <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
           <div class="space-y-2">
             <Label for="startAssetId">{{ $t("reports.label_generator.asset_start") }}</Label>
-            <Input id="startAssetId" v-model.number="startAssetId" type="number" min="1" step="1" />
+            <NumberField
+              id="startAssetId"
+              :model-value="startAssetId"
+              :min="1"
+              step-snapping
+              class="h-9"
+              @update:model-value="v => (startAssetId = v ?? 1)"
+            />
           </div>
           <div class="space-y-2">
             <Label for="endAssetId">{{ $t("reports.label_generator.asset_end") }}</Label>
-            <Input id="endAssetId" v-model.number="endAssetId" type="number" min="1" step="1" />
+            <NumberField
+              id="endAssetId"
+              :model-value="endAssetId"
+              :min="1"
+              step-snapping
+              class="h-9"
+              @update:model-value="v => (endAssetId = v ?? 1)"
+            />
           </div>
           <div class="space-y-2">
             <Label for="skip">{{ $t("reports.label_generator.skip_first_labels") }}</Label>
-            <Input id="skip" v-model.number="skip" type="number" min="0" step="1" />
+            <NumberField
+              id="skip"
+              :model-value="skip"
+              :min="0"
+              step-snapping
+              class="h-9"
+              @update:model-value="v => (skip = v ?? 0)"
+            />
           </div>
         </div>
-        <p v-if="rangeError" class="text-sm text-destructive">{{ rangeError }}</p>
+        <p v-if="rangeError" class="text-sm text-destructive">
+          {{ rangeError }}
+        </p>
         <p v-else class="text-sm text-muted-foreground">
           {{ $t("reports.label_generator.label_count", { count: labelCount }) }}
         </p>
@@ -201,8 +232,8 @@
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="Letter">Letter ({{ measurement.formatSize(215.9, 279.4) }})</SelectItem>
                 <SelectItem value="A4">A4 ({{ measurement.formatSize(210, 297) }})</SelectItem>
+                <SelectItem value="Letter">Letter ({{ measurement.formatSize(215.9, 279.4) }})</SelectItem>
               </SelectContent>
             </Select>
             <p v-if="sheetCapacity" class="text-xs text-muted-foreground">
@@ -219,16 +250,18 @@
 
         <div class="flex flex-wrap gap-2">
           <Button :disabled="!canGenerate" @click="handleDownload">
-            <MdiLoading v-if="isRendering" class="mr-2 size-4 animate-spin" />
-            <MdiDownload v-else class="mr-2 size-4" />
+            <LoaderCircle v-if="isRendering" class="mr-2 size-4 animate-spin" />
+            <Download v-else class="mr-2 size-4" />
             {{ $t("reports.label_generator.download_pdf") }}
           </Button>
           <Button variant="outline" :disabled="!canGenerate" @click="handlePrint">
-            <MdiPrinter class="mr-2 size-4" />
+            <Printer class="mr-2 size-4" />
             {{ $t("reports.label_generator.print_pdf") }}
           </Button>
         </div>
-        <p class="text-xs text-muted-foreground">{{ $t("reports.label_generator.print_tip") }}</p>
+        <p class="text-xs text-muted-foreground">
+          {{ $t("reports.label_generator.print_tip") }}
+        </p>
       </CardContent>
     </Card>
   </BaseContainer>

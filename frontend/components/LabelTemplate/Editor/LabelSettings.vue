@@ -2,6 +2,7 @@
   import { useI18n } from "vue-i18n";
   import { Input } from "@/components/ui/input";
   import { Label } from "@/components/ui/label";
+  import { NumberField } from "@/components/ui/number-field";
   import { Textarea } from "@/components/ui/textarea";
   import { Switch } from "@/components/ui/switch";
   import { Button } from "@/components/ui/button";
@@ -226,7 +227,7 @@
         </div>
         <Switch id="ls-border" v-model="border.enabled" />
       </div>
-      <div v-if="border.enabled" class="grid grid-cols-3 gap-3">
+      <div v-if="border.enabled" class="grid grid-cols-2 gap-3">
         <div class="space-y-1">
           <Label for="ls-border-width" class="text-xs text-muted-foreground">
             {{ $t("components.label_template.form.border_width") }}
@@ -278,14 +279,14 @@
       <div class="flex items-center justify-between gap-3 text-sm">
         <Label for="ls-grid" class="text-sm">{{ $t("components.label_template.editor.display.grid_size") }}</Label>
         <div class="flex items-center gap-1">
-          <Input
+          <NumberField
             id="ls-grid"
-            v-model.number="display.gridSize"
-            type="number"
-            min="5"
-            max="50"
-            step="5"
+            :model-value="display.gridSize"
+            :min="5"
+            :max="50"
+            :step="5"
             class="h-8 w-20"
+            @update:model-value="v => (display.gridSize = v ?? 5)"
           />
           <span class="text-xs text-muted-foreground">px</span>
         </div>

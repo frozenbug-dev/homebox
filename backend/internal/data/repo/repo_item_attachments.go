@@ -512,6 +512,12 @@ func (r *AttachmentRepo) Update(ctx context.Context, gid uuid.UUID, id uuid.UUID
 	bldr := r.db.Attachment.UpdateOneID(id).
 		SetType(typ)
 
+	// An empty title means "leave it", so older clients that never sent one
+	// don't blank it.
+	if title := strings.TrimSpace(data.Title); title != "" {
+		bldr = bldr.SetTitle(title)
+	}
+
 	// Primary only applies to photos
 	if typ == attachment.TypePhoto {
 		bldr = bldr.SetPrimary(data.Primary)

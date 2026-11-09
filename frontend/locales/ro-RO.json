@@ -233,7 +233,7 @@
         "follow_dev": "Urmărește developer-ul",
         "footer": {
             "api_link": "'<a href=\"https://homebox.software/en/api/\" target=\"_blank\">'API'</a>'",
-            "version_link": "'<'a href=\"https://github.com/sysadminsmedia/homebox/releases/tag/{ version }\" target=\"_blank\"'>' Versiune: { version } Build: { build } '</a>'"
+            "version_link": "'<'a href=\"https://github.com/frozenbug-dev/homebox/releases/tag/{ version }\" target=\"_blank\"'>' Versiune: { version } Build: { build } '</a>'"
         },
         "github": "Proiect GitHub",
         "insured": "Asigurat",
@@ -435,8 +435,6 @@
         "notifiers": "Notificatori",
         "notifiers_sub": "Primiți notificări pentru mementourile de întreținere viitoare",
         "test": "Test",
-        "theme_settings": "Setări Temă",
-        "theme_settings_sub": "Setările temei sunt stocate în spațiul de stocare local al browserului. Poți schimba tema oricând. Dacă ai \ndificultăți la setarea temei, poți încerca să reîmprospătezi browser-ul.",
         "update_group": "Actualizare Grup",
         "update_language": "Actualizare Limbă",
         "url": "URL",

@@ -8,6 +8,7 @@ import (
 	"github.com/samber/lo"
 	"github.com/sysadminsmedia/homebox/backend/internal/core/services"
 	"github.com/sysadminsmedia/homebox/backend/internal/data/repo"
+	"github.com/sysadminsmedia/homebox/backend/internal/data/types"
 	"github.com/sysadminsmedia/homebox/backend/internal/web/adapters"
 )
 
@@ -113,6 +114,11 @@ type EntityTemplateCreateItemRequest struct {
 	EntityTypeID uuid.UUID   `json:"entityTypeId"`
 	TagIDs       []uuid.UUID `json:"tagIds"`
 	Quantity     *float64    `json:"quantity"`
+	// Set from the create dialog; the template has no defaults for these,
+	// except LifetimeWarranty, which overrides the template's when given.
+	PurchasePrice    float64    `json:"purchasePrice"    extensions:"x-nullable,x-omitempty"`
+	WarrantyExpires  types.Date `json:"warrantyExpires"  extensions:"x-nullable,x-omitempty"`
+	LifetimeWarranty *bool      `json:"lifetimeWarranty" extensions:"x-nullable,x-omitempty"`
 }
 
 // HandleEntityTemplatesCreateItem godoc
@@ -139,6 +145,11 @@ func (ctrl *V1Controller) HandleEntityTemplatesCreateItem() errchain.HandlerFunc
 			quantity = *body.Quantity
 		}
 
+		lifetimeWarranty := template.DefaultLifetimeWarranty
+		if body.LifetimeWarranty != nil {
+			lifetimeWarranty = *body.LifetimeWarranty
+		}
+
 		// Build custom fields from template
 		fields := lo.Map(template.Fields, func(f repo.TemplateField, _ int) repo.EntityFieldData {
 			return repo.EntityFieldData{
@@ -162,8 +173,10 @@ func (ctrl *V1Controller) HandleEntityTemplatesCreateItem() errchain.HandlerFunc
 			Insured:          template.DefaultInsured,
 			Manufacturer:     template.DefaultManufacturer,
 			ModelNumber:      template.DefaultModelNumber,
-			LifetimeWarranty: template.DefaultLifetimeWarranty,
+			LifetimeWarranty: lifetimeWarranty,
 			WarrantyDetails:  template.DefaultWarrantyDetails,
+			PurchasePrice:    body.PurchasePrice,
+			WarrantyExpires:  body.WarrantyExpires,
 			Fields:           fields,
 		})
 	}

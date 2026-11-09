@@ -5,12 +5,13 @@ import type {
   BarcodeProduct,
   GroupInvitation,
   EntitySummary,
+  ItemAttachment,
   MaintenanceEntry,
   MaintenanceEntryWithDetails,
 } from "~~/lib/api/types/data-contracts";
 
 export enum DialogID {
-  AttachmentEdit = "attachment-edit",
+  Attachment = "attachment",
   ChangePassword = "changePassword",
   CreateApiKey = "create-api-key",
   CreateApiKeyResult = "create-api-key-result",
@@ -26,18 +27,18 @@ export enum DialogID {
   DuplicateTemporarySettings = "duplicate-temporary-settings",
   EditMaintenance = "edit-maintenance",
   Import = "import",
-  ItemImage = "item-image",
   ItemTableSettings = "item-table-settings",
   PrintLabelTemplate = "print-label-template",
   ProductImport = "product-import",
-  QuickMenu = "quick-menu",
+  CommandPalette = "command-palette",
+  Shortcuts = "shortcuts",
   Scanner = "scanner",
   PageQRCode = "page-qr-code",
   UpdateTag = "update-tag",
   UpdateLabelTemplate = "update-label-template",
   UpdateLocation = "update-location",
-  UpdateTemplate = "update-template",
   ItemChangeDetails = "item-table-updater",
+  ItemEditNumber = "item-edit-number",
   CreateEntityType = "create-entity-type",
   UpdateEntityType = "update-entity-type",
   WipeInventory = "wipe-inventory",
@@ -49,26 +50,18 @@ export enum DialogID {
  * - Keys not present       => no params allowed
  */
 export type DialogParamsMap = {
-  [DialogID.ItemImage]: (
-    | {
-        type: "preloaded";
-        originalSrc: string;
-        originalType?: string;
-        thumbnailSrc?: string;
-      }
-    | {
-        type: "attachment";
-        mimeType: string;
-        thumbnailId?: string;
-      }
-  ) & {
+  /** View and edit one attachment; `onChange` gets the entity's attachments after every save or delete. */
+  [DialogID.Attachment]: {
     itemId: string;
-    attachmentId: string;
+    attachment: ItemAttachment;
+    onChange?: (attachments: ItemAttachment[]) => void;
   };
-  [DialogID.CreateEntity]: { baseType: "item"; product?: BarcodeProduct; subItem?: true } | { baseType: "location" };
+  [DialogID.CreateEntity]:
+    | { baseType: "item"; product?: BarcodeProduct; subItem?: true; /** Start from this item template. */ templateId?: string }
+    | { baseType: "location" };
   [DialogID.ProductImport]?: { barcode?: string };
   [DialogID.EditMaintenance]:
-    | { type: "create"; itemId: string | string[] }
+    | { type: "create"; itemId?: string | string[] }
     | { type: "update"; maintenanceEntry: MaintenanceEntry | MaintenanceEntryWithDetails }
     | { type: "duplicate"; maintenanceEntry: MaintenanceEntry | MaintenanceEntryWithDetails; itemId: string };
   [DialogID.ItemChangeDetails]: {
@@ -77,6 +70,7 @@ export type DialogParamsMap = {
     addTags?: boolean;
     removeTags?: boolean;
   };
+  [DialogID.ItemEditNumber]: { item: EntitySummary; field: "quantity" | "purchasePrice" };
   [DialogID.CreateCollection]?: { redirectTo?: string };
   [DialogID.JoinCollection]?: { redirectTo?: string; inviteCode?: string };
   [DialogID.PrintLabelTemplate]: {
@@ -86,17 +80,20 @@ export type DialogParamsMap = {
   [DialogID.UpdateLabelTemplate]: {
     templateId: string;
   };
+  /** Without params it is the global ⌘K palette; with moveInto it picks items to move into that place. */
+  [DialogID.CommandPalette]?: { moveInto?: { id: string; name: string } };
 };
 
 /**
  * Defines the payload type for a dialog's onClose callback.
  */
 export type DialogResultMap = {
-  [DialogID.ItemImage]?: { action: "delete"; id: string };
   [DialogID.EditMaintenance]?: boolean;
   [DialogID.ItemChangeDetails]?: boolean;
+  [DialogID.ItemEditNumber]?: boolean;
   [DialogID.WipeInventory]?: { wipeTags: boolean; wipeLocations: boolean; wipeMaintenance: boolean };
   [DialogID.CreateGroupInvite]?: GroupInvitation;
+  [DialogID.CommandPalette]?: { moved: number };
 };
 
 /** Helpers to split IDs by requirement */

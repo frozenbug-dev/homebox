@@ -444,7 +444,7 @@
         "follow_dev": "追蹤開發人員",
         "footer": {
             "api_link": "'<a href=\"https://homebox.software/en/api/\" target=\"_blank\">'API接口'</a>'",
-            "version_link": "'<'a href=\"https://github.com/sysadminsmedia/homebox/releases/tag/v{ version }\" target=\"_blank\"'>' 版本: { version } 組建: { build } '</a>'"
+            "version_link": "'<'a href=\"https://github.com/frozenbug-dev/homebox/releases/tag/v{ version }\" target=\"_blank\"'>' 版本: { version } 組建: { build } '</a>'"
         },
         "github": "GitHub專案",
         "insured": "已投保",
@@ -757,7 +757,6 @@
         "delete_account_confirm": "是否確認刪除帳戶？若你為群組最後一位成員則群組所有資料將被刪除！此作業無法復原。",
         "delete_account_sub": "刪除你的帳戶和所有相關資料。此作業無法復原。",
         "delete_notifier_confirm": "是否確認刪除此通知？",
-        "display_legacy_header": "{ currentValue, select, true {停用傳統標頭} false {啟用傳統標頭} other {Not Hit}}",
         "enabled": "啟用",
         "example": "範例",
         "group_settings": "群組設定",
@@ -779,8 +778,6 @@
         "notifiers_sub": "接收即將到來的維修提醒",
         "override_locale": "日期和幣值語言設定",
         "test": "測試",
-        "theme_settings": "主題設定",
-        "theme_settings_sub": "主題設定將儲存於本機瀏覽器中，且您可以隨時更換主題。\n若設定主題時發生問題，請嘗試重新整理頁面。",
         "toast": {
             "account_deleted": "已刪除你的帳號。",
             "failed_change_password": "無法變更密碼。",
@@ -811,7 +808,7 @@
             "input_placeholder": "在此輸入",
             "instruction_1": "HomeBox標籤產生器可協助您為HomeBox物品列印標籤。\n且可以次性列印多個物品標籤，並直接貼於您的物品上",
             "instruction_2": "標籤產生器將於標籤上列印網址QR Code和Asset ID。 \n若HomeBox設定中停用AssetID，此工具仍然可以使用但所產生的Asset ID將不會對應到任何項目",
-            "instruction_3": "此功能目前仍在開發階段，未來可能會有所調整。\n若您有任何建議，歡迎於 '<a href=\"https://github.com/sysadminsmedia/homebox/discussions/53\">'GitHub討論'</a>'提出",
+            "instruction_3": "此功能目前仍在開發階段，未來可能會有所調整。\n若您有任何建議，歡迎於 '<a href=\"https://github.com/frozenbug-dev/homebox/discussions\">'GitHub討論'</a>'提出",
             "label_height": "標籤高度",
             "label_width": "標籤寬度",
             "measure_type": "測量單位",

@@ -2,6 +2,7 @@ package repo
 
 import (
 	"context"
+	"github.com/sysadminsmedia/homebox/backend/internal/sys/validate"
 	"math"
 	"strings"
 	"testing"
@@ -1045,4 +1046,101 @@ func TestEntityRepository_QueryByGroup_TimestampOrderDefaultsDesc(t *testing.T) 
 
 	assert.Equal(t, []uuid.UUID{first.ID, third.ID, second.ID}, order("updatedAt", ""))
 	assert.Equal(t, []uuid.UUID{second.ID, third.ID, first.ID}, order("updatedAt", "asc"))
+}
+
+// The create dialog sets price and warranty up front instead of following
+// the create with an update.
+func TestEntityRepository_Create_WithPurchaseAndWarranty(t *testing.T) {
+	itemET := useItemEntityType(t)
+
+	e, err := tRepos.Entities.Create(context.Background(), tGroup.ID, EntityCreate{
+		Name:             "Cordless drill",
+		EntityTypeID:     itemET.ID,
+		PurchasePrice:    129.5,
+		WarrantyExpires:  types.DateFromString("2028-11-08"),
+		LifetimeWarranty: true,
+	})
+	require.NoError(t, err)
+	t.Cleanup(func() { _ = tRepos.Entities.Delete(context.Background(), e.ID) })
+
+	assert.InDelta(t, 129.5, e.PurchasePrice, 0.001)
+	assert.Equal(t, "2028-11-08", e.WarrantyExpires.String())
+	assert.True(t, e.LifetimeWarranty)
+
+	// Left out, they stay empty.
+	plain, err := tRepos.Entities.Create(context.Background(), tGroup.ID, EntityCreate{
+		Name:         "Plain",
+		EntityTypeID: itemET.ID,
+	})
+	require.NoError(t, err)
+	t.Cleanup(func() { _ = tRepos.Entities.Delete(context.Background(), plain.ID) })
+
+	assert.Zero(t, plain.PurchasePrice)
+	assert.True(t, plain.WarrantyExpires.Time().IsZero())
+	assert.False(t, plain.LifetimeWarranty)
+}
+
+func TestEntityRepository_CreateFromTemplate_WithPurchaseAndWarranty(t *testing.T) {
+	containerET := useContainerEntityType(t)
+
+	cf := containerFactory()
+	cf.EntityTypeID = containerET.ID
+	container, err := tRepos.Entities.Create(context.Background(), tGroup.ID, cf)
+	require.NoError(t, err)
+	t.Cleanup(func() { _ = tRepos.Entities.Delete(context.Background(), container.ID) })
+
+	out, err := tRepos.Entities.CreateFromTemplate(context.Background(), tGroup.ID, EntityCreateFromTemplate{
+		Name:            fk.Str(10),
+		Quantity:        1,
+		ParentID:        container.ID,
+		PurchasePrice:   42,
+		WarrantyExpires: types.DateFromString("2027-01-31"),
+	})
+	require.NoError(t, err)
+	t.Cleanup(func() { _ = tRepos.Entities.Delete(context.Background(), out.ID) })
+
+	assert.InDelta(t, 42.0, out.PurchasePrice, 0.001)
+	assert.Equal(t, "2027-01-31", out.WarrantyExpires.String())
+}
+
+func TestEntityRepository_RejectsParentCycles(t *testing.T) {
+	ctx := context.Background()
+	ents := useEntities(t, 3)
+	a, b, c := ents[0], ents[1], ents[2]
+
+	// a > b > c
+	require.NoError(t, tRepos.Entities.Patch(ctx, tGroup.ID, b.ID, EntityPatch{ID: b.ID, ParentID: a.ID}))
+	require.NoError(t, tRepos.Entities.Patch(ctx, tGroup.ID, c.ID, EntityPatch{ID: c.ID, ParentID: b.ID}))
+
+	t.Run("patch into itself", func(t *testing.T) {
+		err := tRepos.Entities.Patch(ctx, tGroup.ID, a.ID, EntityPatch{ID: a.ID, ParentID: a.ID})
+		require.Error(t, err)
+		assert.True(t, validate.IsFieldError(err), "want a field error, got %v", err)
+	})
+
+	t.Run("patch into a grandchild", func(t *testing.T) {
+		err := tRepos.Entities.Patch(ctx, tGroup.ID, a.ID, EntityPatch{ID: a.ID, ParentID: c.ID})
+		require.Error(t, err)
+		assert.True(t, validate.IsFieldError(err), "want a field error, got %v", err)
+	})
+
+	t.Run("update into a child", func(t *testing.T) {
+		_, err := tRepos.Entities.UpdateByGroup(ctx, tGroup.ID, EntityUpdate{
+			ID:           a.ID,
+			Name:         a.Name,
+			EntityTypeID: a.EntityType.ID,
+			ParentID:     b.ID,
+		})
+		require.Error(t, err)
+		assert.True(t, validate.IsFieldError(err), "want a field error, got %v", err)
+	})
+
+	t.Run("moving within the branch still works", func(t *testing.T) {
+		// c out from under b and straight under a: not a cycle.
+		require.NoError(t, tRepos.Entities.Patch(ctx, tGroup.ID, c.ID, EntityPatch{ID: c.ID, ParentID: a.ID}))
+		got, err := tRepos.Entities.GetOneByGroup(ctx, tGroup.ID, c.ID)
+		require.NoError(t, err)
+		require.NotNil(t, got.Parent)
+		assert.Equal(t, a.ID, got.Parent.ID)
+	})
 }

@@ -70,3 +70,9 @@ frontend/test-results/
 frontend/playwright-report/
 frontend/blob-report/
 frontend/playwright/.cache/
+
+# Local dev overrides
+.env.local
+# Personal mise overrides (the shared config is mise.toml)
+mise.local.toml
+mise.local.lock

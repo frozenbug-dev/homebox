@@ -460,7 +460,7 @@
         "follow_dev": "Följ utvecklaren",
         "footer": {
             "api_link": "'<a href=\"https://homebox.software/en/api/\" target=\"_blank\">'API'</a>'",
-            "version_link": "'<'a href=\"https://github.com/sysadminsmedia/homebox/releases/tag/v{ version }\" target=\"_blank\"'>' Version: { version } Bygge: { build } '</a>'"
+            "version_link": "'<'a href=\"https://github.com/frozenbug-dev/homebox/releases/tag/v{ version }\" target=\"_blank\"'>' Version: { version } Bygge: { build } '</a>'"
         },
         "github": "GitHub-projekt",
         "insured": "Försäkrad",
@@ -811,7 +811,6 @@
         "delete_account_confirm": "Är du säker på att du vill radera ditt konto? Om du är den sista medlemmen i din grupp kommer all dina data att raderas. Detta kan inte ångras.",
         "delete_account_sub": "Ta bort ditt konto och alla tillhörande data. Detta kan inte ångras.",
         "delete_notifier_confirm": "Är du säker på att du vill ta bort denna notifiering?",
-        "display_legacy_header": "{ currentValue, select, true {Inaktivera äldre sidhuvud} false {Aktivera äldre sidhuvud} other {Inte träff}}",
         "enabled": "Aktiverad",
         "example": "Exempel",
         "group_settings": "Grupp inställningar",
@@ -834,8 +833,6 @@
         "notifiers_sub": "Få aviseringar om kommande underhållspåminnelser",
         "override_locale": "Åsidosätt datum och valutaspråk",
         "test": "Test",
-        "theme_settings": "Temainställningar",
-        "theme_settings_sub": "Temainställningar sparas i din webbläsares lokala lagring. Du kan ändra tema när du vill. Om du\nhar problem att ställa in tema, pröva att ladda om din webbläsare.",
         "toast": {
             "account_deleted": "Ditt konto har raderats.",
             "api_key_created": "API-nyckel skapad.",
@@ -870,7 +867,7 @@
             "input_placeholder": "Skriv här",
             "instruction_1": "HomeBox Label Generator är ett verktyg som hjälper dig att skriva ut etiketter för ditt HomeBox-inventering. Dessa är skapade\nför att skrivas ut i förväg så att de är redo att användas",
             "instruction_2": "Dessa etiketter fungerar då så att en QR-kod med en URL och ett objekt-ID skrivs ut på etiketten. Om du har stängt av\nObjekt-ID i dina HomeBox.inställningar kan du fortfarande använda verktyget men då kommer Objekt-ID:t inte att hänvisa till något objekt",
-            "instruction_3": "Den här funktionen befinner sig i ett tidigt utvecklingsstadium och kan komma att ändras i framtida versioner. Om du har feedback, vänligen\n ange den i<a href=\"https://github.com/sysadminsmedia/homebox/discussions/53\">'GitHub-diskussionen'</a>\"",
+            "instruction_3": "Den här funktionen befinner sig i ett tidigt utvecklingsstadium och kan komma att ändras i framtida versioner. Om du har feedback, vänligen\n ange den i<a href=\"https://github.com/frozenbug-dev/homebox/discussions\">'GitHub-diskussionen'</a>\"",
             "label_height": "Etiketthöjd",
             "label_width": "Etikettbredd",
             "measure_type": "Måttyp",

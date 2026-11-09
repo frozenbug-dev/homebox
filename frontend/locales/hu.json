@@ -283,7 +283,7 @@
         "follow_dev": "Kövesd a fejlesztőt",
         "footer": {
             "api_link": "'<a href=\"https://homebox.software/en/api/\" target=\"_blank\">'API'</a>'",
-            "version_link": "'<'a href=\"https://github.com/sysadminsmedia/homebox/releases/tag/{ version }\" target=\"_blank\"'>' Verzió: { version } Build: { build } '</a>'"
+            "version_link": "'<'a href=\"https://github.com/frozenbug-dev/homebox/releases/tag/{ version }\" target=\"_blank\"'>' Verzió: { version } Build: { build } '</a>'"
         },
         "github": "Github projekt",
         "insured": "Biztosítva",
@@ -569,7 +569,6 @@
         "delete_account_confirm": "Biztosan törlöd a fiókodat? Ha te vagy az utolsó tag a csoportodban, minden adatod törlődik. Ez a művelet nem visszafordítható.",
         "delete_account_sub": "Törlöd a fiókodat és az összes kapcsolódó adatot. Ezt a műveletet nem lehet visszavonni.",
         "delete_notifier_confirm": "Biztos, hogy törölni akarod ezt az értesítőt?",
-        "display_legacy_header": "{ currentValue, select, true {Legacy fejléc letiltása} false {Legacy fejléc engedélyezése} other {Nincs találat}}",
         "enabled": "Engedélyezve",
         "example": "Példa",
         "group_settings": "Csoport beállításai",
@@ -588,8 +587,6 @@
         "notifiers_sub": "Értesítések kérése a közelgő karbantartási emlékeztetőkről",
         "override_locale": "Dátum és pénznem nyelvének felülbírálása",
         "test": "Teszt",
-        "theme_settings": "Téma Beállítások",
-        "theme_settings_sub": "A témabeállítások a böngésző helyi tárhelyén tárolódnak. Bármikor megváltoztathatod a témát. Ha problémába\n ütközöl a téma beállításakor, próbáld meg frissíteni az oldalt a böngésződben.",
         "toast": {
             "account_deleted": "Fiókodat sikeresen töröltük.",
             "failed_change_password": "Jelszó megváltoztatása sikertelen.",
@@ -620,7 +617,7 @@
             "input_placeholder": "Írj ide",
             "instruction_1": "A Homebox Label Generator egy olyan eszköz, amely segít a Homebox-leltár címkéinek nyomtatásában. Ezeket előre\n kinyomtathatod, hogy bármikor felragaszthass egy új, még használatlan címkét",
             "instruction_2": "Ezek a címkék ezért úgy működnek, hogy egy URL QR-kódot és eszközazonosítót nyomtatnak egy címkére. Ha kikapcsoltad\n az eszközazonosítókat a Homebox beállításokban, akkor is használhatod ezt az eszközt, de nem mutat majd az eszközazonosító semmilyen tételre",
-            "instruction_3": "Ez a funkció korai fejlesztési szakaszban van, és a jövőbeli kiadásokban változhat, ha visszajelzésed van, kérlek\nírd meg nekünk a '<a href=\"https://github.com/sysadminsmedia/homebox/discussions/53\">'GitHub vitafórumon'</a>'",
+            "instruction_3": "Ez a funkció korai fejlesztési szakaszban van, és a jövőbeli kiadásokban változhat, ha visszajelzésed van, kérlek\nírd meg nekünk a '<a href=\"https://github.com/frozenbug-dev/homebox/discussions\">'GitHub vitafórumon'</a>'",
             "label_height": "Címke magassága",
             "label_width": "Címke szélessége",
             "measure_type": "Mértékegység",

@@ -1,7 +1,7 @@
 <template>
   <div class="pointer-events-none absolute inset-0 z-20 flex flex-col justify-between">
     <!-- Top bar -->
-    <div class="pointer-events-auto flex items-center gap-3 bg-background/60 p-3 backdrop-blur-sm">
+    <div class="pointer-events-auto flex items-center gap-3 bg-background/60 p-3 backdrop-blur-xs">
       <Button
         variant="ghost"
         size="icon"
@@ -9,7 +9,7 @@
         :title="t('scanner_ar.back')"
         @click="$emit('back')"
       >
-        <MdiArrowLeft class="size-5" />
+        <ArrowLeft class="size-5" />
       </Button>
       <span class="text-sm font-semibold text-foreground">{{ t("scanner_ar.title") }}</span>
       <div class="grow" />
@@ -20,9 +20,9 @@
     </div>
 
     <!-- Bottom bar -->
-    <div class="pointer-events-auto flex items-center justify-center gap-4 bg-background/60 p-3 backdrop-blur-sm">
+    <div class="pointer-events-auto flex items-center justify-center gap-4 bg-background/60 p-3 backdrop-blur-xs">
       <Button variant="outline" size="sm" @click="$emit('switchCamera')">
-        <MdiCameraFlip class="mr-1.5 size-4" />
+        <SwitchCamera class="mr-1.5 size-4" />
         {{ t("scanner_ar.switch_camera") }}
       </Button>
     </div>
@@ -30,10 +30,9 @@
 </template>
 
 <script setup lang="ts">
+  import { ArrowLeft, SwitchCamera } from "@lucide/vue";
   import { useI18n } from "vue-i18n";
   import { Button } from "@/components/ui/button";
-  import MdiArrowLeft from "~icons/mdi/arrow-left";
-  import MdiCameraFlip from "~icons/mdi/camera-flip";
 
   defineProps<{
     isScanning: boolean;

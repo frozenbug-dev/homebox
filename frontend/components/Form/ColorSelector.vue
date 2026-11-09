@@ -1,10 +1,9 @@
 <script setup lang="ts">
+  import { Dices, X } from "@lucide/vue";
   import { computed, onMounted } from "vue";
   import { useI18n } from "vue-i18n";
   import { Label } from "~/components/ui/label";
   import { Button } from "~/components/ui/button";
-  import MdiClose from "~icons/mdi/close";
-  import MdiDiceMultiple from "~icons/mdi/dice-multiple";
 
   const { t } = useI18n();
 
@@ -77,7 +76,7 @@
     <div class="flex items-center gap-2">
       <span
         :style="swatchStyle"
-        class="inline-block cursor-pointer rounded-full border ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+        class="inline-block cursor-pointer rounded-full border ring-offset-background focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:outline-hidden"
         :aria-label="`${t('components.color_selector.color')}: ${modelValue || t('components.color_selector.no_color_selected')}`"
         role="button"
         tabindex="0"
@@ -95,7 +94,7 @@
           :aria-label="t('components.color_selector.randomize')"
           @click="randomizeColor"
         >
-          <MdiDiceMultiple class="size-3" />
+          <Dices class="size-3" />
         </Button>
         <Button
           type="button"
@@ -105,7 +104,7 @@
           :aria-label="t('components.color_selector.clear')"
           @click="clearColor"
         >
-          <MdiClose class="size-3" />
+          <X class="size-3" />
         </Button>
       </div>
       <input :id="id" ref="colorInput" v-model="value" type="color" class="sr-only" tabindex="-1" />
@@ -118,7 +117,7 @@
     <div class="col-span-3 mt-2 flex items-center gap-2">
       <span
         :style="swatchStyle"
-        class="inline-block cursor-pointer rounded-full border ring-offset-background focus:outline-none focus:outline-primary focus:ring-2 focus:ring-ring focus:ring-offset-2"
+        class="inline-block cursor-pointer rounded-full border ring-offset-background focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:outline-hidden focus:outline-primary"
         :aria-label="`${t('components.color_selector.color')}: ${modelValue || t('components.color_selector.no_color_selected')}`"
         role="button"
         tabindex="0"
@@ -136,7 +135,7 @@
           :aria-label="t('components.color_selector.randomize')"
           @click="randomizeColor"
         >
-          <MdiDiceMultiple class="size-3" />
+          <Dices class="size-3" />
         </Button>
         <Button
           type="button"
@@ -146,7 +145,7 @@
           :aria-label="t('components.color_selector.clear')"
           @click="clearColor"
         >
-          <MdiClose class="size-3" />
+          <X class="size-3" />
         </Button>
       </div>
       <input :id="id" ref="colorInput" v-model="value" type="color" class="sr-only" tabindex="-1" />

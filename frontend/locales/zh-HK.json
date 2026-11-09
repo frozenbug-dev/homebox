@@ -100,8 +100,6 @@
         "notifiers": "通知者",
         "notifiers_sub": "獲取即將到來的維護提醒的通知",
         "test": "測試",
-        "theme_settings": "主題設定",
-        "theme_settings_sub": "主題設定儲存在瀏覽器的本機儲存中。您可以隨時變更主題。如果你是\n 設定主題時遇到問題，請嘗試刷新瀏覽器。",
         "update_group": "更新群組",
         "url": "網址",
         "user_profile": "使用者資料",

@@ -104,7 +104,7 @@
     <!-- Corner square -->
     <div
       v-if="visible"
-      class="absolute left-0 top-0 z-10 flex items-center justify-center bg-muted text-[8px] text-muted-foreground"
+      class="absolute top-0 left-0 z-10 flex items-center justify-center bg-muted text-[8px] text-muted-foreground"
       :style="{ width: `${rulerSize}px`, height: `${rulerSize}px` }"
     >
       {{ unitLabel }}

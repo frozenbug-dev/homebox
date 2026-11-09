@@ -1,17 +1,29 @@
 <script setup lang="ts">
   import { useI18n } from "vue-i18n";
+  import { useQueryClient } from "@tanstack/vue-query";
+  import { useHotkey } from "@tanstack/vue-hotkeys";
+  import {
+    CopyPlus,
+    Ellipsis,
+    LayoutTemplate,
+    Printer,
+    HandCoins,
+    QrCode,
+    Link as LinkIcon,
+    Loader2,
+    Paperclip,
+    Plus,
+    Trash2,
+    Wrench,
+  } from "@lucide/vue";
   import { toast } from "@/components/ui/sonner";
-  import type { AnyDetail, Detail, Details } from "~~/components/global/DetailsSection/types";
-  import { filterZeroValues } from "~~/components/global/DetailsSection/types";
-  import type { ItemAttachment } from "~~/lib/api/types/data-contracts";
-  import MdiPackageVariant from "~icons/mdi/package-variant";
-  import MdiPlus from "~icons/mdi/plus";
-  import MdiMinus from "~icons/mdi/minus";
-  import MdiDelete from "~icons/mdi/delete";
-  import MdiPlusBoxMultipleOutline from "~icons/mdi/plus-box-multiple-outline";
-  import MdiContentSaveEdit from "~icons/mdi/content-save-edit";
-  import MdiDotsVertical from "~icons/mdi/dots-vertical";
-  import { Separator } from "@/components/ui/separator";
+  import AddAttachmentTiles from "~/components/Entity/AddAttachmentTiles.vue";
+  import CoverPhoto from "~/components/Entity/CoverPhoto.vue";
+  import { entityPhotos, type EntityPhoto } from "~/lib/entity-photos";
+  import type { EntityPatch, EntitySummary, EntityUpdate, ItemAttachment } from "~~/lib/api/types/data-contracts";
+  import { templateField } from "~~/lib/api/template-fields";
+  import { toEntityUpdate } from "~/lib/entity-update";
+  import { SHORTCUTS } from "~/lib/shortcuts";
   import {
     DropdownMenu,
     DropdownMenuContent,
@@ -19,33 +31,21 @@
     DropdownMenuSeparator,
     DropdownMenuTrigger,
   } from "@/components/ui/dropdown-menu";
-  import {
-    Breadcrumb,
-    BreadcrumbItem,
-    BreadcrumbLink,
-    BreadcrumbList,
-    BreadcrumbSeparator,
-  } from "@/components/ui/breadcrumb";
-  import { Button, ButtonGroup } from "@/components/ui/button";
+  import { Button } from "@/components/ui/button";
   import { useDialog } from "@/components/ui/dialog-provider";
-  import { Label } from "@/components/ui/label";
-  import { Switch } from "@/components/ui/switch";
-  import { Card } from "@/components/ui/card";
   import { DialogID } from "~/components/ui/dialog-provider/utils";
-  import BaseContainer from "@/components/Base/Container.vue";
-  import ItemImageDialog from "~/components/Item/ImageDialog.vue";
+  import AttachmentDialog from "~/components/Item/AttachmentDialog.vue";
   import ItemDuplicateSettings from "~/components/Item/DuplicateSettings.vue";
   import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-  import TagChip from "~/components/Tag/Chip.vue";
-  import DateTime from "~/components/global/DateTime.vue";
   import PageQRCode from "~/components/global/PageQRCode.vue";
-  import LabelTemplatePrintButton from "~/components/LabelTemplate/PrintButton.vue";
-  import Markdown from "~/components/global/Markdown.vue";
-  import BaseCard from "@/components/Base/Card.vue";
-  import CopyText from "@/components/global/CopyText.vue";
-  import DetailsSection from "~/components/global/DetailsSection/DetailsSection.vue";
+  import AppHeaderActions from "~/components/App/HeaderActions.vue";
   import ItemAttachmentsList from "~/components/Item/AttachmentsList.vue";
-  import ItemViewSelectable from "~/components/Item/View/Selectable.vue";
+  import ItemList from "~/components/Items/List.vue";
+  import PropertiesPanel from "~/components/Item/PropertiesPanel.vue";
+  import ShortcutHint from "~/components/App/ShortcutHint.vue";
+  import InlineText from "~/components/Item/Inline/Text.vue";
+  import InlineMarkdown from "~/components/Item/Inline/Markdown.vue";
+  import InlineDate from "~/components/Item/Inline/Date.vue";
 
   const { t } = useI18n();
 
@@ -56,7 +56,9 @@
   });
 
   const route = useRoute();
+  const router = useRouter();
   const api = useUserApi();
+  const queryClient = useQueryClient();
 
   const itemId = computed<string>(() => route.params.id as string);
   const preferences = useViewPreferences();
@@ -68,423 +70,182 @@
     copyPrefixOverride: preferences.value.duplicateSettings.copyPrefixOverride,
   });
 
+  /** True on the Maintenance sub-page, which renders through <NuxtPage>. */
   const hasNested = computed<boolean>(() => {
     return route.fullPath.split("/").at(-1) !== itemId.value;
   });
 
-  const { data: item, refresh } = useAsyncData(itemId.value, async () => {
-    const { data, error } = await api.items.get(itemId.value);
-    if (error) {
-      toast.error(t("items.toast.failed_load_item"));
-      navigateTo("/home");
-      return;
+  const { data: item, refresh } = useAsyncData(
+    () => `item-${itemId.value}`,
+    async () => {
+      const { data, error } = await api.items.get(itemId.value);
+      if (error) {
+        toast.error(t("items.toast.failed_load_item"));
+        navigateTo("/home");
+        return;
+      }
+      return data;
     }
-    return data;
-  });
+  );
   onMounted(() => {
     refresh();
   });
 
-  const lastRoute = ref(route.fullPath);
-  watchEffect(() => {
-    if (lastRoute.value.endsWith("edit")) {
-      refresh();
-    }
+  // ----- Saving single fields -----
 
-    lastRoute.value = route.fullPath;
-  });
+  function saved(data: NonNullable<typeof item.value>) {
+    item.value = data;
+    queryClient.invalidateQueries({ queryKey: ["entities"] });
+  }
 
-  async function adjustQuantity(amount: number) {
-    if (!item.value) {
+  /** Quantity, place and tags go through PATCH. */
+  async function patch(changes: Omit<EntityPatch, "id">) {
+    const { data, error } = await api.items.patch(itemId.value, { id: itemId.value, ...changes });
+    if (error) {
+      toast.error(t("items.toast.failed_save"));
       return;
     }
+    saved(data);
+  }
 
-    const newQuantity = item.value.quantity + amount;
-    if (newQuantity < 0) {
+  /** Everything else is a full PUT built from the current item, shown optimistically. */
+  async function update(changes: Partial<EntityUpdate>) {
+    const prev = item.value;
+    if (!prev) return;
+    item.value = { ...prev, ...changes } as typeof prev;
+    const { data, error } = await api.items.update(itemId.value, toEntityUpdate(prev, changes));
+    if (error) {
+      item.value = prev;
+      toast.error(t("items.toast.failed_save"));
+      return;
+    }
+    saved(data);
+  }
+
+  async function setQuantity(quantity: number) {
+    if (!item.value || !Number.isFinite(quantity)) return;
+    if (quantity < 0) {
       toast.error(t("items.toast.quantity_cannot_negative"));
       return;
     }
-
-    const resp = await api.items.patch(item.value.id, {
-      id: item.value.id,
-      quantity: newQuantity,
-    });
-
-    if (resp.error) {
-      toast.error(t("items.toast.failed_adjust_quantity"));
-      return;
-    }
-
-    if (resp.data) {
-      item.value = resp.data;
-    }
+    item.value = { ...item.value, quantity };
+    await patch({ quantity });
   }
 
-  type FilteredAttachments = {
-    attachments: ItemAttachment[];
-    warranty: ItemAttachment[];
-    manuals: ItemAttachment[];
-    receipts: ItemAttachment[];
-  };
+  const placePickerOpen = ref(false);
+  const wide = useMediaQuery("(width >= 64rem)");
 
-  type Photo = {
-    thumbnailSrc?: string;
-    originalSrc: string;
-    attachmentId: string;
-    originalType?: string;
-  };
+  // ----- Header, neighbours and shortcuts -----
 
-  const itemTags = computed(() => {
-    return useTagStore().withAncestors(item.value?.tags || []);
+  const neighbours = useEntityNeighbours(itemId);
+
+  function go(target?: { id: string }) {
+    if (target) router.push(`/item/${target.id}`);
+  }
+
+  const itemMeta = (name: string) => ({ meta: { name: t(name), group: "item" as const } });
+  const onDetails = () => !hasNested.value && !!item.value;
+
+  useHotkey(SHORTCUTS.itemPrevious, () => go(neighbours.value?.prev), {
+    ...itemMeta("shell.shortcuts.item_previous"),
+    enabled: () => onDetails() && !!neighbours.value?.prev,
+  });
+  useHotkey(SHORTCUTS.itemNext, () => go(neighbours.value?.next), {
+    ...itemMeta("shell.shortcuts.item_next"),
+    enabled: () => onDetails() && !!neighbours.value?.next,
+  });
+  useHotkey(SHORTCUTS.itemMove, () => (placePickerOpen.value = true), {
+    ...itemMeta("shell.shortcuts.item_move"),
+    enabled: onDetails,
+  });
+  useHotkey(SHORTCUTS.itemPrint, () => printLabel(), {
+    ...itemMeta("shell.shortcuts.item_print"),
+    enabled: onDetails,
+  });
+  useHotkey(SHORTCUTS.itemDuplicate, () => duplicateItem(), {
+    ...itemMeta("shell.shortcuts.item_duplicate"),
+    enabled: onDetails,
   });
 
-  const photos = computed<Photo[]>(() => {
-    if (!item.value) {
-      return [];
-    }
-    return (
-      item.value.attachments.reduce((acc, cur) => {
-        if (cur.type === "photo") {
-          const photo: Photo = {
-            originalSrc: api.authURL(`/entities/${item.value!.id}/attachments/${cur.id}`),
-            originalType: cur.mimeType,
-            attachmentId: cur.id,
-          };
-          if (cur.thumbnail) {
-            photo.thumbnailSrc = api.authURL(`/entities/${item.value!.id}/attachments/${cur.thumbnail.id}`);
-          } else {
-            photo.thumbnailSrc = photo.originalSrc; // fallback to itself if no thumbnail
-          }
-          acc.push(photo);
-        }
-        return acc;
-      }, [] as Photo[]) || []
-    );
-  });
+  function printLabel() {
+    openDialog(DialogID.PrintLabelTemplate, { params: { itemIds: [itemId.value] } });
+  }
 
-  const attachments = computed<FilteredAttachments>(() => {
-    if (!item.value) {
-      return {
-        attachments: [],
-        manuals: [],
-        warranty: [],
-        receipts: [],
-      };
-    }
+  const { copy } = useClipboard();
+  function copyLink() {
+    copy(window.location.href);
+    toast.success(t("shell.item_page.link_copied"));
+  }
 
-    return item.value.attachments.reduce(
-      (acc, attachment) => {
-        if (attachment.type === "photo") {
-          return acc;
-        }
-        if (attachment.type === "warranty") {
-          acc.warranty.push(attachment);
-        } else if (attachment.type === "manual") {
-          acc.manuals.push(attachment);
-        } else if (attachment.type === "receipt") {
-          acc.receipts.push(attachment);
-        } else {
-          acc.attachments.push(attachment);
-        }
-        return acc;
-      },
-      {
-        attachments: [] as ItemAttachment[],
-        warranty: [] as ItemAttachment[],
-        manuals: [] as ItemAttachment[],
-        receipts: [] as ItemAttachment[],
-      }
-    );
-  });
+  type Photo = EntityPhoto;
 
-  const assetID = computed<Details>(() => {
-    if (!item.value) {
-      return [];
-    }
+  /** Primary photo first: it's the cover beside the title, the rest sit below. */
+  const photos = computed<Photo[]>(() => (item.value ? entityPhotos(item.value, path => api.authURL(path)) : []));
+  const cover = computed(() => photos.value[0]);
+  const morePhotos = computed(() => photos.value.slice(1));
 
-    if (item.value?.assetId === "000-000") {
-      return [];
-    }
+  /** Files other than photos, plain attachments first, then manuals, warranties and receipts. */
+  const typeOrder: Record<string, number> = { manual: 1, warranty: 2, receipt: 3 };
+  const files = computed<ItemAttachment[]>(() =>
+    (item.value?.attachments ?? [])
+      .filter(a => a.type !== "photo")
+      .sort((a, b) => (typeOrder[a.type] ?? 0) - (typeOrder[b.type] ?? 0))
+  );
 
-    return [
-      {
-        name: "items.asset_id",
-        text: item.value?.assetId,
-      },
-    ];
-  });
+  /** The Sold section shows once anything about a sale is recorded, or after "Mark as sold". */
+  const markingSold = ref(false);
+  const isSold = computed(
+    () =>
+      !!item.value &&
+      (!!item.value.soldTo || item.value.soldPrice !== 0 || validDate(item.value.soldDate) || !!item.value.soldNotes)
+  );
+  const showSold = computed(() => isSold.value || markingSold.value);
+  watch(itemId, () => (markingSold.value = false));
 
-  const itemDetails = computed<Details>(() => {
-    if (!item.value) {
-      return [];
-    }
+  const formatCurrency = shallowRef<((value: number | string) => string) | null>(null);
+  useFormatCurrency().then(fn => (formatCurrency.value = fn));
+  const soldPrice = computed(() =>
+    item.value?.soldPrice ? (formatCurrency.value?.(item.value.soldPrice) ?? String(item.value.soldPrice)) : ""
+  );
+  function saveSoldPrice(value: string) {
+    const n = Number.parseFloat(value.replace(/[^\d.,-]/g, "").replace(",", "."));
+    update({ soldPrice: Number.isFinite(n) ? n : 0 });
+  }
 
-    const ret: Details = [
-      {
-        name: "items.quantity",
-        text: item.value?.quantity,
-        slot: "quantity",
-      },
-      {
-        name: "items.serial_number",
-        text: item.value?.serialNumber,
-        copyable: true,
-      },
-      {
-        name: "items.model_number",
-        text: item.value?.modelNumber,
-        copyable: true,
-      },
-      {
-        name: "items.manufacturer",
-        text: item.value?.manufacturer,
-        copyable: true,
-      },
-      {
-        name: "items.insured",
-        text: item.value?.insured ? "Yes" : "No",
-      },
-      {
-        name: "items.archived",
-        text: item.value?.archived ? "Yes" : "No",
-      },
-      {
-        name: "items.notes",
-        type: "markdown",
-        text: item.value?.notes,
-      },
-      ...assetID.value,
-      ...item.value.fields.map(field => {
-        /**
-         * Support Special URL Syntax
-         */
-        const url = maybeUrl(field.textValue);
-        if (url.isUrl) {
-          return {
-            type: "link",
-            name: field.name,
-            text: url.text,
-            href: url.url,
-          } as AnyDetail;
-        }
+  /** Warranty notes only matter once there's a warranty, unless some were written already. */
+  const showWarrantyDetails = computed(
+    () =>
+      !!item.value &&
+      (!!item.value.warrantyDetails || item.value.lifetimeWarranty || validDate(item.value.warrantyExpires))
+  );
 
-        return {
-          name: field.name,
-          text: field.textValue,
-        };
-      }),
-    ];
-
-    if (!preferences.value.showEmpty) {
-      return filterZeroValues(ret);
-    }
-
-    return ret;
-  });
-
-  const showAttachments = computed(() => {
-    if (preferences.value?.showEmpty) {
-      return true;
-    }
-
-    return (
-      attachments.value.attachments.length > 0 ||
-      attachments.value.warranty.length > 0 ||
-      attachments.value.manuals.length > 0 ||
-      attachments.value.receipts.length > 0
-    );
-  });
-
-  const attachmentDetails = computed(() => {
-    const details: Detail[] = [];
-
-    const push = (name: string, slot: string) => {
-      details.push({
-        name,
-        text: "",
-        slot,
-      });
-    };
-
-    if (attachments.value.attachments.length > 0) {
-      push("items.attachments", "attachments");
-    }
-
-    if (attachments.value.warranty.length > 0) {
-      push("items.warranty", "warranty");
-    }
-
-    if (attachments.value.manuals.length > 0) {
-      push("items.manuals", "manuals");
-    }
-
-    if (attachments.value.receipts.length > 0) {
-      push("items.receipts", "receipts");
-    }
-
-    return details;
-  });
-
-  const showWarranty = computed(() => {
-    if (preferences.value.showEmpty) {
-      return true;
-    }
-    return item.value?.lifetimeWarranty || validDate(item.value?.warrantyExpires);
-  });
-
-  const warrantyDetails = computed(() => {
-    const details: Details = [
-      {
-        name: "items.lifetime_warranty",
-        text: item.value?.lifetimeWarranty ? "Yes" : "No",
-      },
-    ];
-
-    if (item.value?.lifetimeWarranty) {
-      details.push({
-        name: "items.warranty_expires",
-        text: "N/A",
-      });
+  /** Put the item inside another one, or take it out and leave it in the place it was in. */
+  async function setContainer(container: EntitySummary | null) {
+    if (!item.value) return;
+    if (container) {
+      await patch({ parentId: container.id });
+    } else if (item.value.location) {
+      await patch({ parentId: item.value.location.id });
     } else {
-      details.push({
-        name: "items.warranty_expires",
-        text: item.value?.warrantyExpires || "",
-        type: "date",
-        date: true,
-      });
+      await update({ parentId: null, locationId: null });
     }
+  }
 
-    details.push({
-      name: "items.warranty_details",
-      type: "markdown",
-      text: item.value?.warrantyDetails || "",
-    });
-
-    if (!preferences.value.showEmpty) {
-      return filterZeroValues(details);
-    }
-
-    return details;
-  });
-
-  const showPurchase = computed(() => {
-    if (preferences.value.showEmpty) {
-      return true;
-    }
-    return item.value?.purchaseFrom || item.value?.purchasePrice !== 0 || validDate(item.value?.purchaseDate);
-  });
-
-  const purchaseDetails = computed<Details>(() => {
-    const v: Details = [
-      {
-        name: "items.purchased_from",
-        text: item.value?.purchaseFrom || "",
-      },
-      {
-        name: "items.purchase_price",
-        text: String(item.value?.purchasePrice) || "",
-        type: "currency",
-      },
-      {
-        name: "items.purchase_date",
-        text: item.value?.purchaseDate || "",
-        type: "date",
-        date: true,
-      },
-    ];
-
-    if (!preferences.value.showEmpty) {
-      return filterZeroValues(v);
-    }
-
-    return v;
-  });
-
-  const showSold = computed(() => {
-    if (preferences.value.showEmpty) {
-      return true;
-    }
-    return (
-      item.value?.soldTo || item.value?.soldPrice !== 0 || validDate(item.value?.soldDate) || item.value?.soldNotes
-    );
-  });
-
-  const soldDetails = computed<Details>(() => {
-    const v: Details = [
-      {
-        name: "items.sold_to",
-        text: item.value?.soldTo || "",
-      },
-      {
-        name: "items.sold_price",
-        text: String(item.value?.soldPrice) || "",
-        type: "currency",
-      },
-      {
-        name: "items.sold_at",
-        text: item.value?.soldDate || "",
-        type: "date",
-        date: true,
-      },
-      {
-        name: "items.sold_notes",
-        type: "markdown",
-        text: item.value?.soldNotes || "",
-      }
-    ];
-
-    if (!preferences.value.showEmpty) {
-      return filterZeroValues(v);
-    }
-
-    return v;
-  });
-
-  function openImageDialog(img: Photo, itemId: string) {
-    openDialog(DialogID.ItemImage, {
+  /** View an attachment; renames, type and cover changes show here as they're saved. */
+  function openAttachment(attachmentId: string) {
+    const attachment = item.value?.attachments.find(a => a.id === attachmentId);
+    if (!attachment) return;
+    openDialog(DialogID.Attachment, {
       params: {
-        type: "preloaded",
-        originalSrc: img.originalSrc,
-        originalType: img.originalType,
-        thumbnailSrc: img.thumbnailSrc,
-        attachmentId: img.attachmentId,
-        itemId,
-      },
-      onClose: result => {
-        if (result?.action === "delete") {
-          item.value!.attachments = item.value!.attachments.filter(a => a.id !== result.id);
-        }
+        itemId: itemId.value,
+        attachment,
+        onChange: attachments => {
+          if (item.value) item.value = { ...item.value, attachments };
+          queryClient.invalidateQueries({ queryKey: ["entities"] });
+        },
       },
     });
   }
-
-  const currentUrl = computed(() => {
-    return window.location.href;
-  });
-
-  const currentPath = computed(() => {
-    return route.path;
-  });
-
-  const tabs = computed(() => {
-    return [
-      {
-        id: "details",
-        name: "global.details",
-        to: `/item/${itemId.value}`,
-      },
-      {
-        id: "log",
-        name: "global.maintenance",
-        to: `/item/${itemId.value}/maintenance`,
-      },
-      {
-        id: "edit",
-        name: "global.edit",
-        to: `/item/${itemId.value}/edit`,
-      },
-    ];
-  });
 
   const fullpath = computedAsync(async () => {
     if (!item.value) {
@@ -507,8 +268,9 @@
         return [];
       }
 
+      // By actual parent: a part stored somewhere else is still part of this item.
       const resp = await api.items.getAll({
-        parentIds: [itemId.value],
+        parentItemIds: [itemId.value],
       });
 
       if (resp.error) {
@@ -552,14 +314,6 @@
     navigateTo(`/item/${data.id}`);
   }
 
-  function handleDuplicateClick(event: MouseEvent) {
-    if (event.shiftKey) {
-      openDialog(DialogID.DuplicateTemporarySettings);
-    } else {
-      duplicateItem();
-    }
-  }
-
   const confirm = useConfirm();
 
   async function deleteItem() {
@@ -583,8 +337,6 @@
       return;
     }
 
-    const NIL_UUID = "00000000-0000-0000-0000-000000000000";
-
     // Create template from item data
     const templateData = {
       name: `Template: ${item.value.name}`,
@@ -607,12 +359,7 @@
       ),
       includePurchaseFields: !!(item.value.purchaseFrom || item.value.purchasePrice || item.value.purchaseDate),
       includeSoldFields: !!(item.value.soldTo || item.value.soldPrice || item.value.soldDate),
-      fields: item.value.fields.map(field => ({
-        id: NIL_UUID,
-        name: field.name,
-        type: "text",
-        textValue: field.textValue || "",
-      })),
+      fields: item.value.fields.map(field => templateField({ name: field.name, textValue: field.textValue || "" })),
     };
 
     const { data, error } = await api.templates.create(templateData);
@@ -633,14 +380,44 @@
       },
     });
   }
+
+  /** The attachments section's "Add attachment" row opens this instance's file input. */
+  const fileUpload = useTemplateRef<InstanceType<typeof AddAttachmentTiles>>("fileUpload");
+
+  const soldRow =
+    "grid min-h-8 grid-cols-[96px_minmax(0,1fr)] items-center gap-2 [&>dt]:text-muted-foreground [&>dd]:min-w-0";
+
+  async function onUploaded() {
+    await refresh();
+    queryClient.invalidateQueries({ queryKey: ["entities"] });
+  }
+
+  usePageHeader(() => {
+    const parts = fullpath.value ?? [];
+    return [
+      { label: t("shell.items"), to: "/items" },
+      ...parts.slice(0, -1).map(part => ({
+        label: part.name,
+        to: part.type === "location" ? `/locations?place=${part.id}` : `/${part.type}/${part.id}`,
+      })),
+      ...(hasNested.value
+        ? [
+            { label: item.value?.name ?? "", to: `/item/${itemId.value}` },
+            {
+              label: t("shell.item_page.maintenance"),
+            },
+          ]
+        : [{ label: item.value?.name ?? "" }]),
+    ];
+  });
 </script>
 
 <template>
-  <BaseContainer v-if="item">
+  <div v-if="item" class="flex flex-1 flex-col">
     <!-- set page title -->
     <Title>{{ item.name }}</Title>
 
-    <ItemImageDialog />
+    <AttachmentDialog />
     <Dialog :dialog-id="DialogID.DuplicateTemporarySettings">
       <DialogContent>
         <DialogHeader>
@@ -660,223 +437,281 @@
       </DialogContent>
     </Dialog>
 
-    <section>
-      <Card class="p-3">
-        <header :class="{ 'mb-2': item.description }">
-          <div class="flex flex-wrap items-end gap-2">
-            <div
-              class="mb-auto flex size-12 items-center justify-center rounded-full bg-secondary text-secondary-foreground"
-            >
-              <MdiPackageVariant class="size-7" />
-            </div>
-            <div>
-              <Breadcrumb v-if="fullpath && fullpath.length > 0">
-                <BreadcrumbList>
-                  <BreadcrumbItem v-for="(part, idx) in fullpath" :key="part.id">
-                    <BreadcrumbLink
-                      v-if="idx < fullpath.length - 1"
-                      as-child
-                      class="text-foreground/70 hover:underline"
-                    >
-                      <NuxtLink :to="`/${part.type}/${part.id}`">
-                        {{ part.name }}
-                      </NuxtLink>
-                    </BreadcrumbLink>
-                    <template v-else>
-                      {{ part.name }}
-                    </template>
-                    <BreadcrumbSeparator v-if="idx < fullpath.length - 1" :key="`sep-${part.id}`" />
-                  </BreadcrumbItem>
-                </BreadcrumbList>
-              </Breadcrumb>
-              <h1 class="text-wrap pb-1 text-2xl">
-                {{ item ? item.name : "" }}
-              </h1>
-              <div class="flex flex-wrap gap-2 pb-1">
-                <TagChip v-for="tag in itemTags" :key="tag.id" :tag="tag" size="sm" :ancestors="tag.ancestors" />
-              </div>
-              <div class="flex flex-wrap gap-1 text-wrap text-xs">
-                <div>
-                  {{ $t("items.created_at") }}
-                  <DateTime :date="item?.createdAt" />
-                </div>
-                -
-                <div>
-                  {{ $t("items.updated_at") }}
-                  <DateTime :date="item?.updatedAt" />
-                </div>
-              </div>
-            </div>
-            <div class="ml-auto mt-2 flex flex-wrap items-center justify-between gap-2">
-              <LabelTemplatePrintButton :id="item.id" type="item" />
-              <PageQRCode />
-              <Button class="w-9 md:w-auto" :aria-label="$t('global.create_subitem')" @click="createSubitem">
-                <MdiPlus />
-                <span class="hidden md:inline">{{ $t("global.create_subitem") }}</span>
-              </Button>
+    <!-- Item actions live in the panel header, as in the design -->
+    <AppHeaderActions v-if="!hasNested">
+      <span v-if="neighbours" class="mr-1 hidden items-center gap-1 text-xs text-muted-foreground tabular-nums xl:flex">
+        {{ t("shell.item_page.position", { index: neighbours.index + 1, total: neighbours.total }) }}
+        <button
+          type="button"
+          class="rounded disabled:opacity-40"
+          :disabled="!neighbours.prev"
+          :aria-label="t('shell.item_page.previous')"
+          @click="go(neighbours.prev)"
+        >
+          <ShortcutHint :hotkey="SHORTCUTS.itemPrevious" />
+        </button>
+        <button
+          type="button"
+          class="rounded disabled:opacity-40"
+          :disabled="!neighbours.next"
+          :aria-label="t('shell.item_page.next')"
+          @click="go(neighbours.next)"
+        >
+          <ShortcutHint :hotkey="SHORTCUTS.itemNext" />
+        </button>
+      </span>
+      <Button variant="outline" size="sm" class="h-[30px] text-[13px] max-sm:hidden" @click="duplicateItem()">
+        {{ t("shell.item_page.duplicate") }}
+        <ShortcutHint :hotkey="SHORTCUTS.itemDuplicate" />
+      </Button>
+      <Button size="sm" class="h-[30px] text-[13px]" @click="printLabel">
+        <Printer class="sm:hidden" />
+        <span class="max-sm:sr-only">{{ t("shell.item_page.print_label") }}</span>
+        <ShortcutHint
+          :hotkey="SHORTCUTS.itemPrint"
+          class="max-sm:hidden [&_kbd]:border-primary-foreground/20 [&_kbd]:bg-primary-foreground/15 [&_kbd]:text-primary-foreground"
+        />
+      </Button>
+      <DropdownMenu>
+        <DropdownMenuTrigger as-child>
+          <Button variant="outline" size="icon" class="size-[30px]" :aria-label="t('shell.item_page.more')">
+            <Ellipsis class="size-4" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" class="w-60">
+          <DropdownMenuItem as-child>
+            <NuxtLink :to="`/item/${item.id}/maintenance`">
+              <Wrench class="size-4" />
+              {{ t("shell.item_page.maintenance") }}
+            </NuxtLink>
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem @select="createSubitem">
+            <Plus class="size-4" />
+            {{ $t("global.create_subitem") }}
+          </DropdownMenuItem>
+          <DropdownMenuItem class="sm:hidden" @select="duplicateItem()">
+            <CopyPlus class="size-4" />
+            {{ t("shell.item_page.duplicate") }}
+          </DropdownMenuItem>
+          <DropdownMenuItem @select="openDialog(DialogID.DuplicateTemporarySettings)">
+            <CopyPlus class="size-4" />
+            {{ t("shell.item_page.duplicate_with_options") }}
+          </DropdownMenuItem>
+          <DropdownMenuItem v-if="!showSold" @select="markingSold = true">
+            <HandCoins class="size-4" />
+            {{ t("shell.item_page.mark_sold") }}
+          </DropdownMenuItem>
+          <DropdownMenuItem @select="saveAsTemplate">
+            <LayoutTemplate class="size-4" />
+            {{ $t("components.template.save_as_template") }}
+          </DropdownMenuItem>
+          <DropdownMenuItem @select="copyLink">
+            <LinkIcon class="size-4" />
+            {{ t("shell.item_page.copy_link") }}
+          </DropdownMenuItem>
+          <DropdownMenuItem @select="openDialog(DialogID.PageQRCode)">
+            <QrCode class="size-4" />
+            {{ t("shell.item_page.show_qr") }}
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem class="text-destructive focus:text-destructive" @select="deleteItem">
+            <Trash2 class="size-4" />
+            {{ $t("global.delete") }}
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    </AppHeaderActions>
+    <PageQRCode buttonless />
 
-              <!-- More actions dropdown -->
-              <DropdownMenu>
-                <DropdownMenuTrigger as-child>
-                  <Button variant="outline" size="icon" :aria-label="$t('global.more_actions')">
-                    <MdiDotsVertical class="size-5" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" class="w-48">
-                  <DropdownMenuItem @click="handleDuplicateClick">
-                    <MdiPlusBoxMultipleOutline class="mr-2 size-4" />
-                    {{ $t("global.duplicate") }}
-                  </DropdownMenuItem>
-                  <DropdownMenuItem @click="saveAsTemplate">
-                    <MdiContentSaveEdit class="mr-2 size-4" />
-                    {{ $t("components.template.save_as_template") }}
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem class="text-destructive focus:text-destructive" @click="deleteItem">
-                    <MdiDelete class="mr-2 size-4" />
-                    {{ $t("global.delete") }}
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
+    <!-- Maintenance -->
+    <div v-if="hasNested" class="px-3 py-4 sm:px-6">
+      <NuxtPage :item="item" :page-key="itemId" />
+    </div>
+
+    <!-- Properties sit beside the content on wide screens and right below the title on narrow ones -->
+    <div v-else class="grid flex-1 lg:grid-cols-[minmax(0,1fr)_minmax(300px,22rem)]">
+      <div class="flex min-w-0 flex-col gap-[22px] px-4 py-6 sm:px-10 sm:pt-7 sm:pb-10">
+        <header class="flex max-w-190 flex-col items-start gap-4 sm:flex-row">
+          <CoverPhoto
+            :entity-id="item.id"
+            :photo="cover"
+            @uploaded="onUploaded"
+            @view="p => openAttachment(p.attachmentId)"
+          />
+          <div class="flex w-full min-w-0 flex-1 flex-col gap-1.5">
+            <InlineText
+              :value="item.name"
+              :label="t('items.name')"
+              wrap
+              class="-mx-1.5 text-[26px] leading-tight font-semibold tracking-tight"
+              @save="name => name && update({ name })"
+            />
+            <InlineMarkdown
+              :value="item.description"
+              :label="t('items.description')"
+              :placeholder="t('shell.item_page.add_description')"
+              @save="description => update({ description })"
+            />
           </div>
         </header>
-        <Separator v-if="item.description" />
-        <div v-if="item.description" class="prose max-w-full p-1">
-          <Markdown class="text-base" :source="item.description" />
+
+        <div v-if="!wide" class="-mx-4 border-y border-border/70 bg-muted/20 p-4 sm:-mx-10 sm:px-10">
+          <PropertiesPanel
+            v-model:place-open="placePickerOpen"
+            :item="item"
+            :contents="items ?? []"
+            @patch="patch"
+            @update="update"
+            @quantity="setQuantity"
+            @container="setContainer"
+          />
         </div>
-      </Card>
-
-      <div class="mb-6 mt-3 flex flex-wrap items-center justify-between">
-        <ButtonGroup>
-          <Button
-            v-for="tab in tabs"
-            :key="tab.id"
-            as-child
-            :variant="tab.to === currentPath ? 'default' : 'outline'"
-            size="sm"
+        <!-- The other photos, then quick ways to add more -->
+        <section class="flex flex-wrap gap-2.5" :aria-label="t('items.photos')">
+          <button
+            v-for="img in morePhotos"
+            :key="img.attachmentId"
+            type="button"
+            class="h-[90px] w-30 overflow-hidden rounded-[10px] border border-border bg-muted transition-opacity hover:opacity-90"
+            @click="openAttachment(img.attachmentId)"
           >
-            <NuxtLink :to="tab.to">
-              {{ $t(tab.name) }}
-            </NuxtLink>
-          </Button>
-        </ButtonGroup>
+            <img class="size-full object-cover" :src="img.thumbnailSrc" :alt="$t('items.photo')" loading="lazy" />
+          </button>
+          <AddAttachmentTiles :entity-id="item.id" :kinds="['photo']" @uploaded="onUploaded" />
+        </section>
+
+        <div class="h-px bg-border/70" />
+
+        <section>
+          <h2 class="mb-1 text-[13px] font-semibold text-foreground/80">
+            {{ $t("items.notes") }}
+          </h2>
+          <InlineMarkdown
+            :value="item.notes"
+            :label="t('items.notes')"
+            :placeholder="t('shell.item_page.add_notes')"
+            @save="notes => update({ notes })"
+          />
+        </section>
+
+        <section>
+          <h2 class="mb-2 text-[13px] font-semibold text-foreground/80">
+            {{ $t("items.attachments") }}
+            <span v-if="files.length" class="ml-1 font-normal text-muted-foreground tabular-nums">{{
+              files.length
+            }}</span>
+          </h2>
+          <ItemAttachmentsList
+            v-if="files.length > 0"
+            class="mb-2"
+            :attachments="files"
+            :item-id="item.id"
+            preview
+            @open="a => openAttachment(a.id)"
+          />
+          <button
+            type="button"
+            :disabled="!!fileUpload?.uploading"
+            class="flex w-full items-center gap-3 rounded-lg border border-dashed border-border py-2 pr-2 pl-3 text-left text-sm text-muted-foreground transition-colors hover:border-primary/50 hover:text-foreground disabled:opacity-60"
+            @click="fileUpload?.pick('file')"
+          >
+            <span class="flex size-8 shrink-0 items-center justify-center rounded-md bg-muted">
+              <Loader2 v-if="fileUpload?.uploading" class="size-4 animate-spin" aria-hidden="true" />
+              <Paperclip v-else class="size-4" aria-hidden="true" />
+            </span>
+            {{ fileUpload?.uploading ? t("shell.item_page.uploading") : t("shell.item_page.add_attachment") }}
+          </button>
+          <AddAttachmentTiles ref="fileUpload" :entity-id="item.id" :kinds="[]" @uploaded="onUploaded" />
+        </section>
+
+        <section v-if="showWarrantyDetails">
+          <h2 class="mb-1 text-[13px] font-semibold text-foreground/80">
+            {{ t("shell.item_page.warranty_details") }}
+          </h2>
+          <InlineMarkdown
+            :value="item.warrantyDetails"
+            :label="t('shell.item_page.warranty_details')"
+            :placeholder="t('shell.item_page.add_warranty_details')"
+            @save="warrantyDetails => update({ warrantyDetails })"
+          />
+        </section>
+
+        <section v-if="showSold">
+          <h2 class="mb-1 text-[13px] font-semibold text-foreground/80">
+            {{ t("shell.item_page.sold") }}
+          </h2>
+          <dl class="flex max-w-md flex-col text-[13px]">
+            <div :class="soldRow">
+              <dt>{{ t("shell.item_page.sold_to") }}</dt>
+              <dd>
+                <InlineText :value="item.soldTo" :label="$t('items.sold_to')" @save="soldTo => update({ soldTo })" />
+              </dd>
+            </div>
+            <div :class="soldRow">
+              <dt>{{ t("shell.item_page.sold_price") }}</dt>
+              <dd>
+                <InlineText
+                  :value="item.soldPrice ? String(item.soldPrice) : ''"
+                  :display="soldPrice"
+                  :label="$t('items.sold_price')"
+                  class="tabular-nums"
+                  @save="saveSoldPrice"
+                />
+              </dd>
+            </div>
+            <div :class="soldRow">
+              <dt>{{ t("shell.item_page.sold_date") }}</dt>
+              <dd>
+                <InlineDate
+                  :value="item.soldDate"
+                  :placeholder="t('shell.item_page.set_date')"
+                  :label="$t('items.sold_at')"
+                  @save="soldDate => update({ soldDate })"
+                />
+              </dd>
+            </div>
+          </dl>
+          <InlineMarkdown
+            class="mt-1"
+            :value="item.soldNotes"
+            :label="$t('items.sold_notes')"
+            :placeholder="t('shell.item_page.add_sold_notes')"
+            @save="soldNotes => update({ soldNotes })"
+          />
+        </section>
+
+        <section v-if="items && items.length > 0">
+          <h2 class="mb-1 text-[13px] font-semibold text-foreground/80">
+            {{ t("shell.item_page.contents") }}
+            <span class="ml-1 font-normal text-muted-foreground tabular-nums">{{ items.length }}</span>
+          </h2>
+          <!-- The page's own M / P / ↑↓ shortcuts act on this item, so the list doesn't register any. -->
+          <ItemList
+            class="-mx-1.5"
+            :rows="items"
+            :total="items.length"
+            :columns="{ asset: true, place: false, tags: true, quantity: true, price: true, added: false }"
+            :hotkeys="false"
+            bare
+            @changed="refreshItemList"
+          />
+        </section>
       </div>
-    </section>
 
-    <section>
-      <div class="space-y-6">
-        <!-- this renders the other pages content -->
-        <NuxtPage :item="item" :page-key="itemId" />
-
-        <!-- anything in this is not rendered if on another page -->
-        <BaseCard v-if="!hasNested" collapsable>
-          <template #title> {{ $t("items.details") }} </template>
-          <template #title-actions>
-            <div class="mt-2 flex flex-wrap items-center justify-between gap-4">
-              <Label class="flex cursor-pointer items-center gap-2">
-                <Switch v-model="preferences.showEmpty" />
-                {{ $t("items.show_empty") }}
-              </Label>
-              <div class="space-x-1">
-                <CopyText :text="currentUrl" :icon-size="16" />
-              </div>
-            </div>
-          </template>
-          <DetailsSection :details="itemDetails">
-            <template #quantity="{ detail }">
-              <div class="flex items-center">
-                {{ detail.text }}
-                <span
-                  class="my-0 ml-4 inline-flex gap-2 opacity-10 transition-opacity duration-75 group-hover:opacity-100"
-                >
-                  <Button size="icon" variant="outline" class="size-8 rounded-full" @click="adjustQuantity(-1)">
-                    <MdiMinus class="size-3" />
-                  </Button>
-                  <Button size="icon" variant="outline" class="size-8 rounded-full" @click="adjustQuantity(1)">
-                    <MdiPlus class="size-3" />
-                  </Button>
-                </span>
-              </div>
-            </template>
-          </DetailsSection>
-        </BaseCard>
-
-        <!-- anything in this is not rendered if on another page -->
-        <template v-if="!hasNested">
-          <BaseCard v-if="photos && photos.length > 0">
-            <template #title> {{ $t("items.photos") }} </template>
-            <div class="scroll-bg container mx-auto flex max-h-[500px] flex-wrap gap-2 overflow-y-scroll border-t p-4">
-              <button v-for="(img, i) in photos" :key="i" @click="openImageDialog(img, item.id)">
-                <img class="max-h-[200px] rounded" :src="img.thumbnailSrc" :alt="$t('items.photo')" loading="lazy" />
-              </button>
-            </div>
-          </BaseCard>
-
-          <BaseCard v-if="showAttachments" collapsable>
-            <template #title> {{ $t("items.attachments") }} </template>
-            <DetailsSection v-if="attachmentDetails.length > 0" :details="attachmentDetails">
-              <template #manuals>
-                <ItemAttachmentsList
-                  v-if="attachments.manuals.length > 0"
-                  :attachments="attachments.manuals"
-                  :item-id="item.id"
-                />
-              </template>
-              <template #attachments>
-                <ItemAttachmentsList
-                  v-if="attachments.attachments.length > 0"
-                  :attachments="attachments.attachments"
-                  :item-id="item.id"
-                />
-              </template>
-              <template #warranty>
-                <ItemAttachmentsList
-                  v-if="attachments.warranty.length > 0"
-                  :attachments="attachments.warranty"
-                  :item-id="item.id"
-                />
-              </template>
-              <template #receipts>
-                <ItemAttachmentsList
-                  v-if="attachments.receipts.length > 0"
-                  :attachments="attachments.receipts"
-                  :item-id="item.id"
-                />
-              </template>
-            </DetailsSection>
-            <div v-else>
-              <p class="px-6 pb-4 text-foreground/70">{{ $t("items.no_attachments") }}</p>
-            </div>
-          </BaseCard>
-
-          <BaseCard v-if="showPurchase" collapsable>
-            <template #title> {{ $t("items.purchase_details") }} </template>
-            <DetailsSection :details="purchaseDetails" />
-          </BaseCard>
-
-          <BaseCard v-if="showWarranty" collapsable>
-            <template #title> {{ $t("items.warranty_details") }} </template>
-            <DetailsSection :details="warrantyDetails" />
-          </BaseCard>
-
-          <BaseCard v-if="showSold" collapsable>
-            <template #title> {{ $t("items.sold_details") }} </template>
-            <DetailsSection :details="soldDetails" />
-          </BaseCard>
-        </template>
-      </div>
-    </section>
-
-    <section v-if="items && items.length > 0" class="mt-6">
-      <ItemViewSelectable :items="items" @refresh="refreshItemList" />
-    </section>
-  </BaseContainer>
+      <aside v-if="wide" class="border-l border-border/70 bg-muted/20">
+        <div class="sticky top-(--header-height) px-4 py-[18px]">
+          <PropertiesPanel
+            v-model:place-open="placePickerOpen"
+            :item="item"
+            :contents="items ?? []"
+            @patch="patch"
+            @update="update"
+            @quantity="setQuantity"
+            @container="setContainer"
+          />
+        </div>
+      </aside>
+    </div>
+  </div>
 </template>
-
-<style lang="css" scoped>
-  /* Style dialog background */
-  dialog::backdrop {
-    background: rgba(0, 0, 0, 0.5);
-  }
-</style>

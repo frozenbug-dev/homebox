@@ -33,7 +33,7 @@
           </span>
         </Button>
       </PopoverTrigger>
-      <PopoverContent class="w-[--reka-popper-anchor-width] p-0">
+      <PopoverContent class="w-(--reka-popper-anchor-width) p-0">
         <Command :ignore-filter="true">
           <CommandInput
             v-model="search"
@@ -44,7 +44,7 @@
           <CommandList>
             <CommandGroup>
               <CommandItem v-for="tag in filteredTags" :key="tag.id" :value="tag.id" @select="selectTag(tag)">
-                <Check :class="cn('mr-2 h-4 w-4', value?.id === tag.id ? 'opacity-100' : 'opacity-0')" />
+                <Check :class="cn('mr-2 size-4', value?.id === tag.id ? 'opacity-100' : 'opacity-0')" />
                 <span
                   v-if="tag.color"
                   class="mr-2 size-4 shrink-0 rounded-full"
@@ -63,7 +63,7 @@
 </template>
 
 <script setup lang="ts">
-  import { Check, ChevronsUpDown, X } from "lucide-vue-next";
+  import { Check, ChevronsUpDown, X } from "@lucide/vue";
   import fuzzysort from "fuzzysort";
   import { Button } from "~/components/ui/button";
   import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "~/components/ui/command";
@@ -102,7 +102,7 @@
   }
 
   const filteredTags = computed(() => {
-    const filtered = fuzzysort.go(search.value, props.tags, { key: "name", all: true }).map(i => i.obj);
+    const filtered = fuzzysort.go(search.value, props.tags, { key: "name", limit: 0, threshold: 0 }).map(i => i.obj);
 
     return filtered;
   });

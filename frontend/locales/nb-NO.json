@@ -150,7 +150,7 @@
         "follow_dev": "Følg utvikleren",
         "footer": {
             "api_link": "'<a href=\"https://homebox.software/en/api/\" target=\"_blank\">'API'</a>'",
-            "version_link": "'<'a href=\"https://github.com/sysadminsmedia/homebox/releases/tag/{ version }\" target=\"_blank\"'>' Versjon: { version } Bygg: { build } '</a>'"
+            "version_link": "'<'a href=\"https://github.com/frozenbug-dev/homebox/releases/tag/{ version }\" target=\"_blank\"'>' Versjon: { version } Bygg: { build } '</a>'"
         },
         "github": "GitHub-prosjekt",
         "insured": "Forsikret",
@@ -417,7 +417,6 @@
         "delete_account_confirm": "Er du sikker på at du vil slette kontoen din? Hvis du er det siste medlemmet i gruppen, slettes alle dataene dine. Denne handlingen kan ikke angres.",
         "delete_account_sub": "Slett kontoen din og alle data knyttet til den. Denne handlingen kan ikke angres.",
         "delete_notifier_confirm": "Er du sikker på at du vil slette denne varsleren?",
-        "display_legacy_header": "{ currentValue, select, true {Deaktiver eldre topptekst} false {Aktiver eldre topptekst} other {Ikke aktuelt}}",
         "enabled": "Aktivert",
         "example": "Eksempel",
         "group_settings": "Gruppeinnstillinger",
@@ -432,8 +431,6 @@
         "notifiers_sub": "Få varslinger for kommende vedlikeholdspåminnelser",
         "override_locale": "Overstyr dato og valutaspråk",
         "test": "Test",
-        "theme_settings": "Temainnstillinger",
-        "theme_settings_sub": "Temainnstillinger lagres i nettleseren din sin midlertidige lagring. Du kan endre temaet når som helst. Hvis du\n har problemer, last inn siden på nytt.",
         "toast": {
             "account_deleted": "Profilen er slettet.",
             "failed_change_password": "Klarte ikke å endre passord.",
@@ -464,7 +461,7 @@
             "input_placeholder": "Skriv her",
             "instruction_1": "Homebox Label Generator er et verktøy som hjelper deg med å skrive ut etiketter for Homebox-oversikten din. Disse er ment\n som forhåndsutskrevne etiketter, slik at du kan skrive ut mange etiketter og ha dem klare til bruk",
             "instruction_2": "Etikettene fungerer ved å skrive ut en QR-kode med URL og AssetID-informasjon på etiketten. Hvis du har deaktivert\n AssetID-er i Homebox-innstillingene dine, kan du fortsatt bruke dette verktøyet, men AssetID-ene vil da ikke vise til noen gjenstand",
-            "instruction_3": "Denne funksjonen er i en tidlig utviklingsfase og kan endres i fremtidige versjoner. Hvis du har tilbakemeldinger,\n vennligst legg dem inn i '<a href=\"https://github.com/sysadminsmedia/homebox/discussions/53\">'GitHub-diskusjonen'</a>'",
+            "instruction_3": "Denne funksjonen er i en tidlig utviklingsfase og kan endres i fremtidige versjoner. Hvis du har tilbakemeldinger,\n vennligst legg dem inn i '<a href=\"https://github.com/frozenbug-dev/homebox/discussions\">'GitHub-diskusjonen'</a>'",
             "label_height": "Etiketthøyde",
             "label_width": "Etikettbredde",
             "measure_type": "Måltype",

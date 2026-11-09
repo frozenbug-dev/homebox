@@ -21,4 +21,9 @@ describe("UrlBuilder", () => {
     const result = route("/test", { a: ["b", "c"] });
     expect(result).toBe("/api/v1/test?a=b&a=c");
   });
+
+  it("skips undefined and null parameters", () => {
+    const result = route("/test", { a: "b", q: undefined, c: null, d: false });
+    expect(result).toBe("/api/v1/test?a=b&d=false");
+  });
 });

@@ -306,7 +306,7 @@
         "follow_dev": "Siga o Desenvolvedor",
         "footer": {
             "api_link": "'<a href=\"https://homebox.software/en/api/\" target=\"_blank\">'API'</a>'",
-            "version_link": "'<'a href=\"https://github.com/sysadminsmedia/homebox/releases/tag/{ version }\" target=\"_blank\"'>' Versão: { version } Compilação: { build } '</a>'"
+            "version_link": "'<'a href=\"https://github.com/frozenbug-dev/homebox/releases/tag/{ version }\" target=\"_blank\"'>' Versão: { version } Compilação: { build } '</a>'"
         },
         "github": "Projeto GitHub",
         "insured": "Com seguro",
@@ -589,7 +589,6 @@
         "delete_account_confirm": "Tem a certeza de que deseja eliminar a sua conta? Se for o último membro do grupo, todos os dados serão eliminados. Esta ação não pode ser desfeita.",
         "delete_account_sub": "Eliminar a sua conta e todos os dados associados. Esta ação não pode ser desfeita.",
         "delete_notifier_confirm": "Tem a certeza de que deseja eliminar este notificador?",
-        "display_legacy_header": "{ currentValue, select, true {Desativar Cabeçalho Legacy} false {Ativar Cabeçalho Legacy} other {Sem Resultado} }",
         "enabled": "Ativado",
         "example": "Exemplo",
         "group_settings": "Definições do Grupo",
@@ -605,8 +604,6 @@
         "notifiers_sub": "Receba notificações para os próximos lembretes de manutenção",
         "override_locale": "Substituir Data e Idioma da Moeda",
         "test": "Testar",
-        "theme_settings": "Definições do Tema",
-        "theme_settings_sub": "As definições do tema são guardadas no armazenamento local do seu navegador. Pode alterá-lo a qualquer\n momento. Se tiver problemas ao definir o tema, tente atualizar a página.",
         "toast": {
             "account_deleted": "A sua conta foi eliminada.",
             "failed_change_password": "Falha ao alterar palavra-passe.",
@@ -637,7 +634,7 @@
             "input_placeholder": "Escreva aqui",
             "instruction_1": "O Gerador de Etiquetas Homebox é uma ferramenta para ajudar a imprimir etiquetas para o seu inventário Homebox.\n Estas etiquetas são preparadas antecipadamente para poder imprimi-las em quantidade e aplicá-las depois",
             "instruction_2": "Assim, estas etiquetas funcionam imprimindo um código QR com o URL e informação do AssetID na etiqueta. \n Se desativou os AssetIDs nas definições do Homebox, ainda pode usar esta ferramenta, mas os AssetIDs não irão referenciar nenhum item",
-            "instruction_3": "Esta funcionalidade está em fase inicial de desenvolvimento e pode mudar em futuras versões. \nSe tiver sugestões, envie através da '<a href=\"https://github.com/sysadminsmedia/homebox/discussions/53\">'Discussão no GitHub'</a>'",
+            "instruction_3": "Esta funcionalidade está em fase inicial de desenvolvimento e pode mudar em futuras versões. \nSe tiver sugestões, envie através da '<a href=\"https://github.com/frozenbug-dev/homebox/discussions\">'Discussão no GitHub'</a>'",
             "label_height": "Altura da Etiqueta",
             "label_width": "Largura da Etiqueta",
             "measure_type": "Tipo de Medida",

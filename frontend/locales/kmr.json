@@ -376,7 +376,7 @@
         "follow_dev": "Pêşdebir bişopîne",
         "footer": {
             "api_link": "'<a href=\"https://homebox.software/en/api/\" target=\"_blank\">'API'</a>'",
-            "version_link": "'<'a href=\"https://github.com/sysadminsmedia/homebox/releases/tag/v{ version }\" target=\"_blank\"'>' Guherto: { version } Avakirin: { build } '</a>'"
+            "version_link": "'<'a href=\"https://github.com/frozenbug-dev/homebox/releases/tag/v{ version }\" target=\"_blank\"'>' Guherto: { version } Avakirin: { build } '</a>'"
         },
         "github": "Projeya GitHub",
         "insured": "Bîmeya wê heye",
@@ -721,7 +721,6 @@
         "delete_account_confirm": "Tu piştrastî dixwazî hesabê xwe jê bibî? Heke tu endamê dawî yê koma xwe bî, hemû daneyên te dê werin jêbirin. Ev kiryar nayê vegerandin.",
         "delete_account_sub": "Hesabê xwe û hemû daneyên girêdayî jê bibe. Ev nayê vegerandin.",
         "delete_notifier_confirm": "Tu piştrastî dixwazî vî agahkerî jê bibî?",
-        "display_legacy_header": "{ currentValue, select, true {Sernavê kevn neçalak bike} false {Sernavê kevn çalak bike} other {Nehat girtin}}",
         "enabled": "Çalak",
         "example": "Mînak",
         "group_settings": "Mîhengên komê",
@@ -744,8 +743,6 @@
         "notifiers_sub": "Agahdariyan ji bo bîranînên lênêrînê yên bê werbigire",
         "override_locale": "Zimanê dîrok û diravê derbas bike",
         "test": "Ceribandin",
-        "theme_settings": "Mîhengên tema",
-        "theme_settings_sub": "Mîhengên tema di hilanîna herêmî ya geroka te de têne tomar kirin. Tu dikarî her dem tema biguherînî. Heke di saz kirina temayê de pirsgirêk heye, geroka xwe nû bike.",
         "toast": {
             "account_deleted": "Hesabê te hate jêbirin.",
             "api_key_created": "Mifteya API hate çêkirin.",
@@ -780,7 +777,7 @@
             "input_placeholder": "Li vir binivîse",
             "instruction_1": "Çêkerê etîketên HomeBox amûrek e ku alîkariya te dike etîketên envantera HomeBox çap bikî. Ev ji bo etîketên pêşçapkirî ne, da ku tu gelek etîketan çap bikî û amade bikî ku li envantera xwe bisepînî",
             "instruction_2": "Ji ber vê yekê, ev etîket bi çapkirina Koda QR ya URL û agahiyên AssetID li ser etîketê dixebitin. Heke te AssetID di mîhengên HomeBox de neçalak kiribe, tu hîn jî dikarî vê amûrê bikar bînî, lê AssetID dê tu tiştê nîşan nedin",
-            "instruction_3": "Ev taybetmendî hîn di qonaxên destpêkê yên pêşdebirinê de ye û dibe ku di weşanên bê de biguhere. Heke te bersiv/feedback hebe, ji kerema xwe wê di '<a href=\"https://github.com/sysadminsmedia/homebox/discussions/53\">'Gotûbêja GitHub'</a>' de parve bike",
+            "instruction_3": "Ev taybetmendî hîn di qonaxên destpêkê yên pêşdebirinê de ye û dibe ku di weşanên bê de biguhere. Heke te bersiv/feedback hebe, ji kerema xwe wê di '<a href=\"https://github.com/frozenbug-dev/homebox/discussions\">'Gotûbêja GitHub'</a>' de parve bike",
             "label_height": "Bilindiya etîketê",
             "label_width": "Firehiya etîketê",
             "measure_type": "Cureya pîvanê",

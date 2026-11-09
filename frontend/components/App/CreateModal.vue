@@ -1,6 +1,6 @@
 <template>
   <Dialog v-if="isDesktop" :dialog-id="dialogId">
-    <DialogScrollContent>
+    <DialogScrollContent :class="contentClass">
       <DialogHeader>
         <div class="mr-4 flex place-items-center justify-between">
           <DialogTitle>
@@ -58,11 +58,12 @@
   import { Dialog, DialogFooter, DialogHeader, DialogScrollContent, DialogTitle } from "@/components/ui/dialog";
   import { Shortcut } from "@/components/ui/shortcut";
 
-  const isDesktop = useMediaQuery("(min-width: 768px)");
+  const isDesktop = useMediaQuery("(width >= 48rem)");
 
   defineProps<{
     dialogId: DialogID;
     title?: string;
     hideFooter?: boolean;
+    contentClass?: string;
   }>();
 </script>

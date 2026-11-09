@@ -146,7 +146,7 @@ docker run -d \
   -p 7745:7745 \
   -e HBOX_OPTIONS_ALLOW_REGISTRATION=true \
   -v /tmp/homebox-data:/data \
-  ghcr.io/sysadminsmedia/homebox:latest
+  ghcr.io/frozenbug-dev/homebox:latest
 
 # Wait for startup
 sleep 10

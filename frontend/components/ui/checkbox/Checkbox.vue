@@ -1,7 +1,7 @@
 <script setup lang="ts">
   import type { CheckboxRootEmits, CheckboxRootProps } from "reka-ui";
   import { cn } from "@/lib/utils";
-  import { Check, Minus } from "lucide-vue-next";
+  import { Check, Minus } from "@lucide/vue";
   import { CheckboxIndicator, CheckboxRoot, useForwardPropsEmits } from "reka-ui";
   import { computed, type HTMLAttributes } from "vue";
 
@@ -22,7 +22,7 @@
     v-bind="forwarded"
     :class="
       cn(
-        'peer h-4 w-4 shrink-0 rounded-sm border border-primary ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground data-[state=indeterminate]:bg-primary data-[state=indeterminate]:text-primary-foreground',
+        'peer h-4 w-4 shrink-0 rounded-sm border border-primary ring-offset-background focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground data-[state=indeterminate]:bg-primary data-[state=indeterminate]:text-primary-foreground',
         props.class
       )
     "

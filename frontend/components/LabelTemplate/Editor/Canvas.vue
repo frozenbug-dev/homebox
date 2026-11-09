@@ -80,10 +80,10 @@
       return;
     }
 
-    // Padding, plus the rulers when they are shown
-    const chrome = 40 + (props.showRuler ? RULER_SIZE : 0);
+    // Padding (p-16) plus a little air, and the rulers when they are shown
+    const chrome = 128 + 16 + (props.showRuler ? RULER_SIZE : 0);
     const containerWidth = canvasContainerRef.value.clientWidth - chrome;
-    const containerHeight = Math.max(canvasContainerRef.value.clientHeight - chrome, 200);
+    const containerHeight = Math.max(canvasContainerRef.value.clientHeight - chrome, 120);
 
     const scaleX = containerWidth / displayWidth.value;
     const scaleY = containerHeight / displayHeight.value;
@@ -939,7 +939,8 @@
 </script>
 
 <template>
-  <div ref="canvasContainerRef" class="min-h-[300px] overflow-auto rounded border bg-gray-100 p-4 dark:bg-zinc-800">
+  <!-- Fills the design area; the padding keeps the label clear of the floating tool, text and zoom bars -->
+  <div ref="canvasContainerRef" class="flex size-full min-h-75 overflow-auto p-16">
     <!-- Rulers wrap the label itself so 0,0 lines up with its top-left corner and they scroll with it -->
     <LabelTemplateEditorRuler
       :visible="!!showRuler"
@@ -948,6 +949,7 @@
       :pixel-width="displayWidth * zoomLevel"
       :pixel-height="displayHeight * zoomLevel"
       :unit="rulerUnit"
+      class="m-auto"
     >
       <div class="relative inline-block align-top shadow-lg">
         <!--
@@ -955,7 +957,7 @@
           here as well would let Vue reset the element, and with it the drawing,
           on the render that follows every zoom change.
         -->
-        <canvas ref="gridCanvasRef" class="pointer-events-none absolute left-0 top-0" :style="{ zIndex: 0 }" />
+        <canvas ref="gridCanvasRef" class="pointer-events-none absolute top-0 left-0" :style="{ zIndex: 0 }" />
         <!-- Fabric canvas (front, with transparent background area) -->
         <canvas ref="canvasRef" class="relative" :style="{ zIndex: 1 }" />
       </div>

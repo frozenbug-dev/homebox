@@ -11,7 +11,20 @@
         {{ characterCountText }}
       </span>
     </Label>
+    <NumberField
+      v-if="type === 'number'"
+      :id="fieldId"
+      :model-value="numberValue"
+      :min="toNum(min)"
+      :max="toNum(max)"
+      :step="toNum(step) ?? 1"
+      :placeholder="placeholder"
+      :aria-label="label || undefined"
+      class="h-9 w-full shadow-xs"
+      @update:model-value="v => (value = v as never)"
+    />
     <Input
+      v-else
       v-bind="inputAttrs()"
       :id="fieldId"
       ref="input"
@@ -43,7 +56,20 @@
         {{ characterCountText }}
       </span>
     </Label>
+    <NumberField
+      v-if="type === 'number'"
+      :id="fieldId"
+      :model-value="numberValue"
+      :min="toNum(min)"
+      :max="toNum(max)"
+      :step="toNum(step) ?? 1"
+      :placeholder="placeholder"
+      :aria-label="label || undefined"
+      class="col-span-3 mt-2 h-9 w-full shadow-xs"
+      @update:model-value="v => (value = v as never)"
+    />
     <Input
+      v-else
       v-bind="inputAttrs()"
       :id="fieldId"
       ref="input"
@@ -70,6 +96,7 @@
   import { utf8Length } from "@/lib/utils";
   import { Label } from "~/components/ui/label";
   import { Input } from "~/components/ui/input";
+  import { NumberField } from "~/components/ui/number-field";
 
   defineOptions({
     inheritAttrs: false,
@@ -178,6 +205,17 @@
 
   const value = useVModel(props, "modelValue");
   const isDirty = ref(false);
+
+  /** `type="number"` fields use a stepper; empty is null. */
+  const numberValue = computed(() => {
+    if (value.value === null || value.value === undefined || value.value === "") return null;
+    const n = Number(value.value);
+    return Number.isNaN(n) ? null : n;
+  });
+  const toNum = (v: string | number | undefined) => {
+    const n = Number(v);
+    return v === undefined || v === "" || Number.isNaN(n) ? undefined : n;
+  };
 
   function markDirty() {
     isDirty.value = true;

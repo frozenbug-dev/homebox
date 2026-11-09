@@ -1,18 +1,18 @@
 <template>
-  <Card class="overflow-hidden shadow-xl">
-    <CardHeader v-if="$slots.title" class="px-4 py-5 sm:px-6">
+  <Card class="overflow-hidden">
+    <CardHeader v-if="$slots.title" class="border-b border-border px-5 py-4">
       <component :is="collapsable ? 'button' : 'div'" v-on="collapsable ? { click: toggle } : {}">
-        <h3 class="flex items-center text-lg font-medium leading-6">
+        <h3 class="flex items-center text-base leading-6 font-semibold">
           <slot name="title" />
           <template v-if="collapsable">
             <span class="ml-2 transition-transform" :class="{ 'rotate-180': collapsed }">
-              <MdiChevronDown class="size-6" />
+              <ChevronDown class="size-5 text-muted-foreground" />
             </span>
           </template>
         </h3>
       </component>
       <div>
-        <p v-if="$slots.subtitle" class="mt-1 max-w-2xl text-sm text-foreground/70">
+        <p v-if="$slots.subtitle" class="mt-1 max-w-2xl text-sm text-muted-foreground">
           <slot name="subtitle" />
         </p>
         <template v-if="$slots['title-actions']">
@@ -22,7 +22,7 @@
     </CardHeader>
     <CardContent
       :class="{
-        'max-h-[9000px]': collapsable && !collapsed,
+        'max-h-2250': collapsable && !collapsed,
         'max-h-0 overflow-hidden': collapsed,
       }"
       class="p-0 transition-[max-height] duration-200"
@@ -33,7 +33,7 @@
 </template>
 
 <script setup lang="ts">
-  import MdiChevronDown from "~icons/mdi/chevron-down";
+  import { ChevronDown } from "@lucide/vue";
   import { Card, CardContent, CardHeader } from "@/components/ui/card";
 
   defineProps<{

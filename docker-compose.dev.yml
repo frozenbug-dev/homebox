@@ -1,0 +1,45 @@
+# Supporting services for local development. The API and UI run on the host
+# (`task go:run:postgresql` + `task ui:dev`); this file only provides the
+# dependencies they talk to. Start with `task services:up`.
+#
+# Not for production: credentials are fixed dev values and ports bind to
+# 127.0.0.1 only.
+name: homebox-dev
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: homebox
+      POSTGRES_PASSWORD: homebox
+      POSTGRES_DB: homebox
+    ports:
+      - 127.0.0.1:5432:5432
+    volumes:
+      - postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U homebox -d homebox"]
+      interval: 2s
+      timeout: 5s
+      retries: 30
+
+  # Catches outgoing mail (invites, password resets). Web UI: http://localhost:8025
+  mailpit:
+    image: axllent/mailpit:latest
+    environment:
+      # The backend always authenticates (PLAIN) and only sends mail when a
+      # username/password are configured, so accept any credentials over
+      # plain SMTP. Go's net/smtp allows that only when the host is localhost.
+      MP_SMTP_AUTH_ACCEPT_ANY: "1"
+      MP_SMTP_AUTH_ALLOW_INSECURE: "1"
+    ports:
+      - 127.0.0.1:1025:1025
+      - 127.0.0.1:8025:8025
+    healthcheck:
+      test: ["CMD", "/mailpit", "readyz"]
+      interval: 2s
+      timeout: 5s
+      retries: 30
+
+volumes:
+  postgres:

@@ -59,8 +59,8 @@ representative at an online or offline event.
 ## Enforcement
 
 Instances of abusive, harassing, or otherwise unacceptable behavior may be
-reported to the community leaders responsible for enforcement at
-[support@sysadminsmedia.com](mailto:support@sysadminsmedia.com).
+reported privately to the community leaders responsible for enforcement through a
+[private GitHub security advisory](https://github.com/frozenbug-dev/homebox/security/advisories/new).
 All complaints will be reviewed and investigated promptly and fairly.
 
 All community leaders are obligated to respect the privacy and security of the

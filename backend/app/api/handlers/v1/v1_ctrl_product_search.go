@@ -370,7 +370,7 @@ func lookupOpenFacts(contact string, source openFactsSource, iEan string) ([]rep
 	if err != nil {
 		return nil, err
 	}
-	userAgent := "Homebox/1.0 (https://github.com/sysadminsmedia/homebox)"
+	userAgent := "Homebox/1.0 (https://github.com/frozenbug-dev/homebox)"
 	safeContact := sanitizeHeader(strings.TrimSpace(contact))
 	if len(safeContact) > 0 {
 		userAgent = "Homebox/1.0 (contact: " + safeContact + ")"

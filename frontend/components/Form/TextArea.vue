@@ -11,7 +11,7 @@
       :id="id"
       v-model="value"
       :placeholder="placeholder"
-      class="min-h-[112px] w-full resize-none"
+      class="min-h-28 w-full resize-none"
       @keydown="handleKeyDown"
     />
   </div>

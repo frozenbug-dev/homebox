@@ -4,14 +4,13 @@
   import { Button } from "@/components/ui/button";
   import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
   import { useDialog } from "@/components/ui/dialog-provider";
-  import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-  import { badgeVariants } from "@/components/ui/badge";
+  import { DropdownMenuItem, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
+  import { Bell, Pencil, Plus, Send, Trash2 } from "@lucide/vue";
+  import SettingsSection from "~/components/Settings/Section.vue";
+  import SettingsGroup from "~/components/Settings/Group.vue";
+  import SettingsListRow from "~/components/Settings/ListRow.vue";
   import FormCheckbox from "~/components/Form/Checkbox.vue";
   import FormTextField from "~/components/Form/TextField.vue";
-  import DateTime from "@/components/global/DateTime.vue";
-  import MdiMegaphone from "~icons/mdi/megaphone";
-  import MdiDelete from "~icons/mdi/delete";
-  import MdiPencil from "~icons/mdi/pencil";
   import { DialogID } from "~/components/ui/dialog-provider/utils";
   import type { NotifierCreate, NotifierOut } from "~~/lib/api/types/data-contracts";
 
@@ -20,8 +19,6 @@
   });
 
   const { t } = useI18n();
-
-  useHead({ title: `HomeBox | ${t("collection.tabs.notifiers")}` });
 
   const api = useUserApi();
   const confirm = useConfirm();
@@ -97,6 +94,9 @@
     await notifiers.refresh();
   };
 
+  /** Hides the credentials part of a Shoutrrr URL, e.g. discord://token@id → discord://••••@id. */
+  const maskUrl = (url: string) => url.replace(/^([a-z0-9+.-]+:\/\/)([^@/]+)@/i, "$1••••@");
+
   const deleteNotifier = async (id: string) => {
     const result = await confirm.open(t("profile.delete_notifier_confirm"));
 
@@ -112,10 +112,10 @@
     await notifiers.refresh();
   };
 
-  const testNotifier = async () => {
-    if (!notifier.value) return;
+  const testNotifier = async (url = notifier.value?.url) => {
+    if (!url) return;
 
-    const { error } = await api.notifiers.test(notifier.value.url);
+    const { error } = await api.notifiers.test(url);
 
     if (error) {
       toast.error(t("profile.toast.failed_test_notifier"));
@@ -127,7 +127,11 @@
 </script>
 
 <template>
-  <div class="space-y-4">
+  <SettingsSection :title="t('collection.settings.nav.notifiers')" :description="t('profile.notifiers_sub')">
+    <template #actions>
+      <Button size="sm" @click="openNotifierDialog(null)"><Plus /> {{ t("collection.settings.add_notifier") }}</Button>
+    </template>
+
     <Dialog :dialog-id="DialogID.CreateNotifier">
       <DialogContent>
         <DialogHeader>
@@ -138,13 +142,13 @@
           <template v-if="notifier">
             <FormTextField v-model="notifier.name" :label="$t('global.name')" class="mb-2" />
             <FormTextField v-model="notifier.url" :label="$t('profile.url')" class="mb-2" />
-            <div class="max-w-[100px]">
+            <div class="max-w-25">
               <FormCheckbox v-model="notifier.isActive" :label="$t('profile.enabled')" />
             </div>
           </template>
           <div class="mt-4 flex justify-between gap-2">
             <DialogFooter class="flex w-full">
-              <Button variant="secondary" :disabled="!(notifier && notifier.url)" type="button" @click="testNotifier">
+              <Button variant="secondary" :disabled="!(notifier && notifier.url)" type="button" @click="testNotifier()">
                 {{ $t("profile.test") }}
               </Button>
               <div class="grow" />
@@ -155,59 +159,38 @@
       </DialogContent>
     </Dialog>
 
-    <div class="rounded-md border bg-card p-4">
-      <header class="mb-2 flex items-center gap-2">
-        <MdiMegaphone class="-mt-1" />
-        <div>
-          <h2 class="text-lg font-semibold">{{ $t("profile.notifiers") }}</h2>
-          <p class="text-sm text-muted-foreground">{{ $t("profile.notifiers_sub") }}</p>
-        </div>
-      </header>
+    <p v-if="!notifiers.data.value" class="text-sm text-muted-foreground">{{ t("global.loading") }}</p>
+    <p v-else-if="!notifiers.data.value.length" class="text-sm text-muted-foreground">
+      {{ t("profile.no_notifiers") }}
+    </p>
 
-      <div v-if="notifiers.data.value" class="mx-1 divide-y rounded-md border">
-        <p v-if="notifiers.data.value.length === 0" class="p-2 text-center text-sm">
-          {{ $t("profile.no_notifiers") }}
-        </p>
-        <article v-for="n in notifiers.data.value" v-else :key="n.id" class="p-2">
-          <div class="flex flex-wrap items-center gap-2">
-            <p class="mr-auto text-lg">{{ n.name }}</p>
-            <TooltipProvider :delay-duration="0" class="flex justify-end gap-2">
-              <Tooltip>
-                <TooltipTrigger>
-                  <Button variant="destructive" size="icon" @click="deleteNotifier(n.id)">
-                    <MdiDelete />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>{{ $t("global.delete") }}</TooltipContent>
-              </Tooltip>
-              <Tooltip>
-                <TooltipTrigger>
-                  <Button variant="outline" size="icon" @click="openNotifierDialog(n)">
-                    <MdiPencil />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>{{ $t("global.edit") }}</TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          </div>
-          <div class="flex flex-wrap justify-between py-1 text-sm">
-            <p>
-              <span v-if="n.isActive" :class="badgeVariants()">{{ $t("profile.active") }}</span>
-              <span v-else :class="badgeVariants({ variant: 'destructive' })">{{ $t("profile.inactive") }}</span>
-            </p>
-            <p>
-              {{ $t("global.created") }}
-              <DateTime format="relative" datetime-type="time" :date="n.createdAt" />
-            </p>
-          </div>
-        </article>
-      </div>
-
-      <div class="mt-4">
-        <Button variant="secondary" size="sm" @click="openNotifierDialog(null)">
-          {{ $t("global.create") }}
+    <SettingsGroup v-else>
+      <SettingsListRow v-for="n in notifiers.data.value" :key="n.id" :title="n.name">
+        <template #icon><Bell /></template>
+        <template #subtitle
+          ><span class="font-mono">{{ maskUrl(n.url) }}</span></template
+        >
+        <span
+          class="inline-flex h-[22px] items-center gap-1.5 rounded-full px-2 text-xs font-medium max-sm:hidden"
+          :class="n.isActive ? 'bg-accent text-accent-foreground' : 'bg-muted text-muted-foreground'"
+        >
+          <span class="size-1.5 rounded-full bg-current" aria-hidden="true" />
+          {{ n.isActive ? t("profile.active") : t("profile.inactive") }}
+        </span>
+        <Button variant="outline" size="sm" class="max-sm:hidden" @click="testNotifier(n.url)">
+          {{ t("collection.settings.send_test") }}
         </Button>
-      </div>
-    </div>
-  </div>
+        <template #menu>
+          <DropdownMenuItem @select="openNotifierDialog(n)"><Pencil /> {{ t("global.edit") }}</DropdownMenuItem>
+          <DropdownMenuItem @select="testNotifier(n.url)"
+            ><Send /> {{ t("collection.settings.send_test") }}</DropdownMenuItem
+          >
+          <DropdownMenuSeparator />
+          <DropdownMenuItem class="text-destructive focus:text-destructive" @select="deleteNotifier(n.id)">
+            <Trash2 /> {{ t("global.delete") }}
+          </DropdownMenuItem>
+        </template>
+      </SettingsListRow>
+    </SettingsGroup>
+  </SettingsSection>
 </template>

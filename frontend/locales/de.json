@@ -460,7 +460,7 @@
         "follow_dev": "Dem Entwickler folgen",
         "footer": {
             "api_link": "'<a href=\"https://homebox.software/en/api/\" target=\"_blank\">'API'</a>'",
-            "version_link": "'<'a href=\"https://github.com/sysadminsmedia/homebox/releases/tag/v{ version }\" target=\"_blank\"'>' Version: { version } Erstellt: { build } '</a>'"
+            "version_link": "'<'a href=\"https://github.com/frozenbug-dev/homebox/releases/tag/v{ version }\" target=\"_blank\"'>' Version: { version } Erstellt: { build } '</a>'"
         },
         "github": "GitHub-Projekt",
         "insured": "Versichert",
@@ -811,7 +811,6 @@
         "delete_account_confirm": "Möchten Sie Ihr Konto wirklich löschen? Wenn Sie das letzte Mitglied Ihrer Gruppe sind, werden alle Ihre Daten gelöscht. Diese Aktion kann nicht rückgängig gemacht werden.",
         "delete_account_sub": "Lösche dein Konto und alle zugehörigen Daten. Dies kann nicht rückgängig gemacht werden.",
         "delete_notifier_confirm": "Möchten Sie diesen Notifier wirklich löschen?",
-        "display_legacy_header": "{ currentValue, select, true {Legacy-Header deaktivieren} false {Legacy-Header aktivieren} other {Nicht getroffen}}",
         "enabled": "Aktiviert",
         "example": "Beispiel",
         "group_settings": "Gruppeneinstellungen",
@@ -836,8 +835,6 @@
         "notifiers_sub": "Erhalte Benachrichtigungen über bevorstehende Wartungserinnerungen",
         "override_locale": "Datum und Währungssprache überschreiben",
         "test": "Test",
-        "theme_settings": "Themes",
-        "theme_settings_sub": "Theme-Einstellungen werden im lokalen Speicher deines Browsers gespeichert. Du kannst das Theme jederzeit ändern.\nWenn du Probleme hast, dein Theme einzustellen, versuche, die Seite neu zu laden.",
         "toast": {
             "account_deleted": "Ihr Konto wurde gelöscht.",
             "api_key_created": "API-Key erstellt.",
@@ -874,7 +871,7 @@
             "input_placeholder": "Hier tippen",
             "instruction_1": "Der Homebox-Etikettengenerator ist ein Tool, mit dem Sie Etiketten für Ihr Homebox-Inventar drucken können. Er dient dazu,\nEtiketten im Voraus zu drucken, sodass Sie viele Etiketten drucken und zum Anbringen bereithalten können",
             "instruction_2": "Diese Etiketten funktionieren, indem Sie einen URL-QR-Code und Asset-ID-Informationen auf ein Etikett drucken. Falls Sie Asset-IDs\nin Ihren HomeBox-Einstellungen deaktiviert haben, können Sie dieses Tool weiterhin verwenden, aber die Asset-IDs verweisen nicht auf Artikel",
-            "instruction_3": "Diese Funktion ist in einer frühen Entwicklungsphase und kann sich in zukünftigen Versionen ändern. Wenn Sie Feedback geben möchten, können Sie das hier tun:\n '<a href=\"https://github.com/sysadminsmedia/homebox/discussions/53\">'GitHub Discussion'</a>'",
+            "instruction_3": "Diese Funktion ist in einer frühen Entwicklungsphase und kann sich in zukünftigen Versionen ändern. Wenn Sie Feedback geben möchten, können Sie das hier tun:\n '<a href=\"https://github.com/frozenbug-dev/homebox/discussions\">'GitHub Discussion'</a>'",
             "label_height": "Etikettenhöhe",
             "label_width": "Etikettenbreite",
             "measure_type": "Maßeinheit",

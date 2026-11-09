@@ -1,6 +1,5 @@
 import type { Ref } from "vue";
 import type { EntitySummary } from "~/lib/api/types/data-contracts";
-import type { DaisyTheme } from "~~/lib/data/themes";
 
 export type ViewType = "table" | "card";
 
@@ -13,16 +12,13 @@ export type DuplicateSettings = {
 
 export type LocationViewPreferences = {
   showDetails: boolean;
-  showEmpty: boolean;
   editorAdvancedView: boolean;
   itemDisplayView: ViewType;
-  theme: DaisyTheme;
   itemsPerTablePage: number;
   tableHeaders?: {
     value: keyof EntitySummary;
     enabled: boolean;
   }[];
-  displayLegacyHeader: boolean;
   legacyImageFit: boolean;
   language?: string | null;
   overrideFormatLocale?: string | null;
@@ -43,17 +39,18 @@ export type LocationViewPreferences = {
   measurementSystem: "metric" | "imperial" | null;
 };
 export type PreferenceSyncConfig = Partial<Record<keyof LocationViewPreferences, boolean>>;
-type PreferenceChange = true | Record<string, PreferenceChange>;
+// An interface breaks the self-reference that a plain Record alias cannot.
+interface PreferenceChangeMap {
+  [field: string]: PreferenceChange;
+}
+type PreferenceChange = true | PreferenceChangeMap;
 type PreferenceChanges = Partial<Record<keyof LocationViewPreferences, PreferenceChange>>;
 
 const DEFAULT_PREFERENCES: LocationViewPreferences = {
   showDetails: true,
-  showEmpty: true,
   editorAdvancedView: false,
   itemDisplayView: "card",
-  theme: "homebox",
   itemsPerTablePage: 12,
-  displayLegacyHeader: false,
   legacyImageFit: false,
   language: null,
   overrideFormatLocale: null,

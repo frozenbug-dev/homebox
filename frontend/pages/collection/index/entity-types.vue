@@ -7,15 +7,12 @@
     EntityTypeUpdate,
     EntityTemplateSummary,
   } from "~~/lib/api/types/data-contracts";
-  import MdiPlus from "~icons/mdi/plus";
-  import MdiPencil from "~icons/mdi/pencil";
-  import MdiDelete from "~icons/mdi/delete";
-  import MdiMapMarkerOutline from "~icons/mdi/map-marker-outline";
-  import MdiPackageVariantClosed from "~icons/mdi/package-variant-closed";
+  import { MapPin, Package, Pencil, Plus, Trash2 } from "@lucide/vue";
   import { Button } from "@/components/ui/button";
-  import { Badge } from "@/components/ui/badge";
-  import { Card } from "@/components/ui/card";
-  import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+  import { DropdownMenuItem, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
+  import SettingsSection from "~/components/Settings/Section.vue";
+  import SettingsGroup from "~/components/Settings/Group.vue";
+  import SettingsListRow from "~/components/Settings/ListRow.vue";
   import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
   import { useDialog } from "@/components/ui/dialog-provider";
   import { DialogID } from "~/components/ui/dialog-provider/utils";
@@ -24,9 +21,9 @@
   import TemplateSelector from "~/components/Template/Selector.vue";
   import { useEntityTypeStore } from "~/stores/entityTypes";
 
-  const { t } = useI18n();
+  definePageMeta({ middleware: ["auth"] });
 
-  useHead({ title: `HomeBox | ${t("collection.tabs.entity_types")}` });
+  const { t } = useI18n();
 
   const api = useUserApi();
   const confirm = useConfirm();
@@ -149,7 +146,16 @@
 </script>
 
 <template>
-  <div>
+  <SettingsSection
+    :title="t('collection.settings.nav.entity_types')"
+    :description="t('collection.settings.entity_types_sub')"
+  >
+    <template #actions>
+      <Button size="sm" @click="openDialog(DialogID.CreateEntityType)">
+        <Plus /> {{ t("components.entityTypes.page.empty_button") }}
+      </Button>
+    </template>
+
     <!-- Create Dialog -->
     <Dialog :dialog-id="DialogID.CreateEntityType">
       <DialogContent>
@@ -204,67 +210,44 @@
       </DialogContent>
     </Dialog>
 
-    <!-- Page Content -->
-    <div class="mb-4 flex items-center justify-between">
-      <h3 class="text-lg font-medium">{{ t("components.entityTypes.page.title") }}</h3>
+    <SettingsGroup v-if="entityTypes && entityTypes.length > 0">
+      <SettingsListRow
+        v-for="et in entityTypes"
+        :key="et.id"
+        :title="t(et.name)"
+        :subtitle="
+          et.defaultTemplate && !et.isLocation
+            ? t('components.entityTypes.card.default_template', { name: et.defaultTemplate.name })
+            : undefined
+        "
+      >
+        <template #icon>
+          <MapPin v-if="et.isLocation" />
+          <Package v-else />
+        </template>
+        <span
+          v-if="et.isLocation"
+          class="inline-flex h-[22px] items-center rounded-full bg-accent px-2 text-xs font-medium text-accent-foreground"
+        >
+          {{ t("components.entityTypes.card.badge_container") }}
+        </span>
+        <template #menu>
+          <DropdownMenuItem @select="openEdit(et)">
+            <Pencil /> {{ t("components.entityTypes.card.tooltip.edit") }}
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem class="text-destructive focus:text-destructive" @select="deleteEntityType(et)">
+            <Trash2 /> {{ t("components.entityTypes.card.tooltip.delete") }}
+          </DropdownMenuItem>
+        </template>
+      </SettingsListRow>
+    </SettingsGroup>
+
+    <div v-else class="flex flex-col items-center justify-center rounded-xl border border-dashed py-12 text-center">
+      <p class="mb-4 text-sm text-muted-foreground">{{ t("components.entityTypes.page.empty_title") }}</p>
       <Button size="sm" @click="openDialog(DialogID.CreateEntityType)">
-        <MdiPlus class="mr-1 size-4" />
-        {{ t("components.entityTypes.page.create") }}
+        <Plus /> {{ t("components.entityTypes.page.empty_button") }}
       </Button>
     </div>
-
-    <div v-if="entityTypes && entityTypes.length > 0" class="flex flex-col gap-2">
-      <Card v-for="et in entityTypes" :key="et.id" class="p-4">
-        <div class="flex items-center gap-3">
-          <div
-            class="flex size-10 shrink-0 items-center justify-center rounded-full bg-secondary text-secondary-foreground"
-          >
-            <MdiMapMarkerOutline v-if="et.isLocation" class="size-5" />
-            <MdiPackageVariantClosed v-else class="size-5" />
-          </div>
-
-          <div class="mr-auto min-w-0">
-            <div class="flex items-center gap-2">
-              <span class="font-medium">{{ t(et.name) }}</span>
-              <Badge v-if="et.isLocation" variant="secondary" class="text-xs">
-                {{ t("components.entityTypes.card.badge_container") }}
-              </Badge>
-            </div>
-            <p v-if="et.defaultTemplate && !et.isLocation" class="text-xs text-muted-foreground">
-              {{ t("components.entityTypes.card.default_template", { name: et.defaultTemplate.name }) }}
-            </p>
-          </div>
-
-          <TooltipProvider :delay-duration="0">
-            <div class="flex gap-1">
-              <Tooltip>
-                <TooltipTrigger as-child>
-                  <Button variant="ghost" size="icon" class="size-8" @click="openEdit(et)">
-                    <MdiPencil class="size-4" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>{{ t("components.entityTypes.card.tooltip.edit") }}</TooltipContent>
-              </Tooltip>
-              <Tooltip>
-                <TooltipTrigger as-child>
-                  <Button variant="ghost" size="icon" class="size-8 text-destructive" @click="deleteEntityType(et)">
-                    <MdiDelete class="size-4" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>{{ t("components.entityTypes.card.tooltip.delete") }}</TooltipContent>
-              </Tooltip>
-            </div>
-          </TooltipProvider>
-        </div>
-      </Card>
-    </div>
-
-    <div v-else class="flex flex-col items-center justify-center py-12 text-center">
-      <p class="mb-4 text-muted-foreground">{{ t("components.entityTypes.page.empty_title") }}</p>
-      <Button @click="openDialog(DialogID.CreateEntityType)">
-        <MdiPlus class="mr-2" />
-        {{ t("components.entityTypes.page.empty_button") }}
-      </Button>
-    </div>
-  </div>
+  </SettingsSection>
 </template>

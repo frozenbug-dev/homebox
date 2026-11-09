@@ -20,7 +20,7 @@ const forwardedProps = useForwardProps(delegatedProps)
     :class="cn(
       'text-base',
       'md:text-sm',
-      'min-h-6 focus:outline-none flex-1 bg-transparent px-1',
+      'min-h-6 focus:outline-hidden flex-1 bg-transparent px-1',
       props.class
     )"
   />

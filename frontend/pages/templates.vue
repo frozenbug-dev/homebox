@@ -1,24 +1,22 @@
 <script setup lang="ts">
   import { useI18n } from "vue-i18n";
+  import { Plus } from "@lucide/vue";
   import { toast } from "@/components/ui/sonner";
-  import MdiPlus from "~icons/mdi/plus";
   import { Button } from "@/components/ui/button";
   import { useDialog } from "@/components/ui/dialog-provider";
   import { DialogID } from "~/components/ui/dialog-provider/utils";
-  import BaseContainer from "@/components/Base/Container.vue";
-  import BaseSectionHeader from "@/components/Base/SectionHeader.vue";
-  import TemplateCard from "~/components/Template/Card.vue";
+  import AppHeaderActions from "~/components/App/HeaderActions.vue";
   import TemplateCreateModal from "~/components/Template/CreateModal.vue";
+  import ResourceList from "~/components/Resource/List.vue";
+  import TemplateResource from "~/components/Resource/TemplateResource.vue";
+  import SelectionBar from "~/components/Resource/SelectionBar.vue";
+  import SelectionAction from "~/components/Resource/SelectionAction.vue";
 
-  definePageMeta({
-    middleware: ["auth"],
-  });
+  definePageMeta({ middleware: ["auth"] });
 
   const { t } = useI18n();
-
-  useHead({
-    title: computed(() => `HomeBox | ${t("pages.templates.title")}`),
-  });
+  useHead({ title: () => `HomeBox | ${t("pages.templates.title")}` });
+  usePageHeader(() => [{ label: t("pages.templates.title") }]);
 
   const api = useUserApi();
   const { openDialog } = useDialog();
@@ -29,42 +27,45 @@
       toast.error(t("components.template.toast.load_failed"));
       return [];
     }
-    return data;
+    return [...data].sort((a, b) => a.name.localeCompare(b.name));
   });
 
-  // Wrapper functions to match event signatures
-  const handleRefresh = () => refresh();
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const handleDuplicated = (_id: string) => refresh();
+  const actions = useTemplateActions(() => refresh());
+  const create = () => openDialog(DialogID.CreateTemplate);
 </script>
+
 <template>
-  <BaseContainer>
-    <div class="mb-4 flex justify-between">
-      <BaseSectionHeader>{{ $t("pages.templates.title") }}</BaseSectionHeader>
-      <Button @click="openDialog(DialogID.CreateTemplate)">
-        <MdiPlus class="mr-2" />
-        {{ $t("global.create") }}
+  <div class="flex flex-1 flex-col">
+    <AppHeaderActions>
+      <Button size="sm" class="h-[30px] text-[13px]" @click="create">
+        <Plus />
+        {{ t("shell.templates_page.new_template") }}
       </Button>
-    </div>
+    </AppHeaderActions>
+    <TemplateCreateModal @created="refresh()" />
 
-    <TemplateCreateModal @created="handleRefresh" />
+    <ResourceList
+      class="py-1.5"
+      :items="templates ?? []"
+      :get-key="tpl => tpl.id"
+      :to="tpl => `/template/${tpl.id}`"
+      :label="t('pages.templates.title')"
+    >
+      <template #default="{ item }">
+        <TemplateResource :template="item" @duplicate="actions.duplicate" @delete="actions.remove" />
+      </template>
+      <template #selection="{ items, clear }">
+        <SelectionBar :count="items.length" @clear="clear">
+          <SelectionAction destructive @click="actions.remove(items).then(clear)">
+            {{ t("shell.items_page.delete") }}
+          </SelectionAction>
+        </SelectionBar>
+      </template>
+    </ResourceList>
 
-    <div v-if="templates && templates.length > 0" class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-      <TemplateCard
-        v-for="tpl in templates"
-        :key="tpl.id"
-        :template="tpl"
-        @deleted="handleRefresh"
-        @duplicated="handleDuplicated"
-      />
-    </div>
-
-    <div v-else class="flex flex-col items-center justify-center py-12 text-center">
-      <p class="mb-4 text-muted-foreground">{{ $t("pages.templates.no_templates") }}</p>
-      <Button @click="openDialog(DialogID.CreateTemplate)">
-        <MdiPlus class="mr-2" />
-        {{ $t("components.template.create_modal.title") }}
-      </Button>
-    </div>
-  </BaseContainer>
+    <!-- Empty state; "New template" sits in the header -->
+    <p v-if="templates && !templates.length" class="px-4 py-6 text-center text-sm text-muted-foreground">
+      {{ t("pages.templates.no_templates") }}
+    </p>
+  </div>
 </template>

@@ -460,7 +460,7 @@
         "follow_dev": "Підписатись на розробника",
         "footer": {
             "api_link": "'<a href=\"https://homebox.software/en/api/\" target=\"_blank\">'API'</a>'",
-            "version_link": "'<'a href=\"https://github.com/sysadminsmedia/homebox/releases/tag/v{ version }\" target=\"_blank\"'>' Версія: { version } Збірка: { build } '</a>'"
+            "version_link": "'<'a href=\"https://github.com/frozenbug-dev/homebox/releases/tag/v{ version }\" target=\"_blank\"'>' Версія: { version } Збірка: { build } '</a>'"
         },
         "github": "GitHub проекту",
         "insured": "Застрахований",
@@ -811,7 +811,6 @@
         "delete_account_confirm": "Ви впевнені, що хочете видалити свій обліковий запис? Якщо ви останній учасник групи, усі ваші дані буде видалено. Цю дію не можна скасувати.",
         "delete_account_sub": "Видалити акаунт і всі пов'язані дані. Це невідворотна дія.",
         "delete_notifier_confirm": "Ви впевнені, що хочете видалити цей сповіщувач?",
-        "display_legacy_header": "{ currentValue, select, true {Вимкнути застарілий заголовок} false {Увімкнути застарілий заголовок} other {Не знайдено}}",
         "enabled": "Включено",
         "example": "Приклад",
         "group_settings": "Налаштування групи",
@@ -836,8 +835,6 @@
         "notifiers_sub": "Отримувати сповіщення про майбутнє технічне обслуговування",
         "override_locale": "Заміна мови дати та валюти",
         "test": "Тест",
-        "theme_settings": "Налаштування Теми",
-        "theme_settings_sub": "Налаштування теми зберігаються в локальному сховищі вашого браузера. Ви можете змінити тему в будь-який момент. Якщо\nзберегти не вдається, спробуйте оновити сторінку (Ctrl+F5).",
         "toast": {
             "account_deleted": "Ваш обліковий запис видалено.",
             "api_key_created": "Ключ API створено.",
@@ -874,7 +871,7 @@
             "input_placeholder": "Введіть тут",
             "instruction_1": "Генератор міток HomeBox — це інструмент, який допоможе вам друкувати мітки для вашого інвентарю HomeBox. Вони\n призначені для попереднього друку, щоб ви могли роздрукувати багато міток і тримати їх готовими до наклеювання",
             "instruction_2": "Таким чином, ці етикетки працюють шляхом друку QR-коду з URL-адресою та інформації про AssetID. Якщо ви вимкнули \n AssetID у налаштуваннях HomeBox, ви все одно можете використовувати цей інструмент, але AssetID не матимуть посилань на жоден об'єкт",
-            "instruction_3": "Ця функція перебуває на ранній стадії розробки та може змінитися в майбутніх версіях. Якщо у вас є відгуки, \nбудь ласка, залиште їх у <a href=\"https://github.com/sysadminsmedia/homebox/discussions/53\">«обговоренні на GitHub».</a>",
+            "instruction_3": "Ця функція перебуває на ранній стадії розробки та може змінитися в майбутніх версіях. Якщо у вас є відгуки, \nбудь ласка, залиште їх у <a href=\"https://github.com/frozenbug-dev/homebox/discussions\">«обговоренні на GitHub».</a>",
             "label_height": "Висота мітки",
             "label_width": "Ширина мітки",
             "measure_type": "Одиниці вимірювання",

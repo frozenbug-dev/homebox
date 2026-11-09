@@ -11,10 +11,9 @@
    <a href="https://discord.gg/aY4DCkpNA9">Discord</a>
 </p>
 <p align="center" style="width: 100%;">
-    <img src="https://img.shields.io/github/check-runs/sysadminsmedia/homebox/main" alt="Github Checks"/>
-    <img src="https://img.shields.io/github/license/sysadminsmedia/homebox"/>
-    <img src="https://img.shields.io/github/v/release/sysadminsmedia/homebox?sort=semver&display_name=release"/>
-    <img src="https://img.shields.io/weblate/progress/homebox?server=https%3A%2F%2Ftranslate.sysadminsmedia.com"/>
+    <img src="https://img.shields.io/github/check-runs/frozenbug-dev/homebox/main" alt="Github Checks"/>
+    <img src="https://img.shields.io/github/license/frozenbug-dev/homebox"/>
+    <img src="https://img.shields.io/github/v/release/frozenbug-dev/homebox?sort=semver&display_name=release"/>
 </p>
 <p align="center" style="width: 100%;">
     <img src="https://img.shields.io/reddit/subreddit-subscribers/homebox"/>
@@ -71,9 +70,9 @@ docker run -d \
   --env TZ=Europe/Bucharest \
   --env HBOX_AUTH_API_KEY_PEPPER=$(cat hbox.pepper) \
   --volume /path/to/data/folder/:/data \
-  ghcr.io/sysadminsmedia/homebox:latest
-# ghcr.io/sysadminsmedia/homebox:latest-rootless
-# ghcr.io/sysadminsmedia/homebox:latest-hardened
+  ghcr.io/frozenbug-dev/homebox:latest
+# ghcr.io/frozenbug-dev/homebox:latest-rootless
+# ghcr.io/frozenbug-dev/homebox:latest-hardened
 ```
 
 <!-- CONTRIBUTING -->
@@ -87,15 +86,13 @@ To get started with code based contributions, please see our [contributing guide
 If you are not a coder and can't help translate, you can still contribute financially. Financial contributions help us maintain the project and keep demos running.
 
 ## Help us Translate
-We want to make sure that Homebox is available in as many languages as possible. If you are interested in helping us translate Homebox, please help us via our [Weblate instance](https://translate.sysadminsmedia.com/projects/homebox/).
-
-[![Translation status](https://translate.sysadminsmedia.com/widget/homebox/multi-auto.svg)](https://translate.sysadminsmedia.com/engage/homebox/)
+We want to make sure that Homebox is available in as many languages as possible. If you are interested in helping us translate Homebox, open a pull request against the files in [`frontend/locales`](frontend/locales).
 
 ## Credits
 - Original project by [@hay-kot](https://github.com/hay-kot)
 - Logo by [@lakotelman](https://github.com/lakotelman)
 
 ### Contributors
-<a href="https://github.com/sysadminsmedia/homebox/graphs/contributors">
-  <img src="https://contrib.rocks/image?repo=sysadminsmedia/homebox" />
+<a href="https://github.com/frozenbug-dev/homebox/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=frozenbug-dev/homebox" />
 </a>

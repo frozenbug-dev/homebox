@@ -7,7 +7,7 @@
           {{ text || $t("global.delete_confirm") }}
         </AlertDialogDescription>
         <div v-if="href && href !== ''">
-          <a :href="href" target="_blank" rel="noopener noreferrer" class="break-all text-sm text-primary underline">
+          <a :href="href" target="_blank" rel="noopener noreferrer" class="text-sm break-all text-primary underline">
             {{ href }}
           </a>
         </div>

@@ -41,7 +41,7 @@ type PDFRenderOptions struct {
 // DefaultPDFOptions returns sensible defaults for PDF generation
 func DefaultPDFOptions() PDFRenderOptions {
 	return PDFRenderOptions{
-		PageSize:      PDFPageLetter,
+		PageSize:      PDFPageA4,
 		Orientation:   "P",
 		MarginTop:     10,
 		MarginBottom:  10,
@@ -64,7 +64,7 @@ func getPageDimensions(opts PDFRenderOptions) (width, height float64) {
 	case PDFPageCustom:
 		width, height = opts.PageWidth, opts.PageHeight
 	default:
-		width, height = 215.9, 279.4 // default to letter
+		width, height = 210, 297 // default to A4
 	}
 
 	if opts.Orientation == "L" {

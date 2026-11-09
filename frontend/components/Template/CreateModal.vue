@@ -15,7 +15,9 @@
       />
 
       <Separator class="my-2" />
-      <h3 class="text-sm font-medium">{{ $t("components.template.form.default_item_values") }}</h3>
+      <h3 class="text-sm font-medium">
+        {{ $t("components.template.form.default_item_values") }}
+      </h3>
       <div class="flex min-w-0 flex-col gap-2">
         <FormTextField v-model="form.defaultName" :label="$t('components.template.form.item_name')" :max-length="255" />
         <FormTextArea
@@ -63,9 +65,11 @@
 
       <Separator class="my-2" />
       <div class="flex items-center justify-between">
-        <h3 class="text-sm font-medium">{{ $t("components.template.form.custom_fields") }}</h3>
+        <h3 class="text-sm font-medium">
+          {{ $t("components.template.form.custom_fields") }}
+        </h3>
         <Button type="button" size="sm" variant="outline" @click="addField">
-          <MdiPlus class="mr-1 size-4" />
+          <Plus class="mr-1 size-4" />
           {{ $t("global.add") }}
         </Button>
       </div>
@@ -83,11 +87,13 @@
             class="flex-1"
           />
           <Button type="button" size="icon" variant="ghost" @click="form.fields.splice(idx, 1)">
-            <MdiDelete class="size-4" />
+            <Trash2 class="size-4" />
           </Button>
         </div>
       </div>
-      <p v-else class="text-sm text-muted-foreground">{{ $t("components.template.form.no_custom_fields") }}</p>
+      <p v-else class="text-sm text-muted-foreground">
+        {{ $t("components.template.form.no_custom_fields") }}
+      </p>
 
       <div class="mt-4 flex justify-end">
         <Button type="submit" :loading="loading">{{ $t("global.create") }}</Button>
@@ -97,10 +103,9 @@
 </template>
 
 <script setup lang="ts">
+  import { Plus, Trash2 } from "@lucide/vue";
   import { useI18n } from "vue-i18n";
   import { toast } from "@/components/ui/sonner";
-  import MdiPlus from "~icons/mdi/plus";
-  import MdiDelete from "~icons/mdi/delete";
   import { DialogID } from "@/components/ui/dialog-provider/utils";
   import BaseModal from "@/components/App/CreateModal.vue";
   import { useDialog } from "~/components/ui/dialog-provider";
@@ -113,7 +118,8 @@
   import LocationSelector from "~/components/Location/Selector.vue";
   import TagSelector from "~/components/Tag/Selector.vue";
   import { useTagStore } from "~/stores/tags";
-  import type { EntitySummary } from "~~/lib/api/types/data-contracts";
+  import type { EntitySummary, TemplateField } from "~~/lib/api/types/data-contracts";
+  import { templateField } from "~~/lib/api/template-fields";
 
   const emit = defineEmits<{ created: [] }>();
   const { closeDialog } = useDialog();
@@ -140,13 +146,11 @@
     includeWarrantyFields: false,
     includePurchaseFields: false,
     includeSoldFields: false,
-    fields: [] as Array<{ id: string; name: string; type: "text"; textValue: string }>,
+    fields: [] as TemplateField[],
   });
 
-  const NIL_UUID = "00000000-0000-0000-0000-000000000000";
-
   function addField() {
-    form.fields.push({ id: NIL_UUID, name: "", type: "text", textValue: "" });
+    form.fields.push(templateField());
   }
 
   function reset() {

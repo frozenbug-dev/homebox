@@ -130,6 +130,29 @@ func TestAttachmentRepo_Update(t *testing.T) {
 	}
 }
 
+func TestAttachmentRepo_UpdateTitle(t *testing.T) {
+	ctx := context.Background()
+	att := useAttachments(t, 1)[0]
+
+	_, err := tRepos.Attachments.Update(ctx, tGroup.ID, att.ID, &ItemAttachmentUpdate{
+		Type:  string(att.Type),
+		Title: "  Renamed manual  ",
+	})
+	require.NoError(t, err)
+
+	updated, err := tRepos.Attachments.Get(ctx, tGroup.ID, att.ID)
+	require.NoError(t, err)
+	assert.Equal(t, "Renamed manual", updated.Title)
+
+	// No title keeps the current one.
+	_, err = tRepos.Attachments.Update(ctx, tGroup.ID, att.ID, &ItemAttachmentUpdate{Type: string(att.Type)})
+	require.NoError(t, err)
+
+	updated, err = tRepos.Attachments.Get(ctx, tGroup.ID, att.ID)
+	require.NoError(t, err)
+	assert.Equal(t, "Renamed manual", updated.Title)
+}
+
 func TestAttachmentRepo_Delete(t *testing.T) {
 	entity := useAttachments(t, 1)[0]
 

@@ -460,7 +460,7 @@
         "follow_dev": "Sledovat vývojáře",
         "footer": {
             "api_link": "'<a href=\"https://homebox.software/en/api/\" target=\"_blank\">'API'</a>'",
-            "version_link": "'<'a href=\"https://github.com/sysadminsmedia/homebox/releases/tag/v{ version }\" target=\"_blank\">' Verze: { version } Sestavení: { build }'</a>'"
+            "version_link": "'<'a href=\"https://github.com/frozenbug-dev/homebox/releases/tag/v{ version }\" target=\"_blank\">' Verze: { version } Sestavení: { build }'</a>'"
         },
         "github": "GitHub projekt",
         "insured": "Pojištěno",
@@ -812,7 +812,6 @@
         "delete_account_confirm": "Opravdu chcete svůj účet odstranit? Pokud jste posledním členem skupiny, budou všechna vaše data odstraněna. Tuto akci nelze vzít zpět.",
         "delete_account_sub": "Odstranit váš účet a všechna jeho přidružená data. Tuto akci nelze vrátit.",
         "delete_notifier_confirm": "Opravdu chcete tohoto oznamovače odstranit?",
-        "display_legacy_header": "{ currentValue, select, true {Zakázat staré záhlaví} false {Povolit staré záhlaví} other {Nevybráno}}",
         "enabled": "Povoleno",
         "example": "Příklad",
         "group_settings": "Nastavení skupiny",
@@ -837,8 +836,6 @@
         "notifiers_sub": "Dostávejte oznámení o nadcházejících údržbách",
         "override_locale": "Přepsat jazyk data a měny",
         "test": "Otestovat",
-        "theme_settings": "Nastavení motivu",
-        "theme_settings_sub": "Nastavení motivu jsou uložena v místním úložišti prohlížeče. Motiv můžete kdykoli změnit. Pokud máte s \n nastavením motivu potíže, zkuste obnovit prohlížeč.",
         "toast": {
             "account_deleted": "Váš účet byl odstraněn.",
             "api_key_created": "API klíč byl vytvořen.",
@@ -875,7 +872,7 @@
             "input_placeholder": "Zadejte zde",
             "instruction_1": "Generátor etiket HomeBox je nástroj, který vám pomůže tisknout etikety pro váš inventář HomeBox. Tyto etiket jsou\nurčeny k předběžnému tisku, takže můžete vytisknout mnoho etiket a mít je připravené k použití",
             "instruction_2": "Tyto etikety fungují tak, že na etiketu vytisknou QR kód adresy URL a ID majetku. Pokud jste zakázali ID majetku\n v nastavení HomeBoxu, můžete tento nástroj stále používat, ale ID majetku nebude odkazovat na žádnou položku",
-            "instruction_3": "Tato funkce je v rané fázi vývoje a v budoucích vydáních se může změnit, pokud máte zpětnou vazbu, uveďte ji\n prosím do ' <a href=\"https://github.com/sysadminsmedia/homebox/discussions/53\">'Diskuze na GitHubu'</a>'",
+            "instruction_3": "Tato funkce je v rané fázi vývoje a v budoucích vydáních se může změnit, pokud máte zpětnou vazbu, uveďte ji\n prosím do ' <a href=\"https://github.com/frozenbug-dev/homebox/discussions\">'Diskuze na GitHubu'</a>'",
             "label_height": "Výška etikety",
             "label_width": "Šířka etikety",
             "measure_type": "Typ měření",

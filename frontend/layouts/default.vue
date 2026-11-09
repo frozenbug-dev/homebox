@@ -12,248 +12,286 @@
     <TagCreateModal />
     <LabelTemplatePrintDialog />
     <ItemBarcodeModal />
-    <AppQuickMenuModal :actions="quickMenuActions" />
+    <ItemChangeDetailsDialog />
+    <ItemEditNumberDialog />
+    <AppCommandPalette @scan="openScanner" />
+    <AppShortcutsDialog />
     <AppScannerModal />
     <CollectionCreateModal />
     <CollectionJoinModal />
     <CollectionInviteCreateModal />
     <SidebarProvider :default-open="sidebarState">
-      <Sidebar collapsible="icon">
-        <SidebarHeader class="items-center">
-          <SidebarGroupLabel class="text-base group-data-[collapsible=icon]:hidden">{{
-            $t("global.welcome", { username: username })
-          }}</SidebarGroupLabel>
-          <NuxtLink class="group-data-[collapsible=icon]:hidden" to="/home">
-            <div class="flex size-24 items-center justify-center rounded-full bg-background-accent p-4">
-              <AppLogo />
+      <!-- Desktop: see-through, so the page background shows behind it. The phone drawer keeps its fill. -->
+      <Sidebar collapsible="icon" class="border-r-0 *:data-[sidebar=sidebar]:bg-transparent">
+        <SidebarHeader class="gap-2 p-2.5 pb-2">
+          <div class="flex items-center gap-2">
+            <div class="min-w-0 flex-1">
+              <CollectionSelector />
             </div>
-          </NuxtLink>
-
-          <CollectionSelector />
-
-          <DropdownMenu>
-            <DropdownMenuTrigger as-child>
-              <SidebarMenuButton
-                class="flex justify-center bg-primary text-primary-foreground drop-shadow-md hover:bg-primary/90 active:bg-primary/90 active:text-primary-foreground group-data-[collapsible=icon]:justify-start"
-                :tooltip="$t('global.create')"
-                hotkey="Shortcut: Ctrl+`"
-              >
-                <MdiPlus />
-                <span>
-                  {{ $t("global.create") }}
-                </span>
-              </SidebarMenuButton>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent class="z-40 min-w-[var(--reka-dropdown-menu-trigger-width)]">
-              <DropdownMenuItem
-                v-for="btn in dropdown"
-                :key="btn.id"
-                class="group cursor-pointer text-lg"
-                @click="
-                  () => {
-                    if (btn.dialogId === DialogID.CreateEntity) {
-                      if (btn.id == 0)
-                        // create item
-                        openDialog(btn.dialogId, { params: { baseType: 'item' } });
-                      else if (btn.id == 1)
-                        // create location
-                        openDialog(btn.dialogId, { params: { baseType: 'location' } });
-                    } else {
-                      openDialog(btn.dialogId as NoParamDialogIDs);
-                    }
-                  }
-                "
-              >
-                {{ btn.name.value }}
-                <Shortcut
-                  v-if="btn.shortcut"
-                  class="invisible ml-auto group-hover:visible"
-                  :keys="btn.shortcut.replace('Shift', '⇧').split('+')"
-                />
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          </div>
+          <div class="flex gap-1.5 group-data-[collapsible=icon]:flex-col">
+            <SidebarMenuButton
+              class="h-9 flex-1 justify-start rounded-[9px] border border-border bg-background text-[13px] text-muted-foreground hover:bg-background hover:text-foreground"
+              :tooltip="$t('shell.search_or_add')"
+              @click="openDialog(DialogID.CommandPalette)"
+            >
+              <Search />
+              <span>{{ $t("shell.search_or_add") }}</span>
+              <ShortcutHint :hotkey="SHORTCUTS.commandPalette" class="ml-auto group-data-[collapsible=icon]:hidden" />
+            </SidebarMenuButton>
+            <SidebarMenuButton
+              class="size-9 shrink-0 justify-center rounded-[9px] border border-[color-mix(in_oklab,hsl(var(--primary))_92%,black)] bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground"
+              :tooltip="$t('shell.new_item')"
+              :aria-label="$t('shell.new_item')"
+              @click="openDialog(DialogID.CreateEntity, { params: { baseType: 'item' } })"
+            >
+              <Plus />
+            </SidebarMenuButton>
+          </div>
         </SidebarHeader>
 
         <SidebarContent>
-          <SidebarGroup>
-            <SidebarMenu>
-              <template v-for="n in nav" :key="n.id">
-                <SidebarMenuItem v-if="!n.collapsible" :key="n.id">
-                  <SidebarMenuLink
-                    :href="n.to"
-                    :class="{
-                      'bg-accent text-accent-foreground': n.active?.value,
-                      'text-nowrap': typeof locale === 'string' && locale.startsWith('zh-'),
-                    }"
-                    :tooltip="n.name.value"
-                  >
-                    <component :is="n.icon" />
-                    <span>{{ n.name.value }}</span>
-                  </SidebarMenuLink>
-                </SidebarMenuItem>
-
-                <Collapsible v-else default-open class="group/collapsible">
-                  <SidebarMenuItem>
-                    <SidebarMenuItem class="flex gap-1">
-                      <SidebarMenuLink
-                        :href="n.to"
-                        :class="{
-                          'bg-accent text-accent-foreground': n.active?.value,
-                          'text-nowrap': typeof locale === 'string' && locale.startsWith('zh-'),
-                        }"
-                        :tooltip="n.name.value"
-                      >
-                        <component :is="n.icon" />
-                        <span>{{ n.name.value }}</span>
-                      </SidebarMenuLink>
-                      <CollapsibleTrigger as-child>
-                        <SidebarMenuButton class="flex size-12 items-center justify-center">
-                          <MdiChevronRight
-                            class="transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90"
-                          />
-                        </SidebarMenuButton>
-                      </CollapsibleTrigger>
-                    </SidebarMenuItem>
-                    <CollapsibleContent>
-                      <SidebarMenuSub>
-                        <SidebarMenuSubItem v-for="c in n.collapsible" :key="c.id">
-                          <SidebarMenuLink
-                            :href="c.to"
-                            :class="{
-                              'bg-accent text-accent-foreground': c.active?.value,
-                              'text-nowrap': typeof locale === 'string' && locale.startsWith('zh-'),
-                              'h-min py-0': true,
-                            }"
-                            :tooltip="c.name.value"
-                          >
-                            <span>{{ c.name.value }}</span>
-                          </SidebarMenuLink>
-                        </SidebarMenuSubItem>
-                      </SidebarMenuSub>
-                    </CollapsibleContent>
-                  </SidebarMenuItem>
-                </Collapsible>
-              </template>
-
-              <!-- makes scanner accessible easily if using legacy header -->
-              <SidebarMenuItem v-if="preferences.displayLegacyHeader">
-                <SidebarMenuButton
+          <SidebarGroup class="py-1">
+            <SidebarMenu class="gap-0.5">
+              <SidebarMenuItem v-for="n in nav" :key="n.id">
+                <SidebarMenuLink
+                  :href="n.to"
                   :class="{
+                    'bg-sidebar-accent font-medium text-sidebar-accent-foreground': n.active.value,
                     'text-nowrap': typeof locale === 'string' && locale.startsWith('zh-'),
                   }"
-                  :tooltip="$t('menu.scanner')"
-                  @click.prevent="openDialog(DialogID.Scanner)"
+                  :aria-current="n.active.value ? 'page' : undefined"
+                  :tooltip="n.name.value"
                 >
-                  <MdiQrcodeScan />
-                  <span>{{ $t("menu.scanner") }}</span>
-                </SidebarMenuButton>
+                  <component :is="n.icon" />
+                  <span>{{ n.name.value }}</span>
+                  <span class="ml-auto flex items-center gap-1.5 group-data-[collapsible=icon]:hidden">
+                    <ShortcutHint
+                      v-if="n.hotkey"
+                      :hotkey="n.hotkey"
+                      class="opacity-0 transition-opacity group-hover/menu-item:opacity-100"
+                    />
+                    <span v-if="n.count?.value !== undefined" class="text-xs text-muted-foreground tabular-nums">
+                      {{ n.count.value }}
+                    </span>
+                  </span>
+                </SidebarMenuLink>
+              </SidebarMenuItem>
+            </SidebarMenu>
+          </SidebarGroup>
+
+          <SidebarGroup v-if="topPlaces.length" class="py-1 group-data-[collapsible=icon]:hidden">
+            <SidebarGroupLabel>{{ $t("shell.places") }}</SidebarGroupLabel>
+            <SidebarMenu class="gap-0.5">
+              <SidebarMenuItem v-for="place in topPlaces" :key="place.id">
+                <SidebarMenuLink
+                  :href="`/locations?place=${place.id}`"
+                  :class="{
+                    'bg-sidebar-accent font-medium text-sidebar-accent-foreground':
+                      route.path === '/locations' && route.query.place === place.id,
+                  }"
+                >
+                  <MapPin class="text-muted-foreground" />
+                  <span>{{ place.name }}</span>
+                  <span v-if="place.itemCount" class="ml-auto text-xs text-muted-foreground tabular-nums">
+                    {{ place.itemCount }}
+                  </span>
+                </SidebarMenuLink>
+              </SidebarMenuItem>
+              <SidebarMenuItem v-if="allPlacesCount > topPlaces.length">
+                <SidebarMenuLink href="/locations" class="text-muted-foreground">
+                  <span class="pl-[26px]">{{ $t("shell.all_places", { count: allPlacesCount }) }}</span>
+                </SidebarMenuLink>
               </SidebarMenuItem>
             </SidebarMenu>
           </SidebarGroup>
         </SidebarContent>
 
-        <SidebarFooter>
-          <SidebarMenuButton
-            class="flex justify-center group-data-[collapsible=icon]:justify-start group-data-[collapsible=icon]:bg-destructive group-data-[collapsible=icon]:text-destructive-foreground group-data-[collapsible=icon]:shadow-sm group-data-[collapsible=icon]:hover:bg-destructive/90"
-            :tooltip="$t('global.sign_out')"
-            data-testid="logout-button"
-            @click="logout"
+        <SidebarFooter class="gap-1 p-3">
+          <SidebarMenu class="gap-0.5">
+            <SidebarMenuItem>
+              <SidebarMenuLink
+                href="/collection/settings"
+                :class="{
+                  'bg-sidebar-accent font-medium text-sidebar-accent-foreground': route.path.startsWith('/collection'),
+                }"
+                :tooltip="$t('shell.collection_settings')"
+              >
+                <Settings />
+                <span>{{ $t("shell.collection_settings") }}</span>
+              </SidebarMenuLink>
+            </SidebarMenuItem>
+            <!-- No keyboard on phones -->
+            <SidebarMenuItem class="max-md:hidden">
+              <SidebarMenuButton :tooltip="$t('shell.keyboard_shortcuts')" @click="openDialog(DialogID.Shortcuts)">
+                <Keyboard />
+                <span>{{ $t("shell.keyboard_shortcuts") }}</span>
+                <ShortcutHint :hotkey="SHORTCUTS.help" class="ml-auto group-data-[collapsible=icon]:hidden" />
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          </SidebarMenu>
+          <SidebarMenu class="mt-1 border-t border-sidebar-border pt-2">
+            <SidebarMenuItem class="flex items-center gap-1 group-data-[collapsible=icon]:flex-col">
+              <SidebarMenuLink
+                href="/profile"
+                class="h-11 min-w-0 flex-1"
+                :class="{ 'bg-sidebar-accent text-sidebar-accent-foreground': route.path === '/profile' }"
+                :tooltip="$t('profile.user_profile')"
+              >
+                <span
+                  data-sidebar-icon
+                  class="flex size-7 shrink-0 items-center justify-center rounded-full bg-accent text-xs font-semibold text-accent-foreground"
+                  aria-hidden="true"
+                >
+                  {{ username.charAt(0).toUpperCase() }}
+                </span>
+                <span class="flex min-w-0 flex-col leading-tight">
+                  <span class="truncate font-medium">{{ username }}</span>
+                  <span v-if="email" class="truncate text-xs text-muted-foreground">{{ email }}</span>
+                </span>
+              </SidebarMenuLink>
+              <SidebarMenuButton
+                class="size-9 shrink-0 justify-center text-muted-foreground"
+                :tooltip="$t('global.sign_out')"
+                :aria-label="$t('global.sign_out')"
+                data-testid="logout-button"
+                @click="logout"
+              >
+                <LogOut />
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          </SidebarMenu>
+          <p
+            v-if="status"
+            class="px-2 pt-1 text-[11px] leading-snug text-muted-foreground group-data-[collapsible=icon]:hidden [&_a]:hover:text-foreground"
           >
-            <MdiLogout />
-            <span>
-              {{ $t("global.sign_out") }}
-            </span>
-          </SidebarMenuButton>
+            <span
+              v-html="
+                DOMPurify.sanitize(
+                  $t('global.footer.version_link', {
+                    version: status.build.version.replace(/^v/, ''),
+                    build: status.build.commit,
+                  })
+                )
+              "
+            />
+            ·
+            <span v-html="DOMPurify.sanitize($t('global.footer.api_link'))" />
+          </p>
         </SidebarFooter>
 
         <SidebarRail />
       </Sidebar>
-      <SidebarInset class="min-h-dvh max-w-full overflow-hidden bg-background-accent">
-        <div class="relative flex h-full flex-col justify-center">
-          <div v-if="preferences.displayLegacyHeader">
-            <AppHeaderDecor class="-mt-10 hidden lg:block" />
-            <SidebarTrigger class="absolute left-2 top-2 hidden lg:flex" variant="default" />
-          </div>
-          <!-- IMPORTANT: if you change the height of this div, alter the top value in the item edit page-->
-          <div
-            class="sticky top-0 z-20 flex h-[var(--header-height-mobile)] translate-y-[-0.5px] flex-col bg-secondary p-2 shadow-md sm:h-[var(--header-height)] sm:flex-row"
-            :class="{
-              'lg:hidden': preferences.displayLegacyHeader,
-            }"
-          >
-            <div class="flex h-1/2 items-center gap-2 sm:h-auto">
-              <SidebarTrigger variant="default" />
-              <NuxtLink to="/home">
-                <AppHeaderText class="h-6" />
+
+      <SidebarInset class="min-h-dvh max-w-full min-w-0 bg-transparent md:pr-2 md:pb-2">
+        <!-- IMPORTANT: if you change the height of this header, update --header-height(-mobile) in main.css;
+             the item and location edit pages offset their sticky bars by it -->
+        <header
+          class="sticky top-0 z-20 flex h-(--header-height-mobile) items-center gap-2 px-2 bg-page sm:h-(--header-height) sm:gap-3 md:px-1"
+        >
+          <SidebarTrigger variant="ghost" class="text-muted-foreground" />
+          <!-- On phones only the parent and current crumb are shown; every crumb can truncate so the
+               trail never pushes into the header actions -->
+          <nav aria-label="Breadcrumb" class="flex min-w-0 flex-1 items-center gap-2 overflow-hidden text-sm">
+            <template v-for="(crumb, i) in pageHeader.crumbs" :key="i">
+              <NuxtLink
+                v-if="crumb.to"
+                :to="crumb.to"
+                class="max-w-40 min-w-0 truncate text-muted-foreground hover:text-foreground"
+                :class="{ 'hidden sm:block': i < pageHeader.crumbs.length - 2 }"
+              >
+                {{ crumb.label }}
               </NuxtLink>
-            </div>
-            <div class="sm:grow" />
-            <div class="flex h-1/2 grow items-center justify-end gap-2 sm:h-auto">
-              <Input
-                v-model:model-value="search"
-                class="h-9 grow sm:max-w-sm"
-                :placeholder="$t('global.search')"
-                type="search"
-                @keyup.enter="triggerSearch"
-              />
-              <div>
-                <Button size="icon" @click="triggerSearch">
-                  <MdiMagnify />
-                </Button>
-              </div>
-              <div>
-                <Button size="icon" @click="openScanner">
-                  <MdiQrcodeScan />
-                </Button>
-              </div>
-            </div>
-          </div>
-
-          <slot />
-          <div class="grow" />
-
-          <footer v-if="status" class="bottom-0 w-full pb-4 text-center">
-            <p class="text-center text-sm">
+              <span v-else class="min-w-0 shrink-[0.5] truncate font-medium" aria-current="page">{{
+                crumb.label
+              }}</span>
               <span
-                v-html="
-                  DOMPurify.sanitize(
-                    $t('global.footer.version_link', {
-                      version: status.build.version.replace(/^v/, ''),
-                      build: status.build.commit,
-                    })
-                  )
-                "
+                v-if="i < pageHeader.crumbs.length - 1"
+                class="shrink-0 text-muted-foreground/40"
+                :class="{ 'hidden sm:inline': i < pageHeader.crumbs.length - 2 }"
+                aria-hidden="true"
+                >/</span
+              >
+            </template>
+          </nav>
+          <Button
+            variant="ghost"
+            size="icon"
+            class="md:hidden"
+            :aria-label="$t('shell.search_or_add')"
+            @click="openDialog(DialogID.CommandPalette)"
+          >
+            <Search />
+          </Button>
+          <!-- Pages put their own actions here (see components/App/HeaderActions.vue) -->
+          <div id="page-header-actions" class="flex shrink-0 items-center gap-1.5 empty:hidden" />
+          <template v-if="!hasPageActions">
+            <!-- On phones the bottom nav's create menu has these -->
+            <Button
+              variant="outline"
+              size="sm"
+              class="hidden h-[30px] text-[13px] md:inline-flex"
+              :aria-label="$t('shell.scan')"
+              @click="openScanner"
+            >
+              <ScanQrCode />
+              <span class="hidden lg:inline">{{ $t("shell.scan") }}</span>
+              <ShortcutHint :hotkey="SHORTCUTS.scan" class="hidden lg:inline-flex" />
+            </Button>
+            <Button
+              size="sm"
+              class="hidden h-[30px] text-[13px] md:inline-flex"
+              @click="openDialog(DialogID.CreateEntity, { params: { baseType: 'item' } })"
+            >
+              <Plus />
+              <span class="hidden sm:inline">{{ $t("shell.new_item") }}</span>
+              <ShortcutHint
+                :hotkey="SHORTCUTS.newItem"
+                class="hidden lg:inline-flex [&_kbd]:border-primary-foreground/20 [&_kbd]:bg-primary-foreground/15 [&_kbd]:text-primary-foreground"
               />
-              ~
-              <span v-html="DOMPurify.sanitize($t('global.footer.api_link'))" />
-            </p>
-          </footer>
+            </Button>
+          </template>
+        </header>
+
+        <!-- The page lives in one bordered panel that scrolls under the header. -->
+        <div
+          class="relative flex flex-1 flex-col overflow-clip bg-background pb-(--bottom-nav-space) max-md:rounded-t-xl max-md:border-t max-md:border-border md:rounded-xl md:border md:border-border md:shadow-xs"
+        >
+          <!-- Pages fill the panel (flex-1 on their root) -->
+          <div class="flex flex-1 flex-col">
+            <slot />
+          </div>
         </div>
       </SidebarInset>
     </SidebarProvider>
+    <AppBottomNav :tabs="bottomTabs" @scan="openScanner" />
   </div>
 </template>
 
 <script lang="ts" setup>
   import { useI18n } from "vue-i18n";
   import DOMPurify from "dompurify";
+  import { useQuery, useQueryClient } from "@tanstack/vue-query";
+  import type { RegisterableHotkey } from "@tanstack/vue-hotkeys";
+  import {
+    FileText,
+    House,
+    Keyboard,
+    LogOut,
+    MapPin,
+    Package,
+    Plus,
+    Printer,
+    ScanQrCode,
+    Search,
+    Settings,
+    Tags,
+    Wrench,
+  } from "@lucide/vue";
   import { useTagStore } from "~/stores/tags";
   import { useLocationStore } from "~~/stores/locations";
   import { useEntityTypeStore } from "~~/stores/entityTypes";
-
-  import MdiHome from "~icons/mdi/home";
-  import MdiFileTree from "~icons/mdi/file-tree";
-  import MdiTagMultiple from "~icons/mdi/tag-multiple";
-  import MdiMagnify from "~icons/mdi/magnify";
-  import MdiQrcodeScan from "~icons/mdi/qrcode-scan";
-  import MdiAccount from "~icons/mdi/account";
-  import MdiCog from "~icons/mdi/cog";
-  import MdiWrench from "~icons/mdi/wrench";
-  import MdiPlus from "~icons/mdi/plus";
-  import MdiLogout from "~icons/mdi/logout";
-  import MdiFileDocumentMultiple from "~icons/mdi/file-document-multiple";
-  import MdiChevronRight from "~icons/mdi/chevron-right";
+  import { SHORTCUTS } from "~/lib/shortcuts";
 
   import {
     Sidebar,
@@ -264,8 +302,6 @@
     SidebarHeader,
     SidebarInset,
     SidebarMenu,
-    SidebarMenuSub,
-    SidebarMenuSubItem,
     SidebarMenuButton,
     SidebarMenuItem,
     SidebarMenuLink,
@@ -273,19 +309,10 @@
     SidebarRail,
     SidebarTrigger,
   } from "@/components/ui/sidebar";
-  import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuTrigger,
-  } from "@/components/ui/dropdown-menu";
-  import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-  import { Shortcut } from "~/components/ui/shortcut";
   import { useDialog } from "~/components/ui/dialog-provider";
-  import { Input } from "~/components/ui/input";
   import { Button } from "~/components/ui/button";
   import { toast } from "@/components/ui/sonner";
-  import { DialogID, type NoParamDialogIDs } from "~/components/ui/dialog-provider/utils";
+  import { DialogID } from "~/components/ui/dialog-provider/utils";
   import ModalConfirm from "~/components/ModalConfirm.vue";
   import OutdatedModal from "~/components/App/OutdatedModal.vue";
   import EntityCreateModal from "~/components/Entity/CreateModal.vue";
@@ -293,11 +320,13 @@
   import TagCreateModal from "~/components/Tag/CreateModal.vue";
   import LabelTemplatePrintDialog from "~/components/LabelTemplate/PrintDialog.vue";
   import ItemBarcodeModal from "~/components/Item/BarcodeModal.vue";
-  import AppQuickMenuModal from "~/components/App/QuickMenuModal.vue";
+  import ItemChangeDetailsDialog from "~/components/Item/ChangeDetailsDialog.vue";
+  import ItemEditNumberDialog from "~/components/Item/EditNumberDialog.vue";
+  import AppCommandPalette from "~/components/App/CommandPalette.vue";
+  import AppShortcutsDialog from "~/components/App/ShortcutsDialog.vue";
+  import ShortcutHint from "~/components/App/ShortcutHint.vue";
   import AppScannerModal from "~/components/App/ScannerModal.vue";
-  import AppLogo from "~/components/App/Logo.vue";
-  import AppHeaderDecor from "~/components/App/HeaderDecor.vue";
-  import AppHeaderText from "~/components/App/HeaderText.vue";
+  import AppBottomNav, { type BottomNavTab } from "~/components/App/BottomNav.vue";
   import CollectionSelector from "~/components/Collection/Selector.vue";
   import CollectionCreateModal from "~/components/Collection/CreateModal.vue";
   import CollectionJoinModal from "~/components/Collection/JoinModal.vue";
@@ -305,6 +334,7 @@
 
   const { t, locale } = useI18n();
   const username = computed(() => authCtx.user?.name || "User");
+  const email = computed(() => authCtx.user?.email || "");
 
   const { openDialog } = useDialog();
 
@@ -323,22 +353,6 @@
     return data;
   });
 
-  const search = ref("");
-
-  const triggerSearch = () => {
-    if (search.value) {
-      navigateTo({
-        path: "/search",
-        query: { q: search.value },
-      });
-      search.value = "";
-      // remove focus from input
-      if (document.activeElement && "blur" in document.activeElement) {
-        (document.activeElement as HTMLElement).blur();
-      }
-    }
-  };
-
   const openScanner = () => {
     // request permission
     if (navigator.mediaDevices) {
@@ -356,178 +370,81 @@
     }
   };
 
+  useGlobalShortcuts({ scan: openScanner });
+
   // Preload currency format
   useFormatCurrency();
 
-  type DropdownItem = {
-    id: number;
-    name: ComputedRef<string>;
-    shortcut: string;
-    dialogId: DialogID;
-  };
-
-  const dropdown: DropdownItem[] = [
-    {
-      id: 0,
-      name: computed(() => t("menu.create_item")),
-      shortcut: "Shift+1",
-      dialogId: DialogID.CreateEntity,
-    },
-    {
-      id: 1,
-      name: computed(() => t("menu.create_location")),
-      shortcut: "Shift+2",
-      dialogId: DialogID.CreateEntity,
-    },
-    {
-      id: 2,
-      name: computed(() => t("menu.create_tag")),
-      shortcut: "Shift+3",
-      dialogId: DialogID.CreateTag,
-    },
-  ];
-
   const route = useRoute();
   const router = useRouter();
+  const api = useUserApi();
 
-  const nav: {
+  const { data: stats } = useQuery({
+    queryKey: computed(() => ["stats", preferences.value.collectionId]),
+    queryFn: async () => (await api.stats.group()).data,
+  });
+
+  const pageHeader = usePageHeaderState();
+  const hasPageActions = usePageHeaderActions();
+
+  type NavItem = {
     icon: Component;
     active: ComputedRef<boolean>;
-    id: number;
+    id: string;
     name: ComputedRef<string>;
     to: string;
-    collapsible?: {
-      active: ComputedRef<boolean>;
-      id: number;
-      name: ComputedRef<string>;
-      to: string;
-    }[];
-  }[] = [
-    {
-      icon: MdiHome,
-      active: computed(() => route.path === "/home"),
-      id: 0,
-      name: computed(() => t("menu.home")),
-      to: "/home",
-    },
-    {
-      icon: MdiFileTree,
-      id: 1,
-      active: computed(() => route.path === "/locations"),
-      name: computed(() => t("menu.locations")),
-      to: "/locations",
-    },
-    {
-      icon: MdiTagMultiple,
-      id: 2,
-      active: computed(() => route.path === "/tags"),
-      name: computed(() => t("global.tags")),
-      to: "/tags",
-    },
-    {
-      icon: MdiMagnify,
-      id: 3,
-      active: computed(() => route.path === "/search"),
-      name: computed(() => t("menu.search")),
-      to: "/search",
-    },
-    {
-      icon: MdiFileDocumentMultiple,
-      id: 4,
-      active: computed(() => route.path === "/templates"),
-      name: computed(() => t("menu.templates")),
-      to: "/templates",
-    },
-    {
-      icon: MdiWrench,
-      id: 5,
-      active: computed(() => route.path === "/maintenance"),
-      name: computed(() => t("menu.maintenance")),
-      to: "/maintenance",
-    },
-    {
-      icon: MdiAccount,
-      id: 6,
-      active: computed(() => route.path === "/profile" || route.path.startsWith("/label-templates")),
-      name: computed(() => t("menu.profile")),
-      to: "/profile",
-      // Label templates are personal unless shared, so they live under the profile
-      collapsible: [
-        {
-          id: 51,
-          active: computed(() => route.path === "/profile"),
-          name: computed(() => t("profile.user_profile")),
-          to: "/profile",
-        },
-        {
-          id: 52,
-          active: computed(() => route.path.startsWith("/label-templates")),
-          name: computed(() => t("menu.label_templates")),
-          to: "/label-templates",
-        },
-      ],
-    },
-    {
-      icon: MdiCog,
-      id: 7,
-      active: computed(() => route.path.includes("/collection")),
-      name: computed(() => t("menu.collection")),
-      to: "/collection/members",
-      collapsible: [
-        {
-          id: 61,
-          active: computed(() => route.path === "/collection/members"),
-          name: computed(() => t("collection.tabs.members")),
-          to: "/collection/members",
-        },
-        {
-          id: 62,
-          active: computed(() => route.path === "/collection/invites"),
-          name: computed(() => t("collection.tabs.invites")),
-          to: "/collection/invites",
-        },
-        {
-          id: 63,
-          active: computed(() => route.path === "/collection/notifiers"),
-          name: computed(() => t("collection.tabs.notifiers")),
-          to: "/collection/notifiers",
-        },
-        {
-          id: 64,
-          active: computed(() => route.path === "/collection/settings"),
-          name: computed(() => t("collection.tabs.settings")),
-          to: "/collection/settings",
-        },
-        {
-          id: 65,
-          active: computed(() => route.path === "/collection/entity-types"),
-          name: computed(() => t("collection.tabs.entity_types")),
-          to: "/collection/entity-types",
-        },
-        {
-          id: 66,
-          active: computed(() => route.path === "/collection/tools"),
-          name: computed(() => t("collection.tabs.tools")),
-          to: "/collection/tools",
-        },
-      ],
-    },
+    count?: ComputedRef<number | undefined>;
+    hotkey?: RegisterableHotkey;
+  };
+
+  const navItem = (
+    id: string,
+    icon: Component,
+    name: () => string,
+    to: string,
+    opts: { isActive?: () => boolean; count?: () => number | undefined; hotkey?: RegisterableHotkey } = {}
+  ): NavItem => ({
+    hotkey: opts.hotkey,
+    id,
+    icon,
+    name: computed(name),
+    to,
+    active: computed(opts.isActive ?? (() => route.path === to)),
+    count: opts.count ? computed(opts.count) : undefined,
+  });
+
+  // Same order as the design; Templates sits at the end since the design has no slot for it.
+  const nav: NavItem[] = [
+    navItem("home", House, () => t("menu.home"), "/home", { hotkey: SHORTCUTS.goHome }),
+    navItem("items", Package, () => t("shell.items"), "/items", {
+      isActive: () => route.path === "/items" || route.path === "/search" || route.path.startsWith("/item/"),
+      count: () => stats.value?.totalItems,
+      hotkey: SHORTCUTS.goItems,
+    }),
+    navItem("places", MapPin, () => t("shell.places"), "/locations", {
+      isActive: () => route.path === "/locations",
+      count: () => stats.value?.totalLocations,
+      hotkey: SHORTCUTS.goPlaces,
+    }),
+    navItem("tags", Tags, () => t("global.tags"), "/tags", {
+      isActive: () => route.path === "/tags",
+      count: () => stats.value?.totalTags,
+      hotkey: SHORTCUTS.goTags,
+    }),
+    navItem("maintenance", Wrench, () => t("menu.maintenance"), "/maintenance"),
+    navItem("labels", Printer, () => t("shell.labels"), "/label-templates", {
+      isActive: () => route.path.startsWith("/label-templates"),
+    }),
+    navItem("templates", FileText, () => t("menu.templates"), "/templates", {
+      isActive: () => route.path === "/templates" || route.path.startsWith("/template/"),
+    }),
   ];
 
-  const quickMenuActions = reactive([
-    ...dropdown.map(v => ({
-      text: computed(() => v.name.value),
-      dialogId: v.dialogId,
-      shortcut: v.shortcut.split("+")[1] as string,
-      id: v.id,
-      type: "create" as const,
-    })),
-    ...nav.map(v => ({
-      text: computed(() => v.name.value),
-      href: v.to,
-      type: "navigate" as const,
-    })),
-  ]);
+  const bottomTabs = computed<BottomNavTab[]>(() =>
+    nav
+      .filter(n => ["home", "items", "places"].includes(n.id))
+      .map(n => ({ id: n.id, icon: n.icon, name: n.name.value, to: n.to, active: n.active.value }))
+  );
 
   const tagStore = useTagStore();
   tagStore.ensureAllTagsFetched();
@@ -537,6 +454,14 @@
 
   const entityTypeStore = useEntityTypeStore();
   entityTypeStore.ensureFetched();
+
+  // The sidebar lists the busiest top-level places; the Places page has all of them.
+  const allPlacesCount = computed(() => locationStore.parentLocations.length);
+  const topPlaces = computed(() =>
+    [...locationStore.parentLocations]
+      .sort((a, b) => (b.itemCount ?? 0) - (a.itemCount ?? 0) || a.name.localeCompare(b.name))
+      .slice(0, 6)
+  );
 
   onMounted(() => {
     locationStore.refreshParents();
@@ -560,18 +485,27 @@
     }
   });
 
+  // Keep TanStack Query caches in step with the server, like the stores below.
+  const queryClient = useQueryClient();
+  watch(
+    () => preferences.value.collectionId,
+    () => queryClient.clear()
+  );
+
   onServerEvent(ServerEvent.TagMutation, () => {
     tagStore.refresh();
+    queryClient.invalidateQueries({ queryKey: ["stats"] });
   });
 
   onServerEvent(ServerEvent.EntityMutation, () => {
     locationStore.refreshChildren();
     locationStore.refreshParents();
     locationStore.refreshTree();
+    queryClient.invalidateQueries({ queryKey: ["entities"] });
+    queryClient.invalidateQueries({ queryKey: ["stats"] });
   });
 
   const authCtx = useAuthContext();
-  const api = useUserApi();
 
   async function logout() {
     await authCtx.logout(api);

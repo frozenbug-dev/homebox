@@ -1,285 +1,173 @@
 <script setup lang="ts">
+  import AppSubheader from "~/components/App/Subheader.vue";
+  import AppHeaderActions from "~/components/App/HeaderActions.vue";
   import { useI18n } from "vue-i18n";
-  import type { MaintenanceEntry, MaintenanceEntryWithDetails } from "~~/lib/api/types/data-contracts";
+  import { Plus } from "@lucide/vue";
   import { MaintenanceFilterStatus } from "~~/lib/api/types/data-contracts";
-  import type { StatsFormat } from "~~/components/global/StatCard/types";
-  import MdiCheck from "~icons/mdi/check";
-  import MdiDelete from "~icons/mdi/delete";
-  import MdiEdit from "~icons/mdi/edit";
-  import MdiCalendar from "~icons/mdi/calendar";
-  import MdiPlus from "~icons/mdi/plus";
-  import MdiWrenchClock from "~icons/mdi/wrench-clock";
-  import MdiContentDuplicate from "~icons/mdi/content-duplicate";
   import MaintenanceEditModal from "~~/components/Maintenance/EditModal.vue";
-  import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-  import { Badge } from "@/components/ui/badge";
-  import { Button, ButtonGroup } from "@/components/ui/button";
-  import StatCard from "~/components/global/StatCard/StatCard.vue";
-  import BaseCard from "@/components/Base/Card.vue";
-  import BaseSectionHeader from "@/components/Base/SectionHeader.vue";
-  import DateTime from "~/components/global/DateTime.vue";
+  import ResourceList from "~/components/Resource/List.vue";
+  import MaintenanceResource, { type MaintenanceRow } from "~/components/Resource/MaintenanceResource.vue";
+  import SelectionBar from "~/components/Resource/SelectionBar.vue";
+  import SelectionAction from "~/components/Resource/SelectionAction.vue";
   import Currency from "~/components/global/Currency.vue";
-  import Markdown from "~/components/global/Markdown.vue";
+  import { Button } from "@/components/ui/button";
   import { toast } from "@/components/ui/sonner";
   import { useDialog } from "@/components/ui/dialog-provider";
+  import { DialogID } from "@/components/ui/dialog-provider/utils";
   import { toDateOnlyString } from "~/lib/datelib/dateOnly";
-  import { DialogID } from "../ui/dialog-provider/utils";
 
-  const maintenanceFilterStatus = ref(MaintenanceFilterStatus.MaintenanceFilterStatusScheduled);
+  /** Maintenance entries, for one item (`currentItemId`) or for everything. Click a row to edit it. */
+  const props = defineProps<{ currentItemId?: string }>();
 
   const api = useUserApi();
   const { t } = useI18n();
   const confirm = useConfirm();
   const { openDialog } = useDialog();
 
-  const props = defineProps({
-    currentItemId: {
-      type: String,
-      default: undefined,
-    },
-  });
+  const status = ref(MaintenanceFilterStatus.MaintenanceFilterStatusScheduled);
+  const statuses = computed(() => [
+    { id: MaintenanceFilterStatus.MaintenanceFilterStatusScheduled, label: t("maintenance.filter.scheduled") },
+    { id: MaintenanceFilterStatus.MaintenanceFilterStatusCompleted, label: t("maintenance.filter.completed") },
+    { id: MaintenanceFilterStatus.MaintenanceFilterStatusBoth, label: t("maintenance.filter.both") },
+  ]);
 
-  const { data: maintenanceDataList, refresh: refreshList } = useAsyncData(
-    async () => {
-      const { data } =
-        props.currentItemId !== undefined
-          ? await api.items.maintenance.getLog(props.currentItemId, { status: maintenanceFilterStatus.value })
-          : await api.maintenance.getAll({ status: maintenanceFilterStatus.value });
-      console.log(data);
-      return data;
+  const { data: entries, refresh } = useAsyncData(
+    async (): Promise<MaintenanceRow[]> => {
+      const { data } = props.currentItemId
+        ? await api.items.maintenance.getLog(props.currentItemId, { status: status.value })
+        : await api.maintenance.getAll({ status: status.value });
+      return data ?? [];
     },
-    {
-      watch: [maintenanceFilterStatus],
-    }
+    { watch: [status] }
   );
 
-  const stats = computed(() => {
-    console.log(maintenanceDataList);
-    if (!maintenanceDataList.value) return [];
+  const totalCost = computed(() => (entries.value ?? []).reduce((sum, e) => sum + (Number.parseFloat(e.cost) || 0), 0));
 
-    const count = maintenanceDataList.value ? maintenanceDataList.value.length || 0 : 0;
-    let total = 0;
-    maintenanceDataList.value.forEach(item => {
-      total += parseFloat(item.cost);
+  // ----- Actions -----
+
+  // Always refresh: with "Create more" on, entries are added before the dialog closes without a result.
+  const afterDialog = () => refresh();
+
+  function create() {
+    openDialog(DialogID.EditMaintenance, {
+      params: { type: "create", itemId: props.currentItemId },
+      onClose: afterDialog,
     });
-
-    const average = count > 0 ? total / count : 0;
-
-    return [
-      {
-        id: "count",
-        title: t("maintenance.total_entries"),
-        value: count,
-        type: "number" as StatsFormat,
-      },
-      {
-        id: "total",
-        title: t("maintenance.total_cost"),
-        value: total,
-        type: "currency" as StatsFormat,
-      },
-      {
-        id: "average",
-        title: t("maintenance.monthly_average"),
-        value: average,
-        type: "currency" as StatsFormat,
-      },
-    ];
-  });
-
-  async function deleteEntry(id: string) {
-    const result = await confirm.open(t("maintenance.modal.delete_confirmation"));
-    if (result.isCanceled) {
-      return;
-    }
-
-    const { error } = await api.maintenance.delete(id);
-
-    if (error) {
-      toast.error(t("maintenance.toast.failed_to_delete"));
-      return;
-    }
-    refreshList();
+  }
+  function edit(entry: MaintenanceRow) {
+    openDialog(DialogID.EditMaintenance, { params: { type: "update", maintenanceEntry: entry }, onClose: afterDialog });
+  }
+  function duplicate(entry: MaintenanceRow) {
+    const itemId = entry.itemID ?? props.currentItemId;
+    if (!itemId) return;
+    openDialog(DialogID.EditMaintenance, {
+      params: { type: "duplicate", maintenanceEntry: entry, itemId },
+      onClose: afterDialog,
+    });
   }
 
-  async function completeEntry(maintenanceEntry: MaintenanceEntry) {
-    const { error } = await api.maintenance.update(maintenanceEntry.id, {
-      name: maintenanceEntry.name,
-      // Local YYYY-MM-DD — using a Date object would JSON-stringify to UTC and
-      // shift the day for users east of UTC.
-      completedDate: toDateOnlyString(new Date()),
-      scheduledDate: (maintenanceEntry.scheduledDate as string) ?? "",
-      description: maintenanceEntry.description,
-      cost: maintenanceEntry.cost,
-    });
-    if (error) {
-      toast.error(t("maintenance.toast.failed_to_update"));
-    }
-    refreshList();
+  async function complete(list: MaintenanceRow[]) {
+    const results = await Promise.all(
+      list.map(e =>
+        api.maintenance.update(e.id, {
+          name: e.name,
+          // Local YYYY-MM-DD: a Date would serialise to UTC and shift the day east of UTC.
+          completedDate: toDateOnlyString(new Date()),
+          scheduledDate: (e.scheduledDate as string) ?? "",
+          description: e.description,
+          cost: e.cost,
+        })
+      )
+    );
+    if (results.some(r => r.error)) toast.error(t("maintenance.toast.failed_to_update"));
+    refresh();
+  }
+
+  async function remove(list: MaintenanceRow[]) {
+    if (!list.length) return;
+    const { isCanceled } = await confirm.open(t("shell.maintenance_page.delete_confirm", { n: list.length }));
+    if (isCanceled) return;
+    const results = await Promise.all(list.map(e => api.maintenance.delete(e.id)));
+    if (results.some(r => r.error)) toast.error(t("maintenance.toast.failed_to_delete"));
+    refresh();
   }
 </script>
 
 <template>
-  <section class="space-y-6">
-    <div class="grid grid-cols-1 gap-6 md:grid-cols-3">
-      <StatCard v-for="stat in stats" :key="stat.id" :title="stat.title" :value="stat.value" :type="stat.type" />
-    </div>
-    <div class="flex">
-      <ButtonGroup>
-        <Button
-          size="sm"
-          :variant="
-            maintenanceFilterStatus == MaintenanceFilterStatus.MaintenanceFilterStatusScheduled ? 'default' : 'outline'
-          "
-          @click="maintenanceFilterStatus = MaintenanceFilterStatus.MaintenanceFilterStatusScheduled"
-        >
-          {{ $t("maintenance.filter.scheduled") }}
-        </Button>
-        <Button
-          size="sm"
-          :variant="
-            maintenanceFilterStatus == MaintenanceFilterStatus.MaintenanceFilterStatusCompleted ? 'default' : 'outline'
-          "
-          @click="maintenanceFilterStatus = MaintenanceFilterStatus.MaintenanceFilterStatusCompleted"
-        >
-          {{ $t("maintenance.filter.completed") }}
-        </Button>
-        <Button
-          size="sm"
-          :variant="
-            maintenanceFilterStatus == MaintenanceFilterStatus.MaintenanceFilterStatusBoth ? 'default' : 'outline'
-          "
-          @click="maintenanceFilterStatus = MaintenanceFilterStatus.MaintenanceFilterStatusBoth"
-        >
-          {{ $t("maintenance.filter.both") }}
-        </Button>
-      </ButtonGroup>
-      <Button
-        v-if="props.currentItemId"
-        class="ml-auto"
-        size="sm"
-        @click="
-          openDialog(DialogID.EditMaintenance, {
-            params: { type: 'create', itemId: props.currentItemId },
-            onClose: result => {
-              if (result) {
-                refreshList();
-              }
-            },
-          })
-        "
-      >
-        <MdiPlus />
-        {{ $t("maintenance.list.new") }}
+  <section class="flex flex-col">
+    <MaintenanceEditModal />
+
+    <!-- Global list: the header CTA creates an entry instead of an item -->
+    <AppHeaderActions v-if="!currentItemId">
+      <Button size="sm" class="h-[30px] text-[13px]" @click="create">
+        <Plus />
+        {{ t("shell.maintenance_page.new_entry") }}
       </Button>
-    </div>
-  </section>
-  <section>
-    <!-- begin -->
-    <MaintenanceEditModal ref="maintenanceEditModal" @changed="refreshList" />
-    <div class="container space-y-6">
-      <BaseCard v-for="e in maintenanceDataList" :key="e.id">
-        <BaseSectionHeader class="border-b p-6">
-          <span class="mb-2">
-            <span v-if="!props.currentItemId">
-              <NuxtLink class="hover:underline" :to="`/item/${(e as MaintenanceEntryWithDetails).itemID}/maintenance`">
-                {{ (e as MaintenanceEntryWithDetails).itemName }}
-              </NuxtLink>
-              -
-            </span>
-            {{ e.name }}
-          </span>
-          <template #description>
-            <div class="flex flex-wrap gap-2">
-              <Badge v-if="validDate(e.completedDate)" variant="outline">
-                <MdiCheck class="mr-2" />
-                <DateTime :date="e.completedDate" format="human" datetime-type="date" />
-              </Badge>
-              <Badge v-else-if="validDate(e.scheduledDate)" variant="outline">
-                <MdiCalendar class="mr-2" />
-                <DateTime :date="e.scheduledDate" format="human" datetime-type="date" />
-              </Badge>
-              <TooltipProvider :delay-duration="0">
-                <Tooltip>
-                  <TooltipTrigger>
-                    <Badge>
-                      <Currency :amount="e.cost" />
-                    </Badge>
-                  </TooltipTrigger>
-                  <TooltipContent> {{ $t("maintenance.modal.cost") }} </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            </div>
-          </template>
-        </BaseSectionHeader>
-        <div :class="{ 'p-6': e.description }">
-          <Markdown :source="e.description" />
-        </div>
-        <ButtonGroup class="flex flex-wrap justify-end p-4">
-          <Button
-            size="sm"
-            @click="
-              openDialog(DialogID.EditMaintenance, {
-                params: { type: 'update', maintenanceEntry: e },
-                onClose: result => {
-                  if (result) {
-                    refreshList();
-                  }
-                },
-              })
-            "
-          >
-            <MdiEdit />
-            {{ $t("maintenance.list.edit") }}
-          </Button>
-          <Button v-if="!validDate(e.completedDate)" size="sm" variant="outline" @click="completeEntry(e)">
-            <MdiCheck />
-            {{ $t("maintenance.list.complete") }}
-          </Button>
-          <Button
-            size="sm"
-            variant="outline"
-            @click="
-              openDialog(DialogID.EditMaintenance, {
-                params: { type: 'duplicate', maintenanceEntry: e, itemId: props.currentItemId! },
-                onClose: result => {
-                  if (result) {
-                    refreshList();
-                  }
-                },
-              })
-            "
-          >
-            <MdiContentDuplicate />
-            {{ $t("maintenance.list.duplicate") }}
-          </Button>
-          <Button size="sm" variant="destructive" @click="deleteEntry(e.id)">
-            <MdiDelete />
-            {{ $t("maintenance.list.delete") }}
-          </Button>
-        </ButtonGroup>
-      </BaseCard>
-      <div v-if="props.currentItemId" class="hidden first:block">
+    </AppHeaderActions>
+
+    <AppSubheader>
+      <div class="flex rounded-lg bg-muted p-0.5 text-xs" role="tablist">
         <button
+          v-for="s in statuses"
+          :key="s.id"
           type="button"
-          class="relative block w-full rounded-lg border-2 border-dashed p-12 text-center"
-          @click="
-            openDialog(DialogID.EditMaintenance, {
-              params: { type: 'create', itemId: props.currentItemId },
-              onClose: result => {
-                if (result) {
-                  refreshList();
-                }
-              },
-            })
-          "
+          role="tab"
+          :aria-selected="status === s.id"
+          class="h-6 rounded-md px-2.5 font-medium text-muted-foreground"
+          :class="{ 'bg-background text-foreground shadow-xs': status === s.id }"
+          @click="status = s.id"
         >
-          <MdiWrenchClock class="inline size-16" />
-          <span class="mt-2 block text-sm font-medium text-foreground">
-            {{ $t("maintenance.list.create_first") }}
-          </span>
+          {{ s.label }}
         </button>
       </div>
+      <div class="grow" />
+      <span class="text-xs text-muted-foreground tabular-nums">
+        {{ t("shell.maintenance_page.count", { n: entries?.length ?? 0 }) }}
+        <template v-if="totalCost"> · <Currency :amount="totalCost" /> </template>
+      </span>
+      <Button v-if="currentItemId" size="sm" class="h-7 gap-1.5 px-2 text-xs" @click="create">
+        <Plus class="size-3.5" />
+        {{ t("maintenance.list.new") }}
+      </Button>
+    </AppSubheader>
+
+    <ResourceList
+      class="py-1.5"
+      :items="entries ?? []"
+      :get-key="e => e.id"
+      :label="t('menu.maintenance')"
+      @open="edit"
+    >
+      <template #default="{ item }">
+        <MaintenanceResource
+          :entry="item"
+          :show-item="!currentItemId"
+          @edit="edit"
+          @duplicate="duplicate"
+          @complete="complete"
+          @delete="remove"
+        />
+      </template>
+      <template #selection="{ items, clear }">
+        <SelectionBar :count="items.length" @clear="clear">
+          <SelectionAction @click="complete(items.filter(e => !validDate(e.completedDate))).then(clear)">
+            {{ t("maintenance.list.complete") }}
+          </SelectionAction>
+          <SelectionAction destructive @click="remove(items).then(clear)">
+            {{ t("maintenance.list.delete") }}
+          </SelectionAction>
+        </SelectionBar>
+      </template>
+    </ResourceList>
+
+    <div
+      v-if="entries && !entries.length"
+      class="flex flex-col items-center gap-3 px-4 py-10 text-sm text-muted-foreground"
+    >
+      <p>{{ t("shell.maintenance_page.empty") }}</p>
+      <Button variant="outline" size="sm" @click="create">
+        {{ t("maintenance.list.create_first") }}
+      </Button>
     </div>
   </section>
 </template>

@@ -459,7 +459,7 @@
         "follow_dev": "Seguir o desenvolvedor",
         "footer": {
             "api_link": "'<a href=\"https://homebox.software/en/api/\" target=\"_blank\">'API'</a>'",
-            "version_link": "'<'a href=\"https://github.com/sysadminsmedia/homebox/releases/tag/v{ version }\" target=\"_blank\"'>' Versão: { version } Build: { build } '</a>'"
+            "version_link": "'<'a href=\"https://github.com/frozenbug-dev/homebox/releases/tag/v{ version }\" target=\"_blank\"'>' Versão: { version } Build: { build } '</a>'"
         },
         "github": "Projeto GitHub",
         "insured": "Segurado",
@@ -778,7 +778,6 @@
         "delete_account_confirm": "Tem certeza de que deseja deletar sua conta? Se você for o último membro do grupo, todos os seus dados serão deletados. Esta ação não pode ser desfeita.",
         "delete_account_sub": "Deletar sua conta e todos os dados associados. Essa ação não pode ser desfeita.",
         "delete_notifier_confirm": "Tem certeza que deseja apagar o notificador?",
-        "display_legacy_header": "{ currentValue, select, true {Desativar cabeçalho legado} false {Ativar cabeçalho legado} other {Não atingido}}",
         "enabled": "Ativado",
         "example": "Exemplo",
         "group_settings": "Definições do grupo",
@@ -800,8 +799,6 @@
         "notifiers_sub": "Receba notificações para lembretes de manutenção futuros",
         "override_locale": "Sobrepor Linguagem da Data e Moeda",
         "test": "Teste",
-        "theme_settings": "Configurações do Tema",
-        "theme_settings_sub": "As configurações de tema são salvas localmente em seu navegador. Você pode mudar o tema a qualquer momento. Se está\ntendo problemas com a mudança de tema, tente recarregar a pagina.",
         "toast": {
             "account_deleted": "Sua conta foi deletada.",
             "failed_change_password": "Falha ao alterar senha.",
@@ -832,7 +829,7 @@
             "input_placeholder": "Digite aqui",
             "instruction_1": "O Gerador de etiquetas do HomeBox é uma ferramenta que ajuda você a imprimir etiquetas do seu inventário. Ele foi feita para\n antecipar arquivo de impressão das etiquetas e deixá-lo pronto para imprimir e usar",
             "instruction_2": "Dessa forma, essas é geradoum código QR com o URL e informações de AssetID em uma etiqueta. Se você desativou os\n AssetIDs nas configurações do HomeBox, a ferramenta ainda funciona, mas os AssetIDs não farão referência a nenhum item",
-            "instruction_3": "Este recurso está em estágios iniciais de desenvolvimento e pode mudar em versões futuras. Se você tiver algum feedback,\nfaça-o na '<a href=\"https://github.com/sysadminsmedia/homebox/discussions/53\">'Discussão do GitHub'</a>'",
+            "instruction_3": "Este recurso está em estágios iniciais de desenvolvimento e pode mudar em versões futuras. Se você tiver algum feedback,\nfaça-o na '<a href=\"https://github.com/frozenbug-dev/homebox/discussions\">'Discussão do GitHub'</a>'",
             "label_height": "Altura da Etiqueta",
             "label_width": "Largura da Etiqueta",
             "measure_type": "Tipo da Medida",

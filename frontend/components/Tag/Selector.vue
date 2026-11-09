@@ -37,7 +37,7 @@
           <ComboboxContent :side-offset="4" position="popper" class="z-50">
             <CommandList
               position="popper"
-              class="mt-2 w-[--reka-popper-anchor-width] rounded-md border bg-popover text-popover-foreground shadow-md outline-none data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2"
+              class="mt-2 w-(--reka-popper-anchor-width) rounded-md border bg-popover text-popover-foreground shadow-md outline-hidden data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95"
             >
               <CommandEmpty />
               <CommandGroup>
@@ -67,7 +67,7 @@
                   />
                   <div class="flex flex-col gap-1">
                     <span>{{ tag.label }}</span>
-                    <span v-if="tag.ancestors" class="text-xs italic text-muted-foreground">{{ tag.ancestors }}</span>
+                    <span v-if="tag.ancestors" class="text-xs text-muted-foreground italic">{{ tag.ancestors }}</span>
                   </div>
                 </CommandItem>
               </CommandGroup>
@@ -142,7 +142,7 @@
 
   const filteredTags = computed(() => {
     const filtered = fuzzysort
-      .go(searchTerm.value, props.tags, { key: "name", all: true })
+      .go(searchTerm.value, props.tags, { key: "name", limit: 0, threshold: 0 })
       .map(l => {
         const ancestors = getTagAncestors(l.obj.id);
         return {

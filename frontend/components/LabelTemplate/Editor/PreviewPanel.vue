@@ -1,7 +1,7 @@
 <script setup lang="ts">
+  import { RefreshCw } from "@lucide/vue";
   import { watchDebounced } from "@vueuse/core";
   import { useI18n } from "vue-i18n";
-  import MdiRefresh from "~icons/mdi/refresh";
   import { Button } from "@/components/ui/button";
   import ItemSelector from "~/components/Item/Selector.vue";
   import type { EntitySummary } from "~/lib/api/types/data-contracts";
@@ -43,14 +43,7 @@
 
     isRenderingPreview.value = true;
     try {
-      const blob = await render(
-        props.templateId,
-        [selectedItem.value.id],
-        "png",
-        "Letter",
-        false,
-        props.canvasDataJson
-      );
+      const blob = await render(props.templateId, [selectedItem.value.id], "png", "A4", false, props.canvasDataJson);
       previewUrl.value = URL.createObjectURL(blob);
     } catch (err) {
       previewError.value = t("components.label_template.editor.preview.render_failed");
@@ -81,57 +74,51 @@
 </script>
 
 <template>
-  <section
-    class="flex min-w-0 flex-1 flex-col gap-2 2xl:min-w-[360px]"
-    :aria-label="$t('components.label_template.editor.preview.print_preview')"
-  >
-    <div class="flex flex-wrap items-center justify-between gap-2">
-      <span class="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
-        {{ $t("components.label_template.editor.preview.print_preview") }}
-      </span>
-      <div class="w-56 max-w-full">
-        <ItemSelector
-          v-model="selectedItem"
-          :items="results"
-          item-text="name"
-          item-value="id"
-          :is-loading="isLoading"
-          :trigger-search="triggerSearch"
-          :search="query"
-          @update:search="query = $event"
-        >
-          <template #display="{ item }">
-            <span v-if="item" class="truncate">{{ (item as { name: string }).name }}</span>
-            <span v-else class="text-muted-foreground">{{
-              $t("components.label_template.editor.preview.pick_item")
-            }}</span>
-          </template>
-        </ItemSelector>
-      </div>
-    </div>
-
-    <div
-      class="flex w-full max-w-[520px] items-center justify-center overflow-hidden rounded border bg-white shadow"
-      :style="{ aspectRatio }"
+  <div class="flex flex-col gap-2.5">
+    <ItemSelector
+      v-model="selectedItem"
+      :items="results"
+      item-text="name"
+      item-value="id"
+      :is-loading="isLoading"
+      :trigger-search="triggerSearch"
+      :search="query"
+      @update:search="query = $event"
     >
-      <p v-if="!selectedItem" class="px-6 text-center text-xs text-muted-foreground">
-        {{ $t("components.label_template.editor.preview.select_item_hint") }}
-      </p>
-      <div v-else-if="isRenderingPreview" class="text-center">
-        <div class="mx-auto size-5 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+      <template #display="{ item }">
+        <span v-if="item" class="truncate">{{ (item as { name: string }).name }}</span>
+        <span v-else class="text-muted-foreground">{{ $t("components.label_template.editor.preview.pick_item") }}</span>
+      </template>
+    </ItemSelector>
+
+    <div class="flex justify-center rounded-lg bg-muted/60 p-3">
+      <div
+        class="flex w-full items-center justify-center overflow-hidden bg-white shadow-sm ring-1 ring-black/5"
+        :style="{ aspectRatio }"
+      >
+        <p v-if="!selectedItem" class="px-4 text-center text-xs text-muted-foreground">
+          {{ $t("components.label_template.editor.preview.select_item_hint") }}
+        </p>
+        <div v-else-if="isRenderingPreview" class="text-center">
+          <div class="mx-auto size-5 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+        </div>
+        <div v-else-if="previewError" class="flex flex-col items-center gap-2">
+          <p class="text-xs text-destructive">{{ previewError }}</p>
+          <Button variant="ghost" size="sm" @click="renderPreview">
+            <RefreshCw class="mr-1 size-3" />
+            {{ $t("components.label_template.editor.preview.retry") }}
+          </Button>
+        </div>
+        <img v-else-if="previewUrl" :src="previewUrl" alt="" class="size-full object-contain" />
       </div>
-      <div v-else-if="previewError" class="flex flex-col items-center gap-2">
-        <p class="text-xs text-destructive">{{ previewError }}</p>
-        <Button variant="ghost" size="sm" @click="renderPreview">
-          <MdiRefresh class="mr-1 size-3" />
-          {{ $t("components.label_template.editor.preview.retry") }}
-        </Button>
-      </div>
-      <img v-else-if="previewUrl" :src="previewUrl" alt="" class="size-full object-contain" />
     </div>
 
-    <p v-if="selectedItem" class="max-w-[520px] text-xs leading-relaxed text-muted-foreground">
-      {{ $t("components.label_template.editor.preview.render_hint", { dpi: props.dpi }) }}
+    <p v-if="selectedItem" class="text-xs leading-relaxed text-muted-foreground">
+      {{
+        $t("components.label_template.editor.preview.render_hint", {
+          dpi: props.dpi,
+        })
+      }}
     </p>
-  </section>
+  </div>
 </template>
