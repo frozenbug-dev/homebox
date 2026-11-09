@@ -6,14 +6,17 @@ import { ActivityIndicator, RefreshControl, Text, View } from 'react-native'
 import { StyleSheet, useUnistyles } from 'react-native-unistyles'
 
 import type { EntitySummary } from '@/lib/api/api'
+import { confirmDelete, useDeleteEntity, usePatchAnyEntity } from '@/lib/api/mutations'
 import { itemsQuery, type ItemFilters } from '@/lib/api/queries'
 import { useSession } from '@/lib/auth/session'
+import { useSheets } from '@/lib/use-sheets'
 
 import { ActionButton } from './action-button'
 import { EmptyState } from './empty-state'
 import { EntityThumb } from './entity-thumb'
 import { icons } from './icon'
 import { ListRow, RowSeparator } from './list-row'
+import { closeOpenSwipeable, SwipeableRow } from './swipeable-row'
 import { TagInline } from './tag-chip'
 
 interface EntityListProps {
@@ -40,6 +43,9 @@ export function EntityList({
   const router = useRouter()
   const { api } = useSession()
   const query = useInfiniteQuery(itemsQuery(api, filters))
+  const sheets = useSheets()
+  const patch = usePatchAnyEntity()
+  const remove = useDeleteEntity()
 
   const items = query.data?.pages.flatMap((p) => p.items ?? []) ?? []
 
@@ -78,6 +84,7 @@ export function EntityList({
         if (query.hasNextPage && !query.isFetchingNextPage) query.fetchNextPage()
       }}
       onEndReachedThreshold={0.5}
+      onScrollBeginDrag={closeOpenSwipeable}
       refreshControl={
         <RefreshControl
           refreshing={query.isRefetching && !query.isFetchingNextPage}
@@ -90,15 +97,38 @@ export function EntityList({
         />
       }
       renderItem={({ item }) => (
-        <EntityRow
-          entity={item}
-          showPlace={showPlace}
-          onPress={() =>
-            item.entityType?.isLocation
-              ? router.push({ pathname: '/place/[id]', params: { id: item.id!, name: item.name } })
-              : router.push({ pathname: '/item/[id]', params: { id: item.id!, name: item.name } })
-          }
-        />
+        <SwipeableRow
+          leading={{
+            label: 'Move',
+            icon: { ios: 'arrow.right.square', android: 'drive_file_move' },
+            color: theme.colors.primary,
+            onPress: () =>
+              sheets.pickPlace({
+                title: `Move “${item.name}”`,
+                selectedId: item.parent?.id ?? null,
+                onSelect: (p) => {
+                  if (p.id && p.id !== item.parent?.id) patch.mutate({ id: item.id!, patch: { parentId: p.id } })
+                },
+              }),
+          }}
+          trailing={{
+            label: 'Delete',
+            icon: { ios: 'trash', android: 'delete' },
+            color: theme.colors.danger,
+            onPress: async () => {
+              if (await confirmDelete(`“${item.name}”`)) remove.mutate(item.id!)
+            },
+          }}>
+          <EntityRow
+            entity={item}
+            showPlace={showPlace}
+            onPress={() =>
+              item.entityType?.isLocation
+                ? router.push({ pathname: '/place/[id]', params: { id: item.id!, name: item.name } })
+                : router.push({ pathname: '/item/[id]', params: { id: item.id!, name: item.name } })
+            }
+          />
+        </SwipeableRow>
       )}
     />
   )

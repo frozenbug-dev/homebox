@@ -8,11 +8,15 @@ import { StyleSheet, useUnistyles } from 'react-native-unistyles'
 
 import { ActionButton } from '@/components/action-button'
 import { EmptyState } from '@/components/empty-state'
+import { HeaderMenu } from '@/components/header-button'
+import { PressableFeedback } from '@/components/pressable-feedback'
 import { Icon, icons } from '@/components/icon'
 import { ListRow, RowSeparator } from '@/components/list-row'
 import { PropertyChip } from '@/components/property-chip'
 import { SectionHeader } from '@/components/section-header'
 import { TagChip } from '@/components/tag-chip'
+import { confirmDelete, useDeleteEntity, useDuplicateEntity, usePatchEntity, type EntityPatch } from '@/lib/api/mutations'
+import { useSheets } from '@/lib/use-sheets'
 import type { Attachment, Entity } from '@/lib/api/api'
 import { apiUrl } from '@/lib/api/client'
 import { entityPathQuery, entityQuery } from '@/lib/api/queries'
@@ -29,6 +33,10 @@ export default function ItemDetailScreen() {
   const { api, session } = useSession()
   const item = useQuery(entityQuery(api, id))
   const path = useQuery(entityPathQuery(api, id))
+  const patch = usePatchEntity(id)
+  const remove = useDeleteEntity()
+  const duplicate = useDuplicateEntity()
+  const sheets = useSheets()
 
   if (!item.data) {
     return (
@@ -64,6 +72,44 @@ export default function ItemDetailScreen() {
     : 'No place'
   const parent = containers.at(-1)
 
+  const save = (body: EntityPatch) => patch.mutate(body)
+  const editText = (
+    title: string,
+    value: string | undefined,
+    toPatch: (v: string) => EntityPatch,
+    kind: 'text' | 'multiline' | 'integer' | 'decimal' = 'text',
+    required = false,
+  ) => sheets.editText({ title, value: value ?? '', kind, required, onSave: (v) => save(toPatch(v)) })
+
+  const move = () =>
+    sheets.pickPlace({
+      title: 'Move to',
+      selectedId: parent?.id ?? null,
+      onSelect: (p) => {
+        if (p.id && p.id !== parent?.id) {
+          save({ parentId: p.id })
+          path.refetch()
+        }
+      },
+    })
+
+  const editTags = () =>
+    sheets.pickTags({
+      selectedIds: (e.tags ?? []).map((t) => t.id!),
+      onChange: (tagIds) => save({ tagIds }),
+    })
+
+  const onDelete = async () => {
+    if (!(await confirmDelete(`“${e.name}”`, 'The item, its photos and attachments are removed for everyone.'))) return
+    await remove.mutateAsync(e.id!)
+    router.back()
+  }
+
+  const onDuplicate = async () => {
+    const copy = await duplicate.mutateAsync(e.id!)
+    router.push({ pathname: '/item/[id]', params: { id: copy.id!, name: copy.name } })
+  }
+
   const openFile = (a: Attachment) => {
     if (!session) return
     const url = `${apiUrl(session.serverUrl, `/entities/${e.id}/attachments/${a.id}`)}?access_token=${encodeURIComponent(session.attachmentToken)}`
@@ -88,13 +134,53 @@ export default function ItemDetailScreen() {
         />
       }>
       <Stack.Screen options={{ title: '' }} />
+      <Stack.Toolbar placement="right">
+        <HeaderMenu>
+          <Stack.Toolbar.MenuAction onPress={() => editText('Name', e.name, (name) => ({ name }), 'text', true)}>
+            Rename
+          </Stack.Toolbar.MenuAction>
+          <Stack.Toolbar.MenuAction onPress={move}>Move to…</Stack.Toolbar.MenuAction>
+          <Stack.Toolbar.MenuAction onPress={onDuplicate}>Duplicate</Stack.Toolbar.MenuAction>
+          <Stack.Toolbar.MenuAction onPress={() => save({ insured: !e.insured })}>
+            {e.insured ? 'Mark as not insured' : 'Mark as insured'}
+          </Stack.Toolbar.MenuAction>
+          <Stack.Toolbar.MenuAction onPress={() => save({ archived: !e.archived })}>
+            {e.archived ? 'Unarchive' : 'Archive'}
+          </Stack.Toolbar.MenuAction>
+          <Stack.Toolbar.MenuAction destructive onPress={onDelete}>
+            Delete
+          </Stack.Toolbar.MenuAction>
+        </HeaderMenu>
+      </Stack.Toolbar>
 
       {photos.length ? <PhotoPager entityId={e.id!} photos={photos} /> : null}
 
       <View style={styles.head}>
-        <Text style={styles.title} selectable>
-          {e.name}
-        </Text>
+        {containers.length ? (
+          <View style={styles.breadcrumb}>
+            {containers.map((c, i) => (
+              <Text key={c.id} style={styles.crumb} numberOfLines={1}>
+                {i > 0 ? ' › ' : ''}
+                <Text
+                  accessibilityRole="link"
+                  onPress={() =>
+                    c.type === 'location'
+                      ? router.push({ pathname: '/place/[id]', params: { id: c.id!, name: c.name } })
+                      : router.push({ pathname: '/item/[id]', params: { id: c.id!, name: c.name } })
+                  }>
+                  {c.name}
+                </Text>
+              </Text>
+            ))}
+          </View>
+        ) : null}
+        <PressableFeedback
+          onPress={() => editText('Name', e.name, (name) => ({ name }), 'text', true)}
+          accessibilityRole="button"
+          accessibilityHint="Rename"
+          style={styles.titlePress}>
+          <Text style={styles.title}>{e.name}</Text>
+        </PressableFeedback>
         {e.assetId && e.assetId !== '000-000' ? <Text style={styles.asset}>#{e.assetId}</Text> : null}
       </View>
 
@@ -103,40 +189,52 @@ export default function ItemDetailScreen() {
           icon={icons.place}
           label={placeLabel}
           empty={!parent}
-          accessibilityLabel={`Place: ${placeLabel}`}
-          onPress={
-            parent
-              ? () =>
-                  parent.type === 'location'
-                    ? router.push({ pathname: '/place/[id]', params: { id: parent.id!, name: parent.name } })
-                    : router.push({ pathname: '/item/[id]', params: { id: parent.id!, name: parent.name } })
-              : undefined
+          accessibilityLabel={`Place: ${placeLabel}. Move`}
+          onPress={move}
+        />
+        <PropertyChip
+          icon={icons.quantity}
+          label={`×${e.quantity ?? 1}`}
+          accessibilityLabel={`Quantity ${e.quantity ?? 1}. Change`}
+          onPress={() =>
+            editText('Quantity', String(e.quantity ?? 1), (v) => ({ quantity: v === '' ? 1 : Number(v) }), 'integer')
           }
         />
-        {e.quantity && e.quantity !== 1 ? (
-          <PropertyChip icon={icons.quantity} label={`×${e.quantity}`} accessibilityLabel={`Quantity ${e.quantity}`} />
-        ) : null}
-        {formatPrice(e.purchasePrice) ? (
-          <PropertyChip icon={icons.price} label={formatPrice(e.purchasePrice)!} accessibilityLabel="Purchase price" />
-        ) : null}
-        {e.insured ? <PropertyChip icon={icons.insured} label="Insured" /> : null}
-        {e.archived ? <PropertyChip icon={icons.archived} label="Archived" /> : null}
-        {e.tags?.map((t) => (
-          <TagChip
-            key={t.id}
-            tag={t}
-            onPress={() => router.push({ pathname: '/tag/[id]', params: { id: t.id!, name: t.name } })}
-          />
-        ))}
+        <PropertyChip
+          icon={icons.price}
+          label={formatPrice(e.purchasePrice) ?? 'Price'}
+          empty={!e.purchasePrice}
+          accessibilityLabel={`Purchase price ${formatPrice(e.purchasePrice) ?? 'not set'}. Change`}
+          onPress={() =>
+            editText(
+              'Purchase price',
+              e.purchasePrice ? String(e.purchasePrice) : '',
+              (v) => ({ purchasePrice: v === '' ? 0 : Number(v) }),
+              'decimal',
+            )
+          }
+        />
+        {e.insured ? <PropertyChip icon={icons.insured} label="Insured" onPress={() => save({ insured: false })} accessibilityLabel="Insured. Tap to unmark" /> : null}
+        {e.archived ? <PropertyChip icon={icons.archived} label="Archived" onPress={() => save({ archived: false })} accessibilityLabel="Archived. Tap to unarchive" /> : null}
+        {e.tags?.map((t) => <TagChip key={t.id} tag={t} onPress={editTags} />)}
+        <PropertyChip
+          icon={icons.tag}
+          label={e.tags?.length ? 'Edit tags' : 'Add tags'}
+          empty
+          onPress={editTags}
+        />
       </View>
 
-      {e.description ? (
-        <Text style={styles.description} selectable>
-          {e.description}
+      <PressableFeedback
+        onPress={() => editText('Description', e.description, (description) => ({ description }), 'multiline')}
+        accessibilityRole="button"
+        accessibilityLabel={e.description ? `Description: ${e.description}. Edit` : 'Add a description'}>
+        <Text style={[styles.description, !e.description && styles.placeholder]}>
+          {e.description || 'Add a description…'}
         </Text>
-      ) : null}
+      </PressableFeedback>
 
-      <Details entity={e} />
+      <Details entity={e} onEdit={editText} />
 
       {e.children?.length ? (
         <>
@@ -217,13 +315,23 @@ function PhotoPager({ entityId, photos }: { entityId: string; photos: Attachment
   )
 }
 
-function Details({ entity: e }: { entity: Entity }) {
+type EditText = (
+  title: string,
+  value: string | undefined,
+  toPatch: (v: string) => EntityPatch,
+  kind?: 'text' | 'multiline' | 'integer' | 'decimal',
+) => void
+
+function Details({ entity: e, onEdit }: { entity: Entity; onEdit: EditText }) {
   const purchased = [formatDate(e.purchaseDate), e.purchaseFrom].filter(Boolean).join(' · ')
   const warranty = e.lifetimeWarranty ? 'Lifetime' : formatDate(e.warrantyExpires)
+  // Editable text fields are always listed so they can be filled in.
+  const editable: [string, string | undefined, (v: string) => EntityPatch][] = [
+    ['Manufacturer', e.manufacturer, (manufacturer) => ({ manufacturer })],
+    ['Model', e.modelNumber, (modelNumber) => ({ modelNumber })],
+    ['Serial number', e.serialNumber, (serialNumber) => ({ serialNumber })],
+  ]
   const rows: [string, string | null | undefined][] = [
-    ['Manufacturer', e.manufacturer],
-    ['Model', e.modelNumber],
-    ['Serial number', e.serialNumber],
     ['Purchased', purchased],
     ['Warranty', warranty ? `${warranty}${e.warrantyDetails ? ` · ${e.warrantyDetails}` : ''}` : null],
     ['Sold', [formatDate(e.soldDate), e.soldTo].filter(Boolean).join(' · ')],
@@ -238,9 +346,24 @@ function Details({ entity: e }: { entity: Entity }) {
 
   return (
     <>
+      <SectionHeader title="Details" />
+      <View style={styles.details}>
+        {editable.map(([label, value, toPatch]) => (
+          <PressableFeedback
+            key={label}
+            style={styles.detailRow}
+            onPress={() => onEdit(label, value, toPatch)}
+            accessibilityRole="button"
+            accessibilityLabel={`${label}: ${value || 'not set'}. Edit`}>
+            <Text style={styles.detailLabel}>{label}</Text>
+            <Text style={[styles.detailValue, !value && styles.placeholder]} numberOfLines={2}>
+              {value || 'Add'}
+            </Text>
+          </PressableFeedback>
+        ))}
+      </View>
       {visible.length ? (
         <>
-          <SectionHeader title="Details" />
           <View style={styles.details}>
             {visible.map(([label, value]) => (
               <View key={label} style={styles.detailRow} accessible accessibilityLabel={`${label}: ${value}`}>
@@ -253,14 +376,13 @@ function Details({ entity: e }: { entity: Entity }) {
           </View>
         </>
       ) : null}
-      {e.notes ? (
-        <>
-          <SectionHeader title="Notes" />
-          <Text style={styles.description} selectable>
-            {e.notes}
-          </Text>
-        </>
-      ) : null}
+      <SectionHeader title="Notes" />
+      <PressableFeedback
+        onPress={() => onEdit('Notes', e.notes, (notes) => ({ notes }), 'multiline')}
+        accessibilityRole="button"
+        accessibilityLabel={e.notes ? `Notes: ${e.notes}. Edit` : 'Add notes'}>
+        <Text style={[styles.notes, !e.notes && styles.placeholder]}>{e.notes || 'Add notes…'}</Text>
+      </PressableFeedback>
     </>
   )
 }
@@ -285,6 +407,28 @@ const styles = StyleSheet.create((theme) => ({
     ...theme.type.title,
     color: theme.colors.text,
   },
+  titlePress: {
+    alignSelf: 'flex-start',
+    borderRadius: theme.radius.sm,
+  },
+  breadcrumb: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+  },
+  crumb: {
+    ...theme.type.meta,
+    color: theme.colors.textMuted,
+  },
+  placeholder: {
+    color: theme.colors.textFaint,
+  },
+  notes: {
+    ...theme.type.body,
+    lineHeight: 22,
+    color: theme.colors.text,
+    paddingHorizontal: theme.spacing(4),
+    paddingVertical: theme.spacing(2),
+  },
   asset: {
     ...theme.type.meta,
     color: theme.colors.textMuted,
@@ -302,7 +446,7 @@ const styles = StyleSheet.create((theme) => ({
     lineHeight: 22,
     color: theme.colors.text,
     paddingHorizontal: theme.spacing(4),
-    paddingTop: theme.spacing(4),
+    paddingVertical: theme.spacing(4),
   },
   details: {
     paddingHorizontal: theme.spacing(4),

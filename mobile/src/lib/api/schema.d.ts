@@ -4865,12 +4865,26 @@ export interface components {
             warrantyExpires?: string;
         };
         "repo.EntityPatch": {
+            archived?: boolean | null;
+            /**
+             * @description ClearParent moves the entity to the top level (parentId can't
+             *     express that: a missing or null parentId means "unchanged").
+             */
+            clearParent?: boolean;
+            description?: string | null;
             entityTypeId?: string | null;
             id?: string;
+            insured?: boolean | null;
             locationId?: string | null;
+            manufacturer?: string | null;
+            modelNumber?: string | null;
+            /** @description Text and flags; nil leaves the field unchanged. */
+            name?: string | null;
+            notes?: string | null;
             parentId?: string | null;
             purchasePrice?: number | null;
             quantity?: number | null;
+            serialNumber?: string | null;
             tagIds?: string[] | null;
         };
         "repo.EntityPath": {

@@ -6,6 +6,7 @@ import { ActivityIndicator, RefreshControl, View } from 'react-native'
 import { StyleSheet, useUnistyles } from 'react-native-unistyles'
 
 import { AccountButton } from '@/components/account-button'
+import { HeaderButton } from '@/components/header-button'
 import { EmptyState } from '@/components/empty-state'
 import { Icon, icons } from '@/components/icon'
 import { ListRow, RowSeparator } from '@/components/list-row'
@@ -47,6 +48,12 @@ export default function PlacesScreen() {
         onCancelButtonPress={() => setSearch('')}
       />
       <Stack.Toolbar placement="right">
+        <HeaderButton
+          sf="plus"
+          md="add"
+          label="New place"
+          onPress={() => router.push({ pathname: '/new-item', params: { kind: 'place' } })}
+        />
         <Stack.Toolbar.View>
           <AccountButton />
         </Stack.Toolbar.View>

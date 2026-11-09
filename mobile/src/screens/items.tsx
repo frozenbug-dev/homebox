@@ -1,14 +1,16 @@
-import { Stack } from 'expo-router'
+import { Stack, useRouter } from 'expo-router'
 import { useState } from 'react'
 import { View } from 'react-native'
 import { StyleSheet } from 'react-native-unistyles'
 
 import { AccountButton } from '@/components/account-button'
 import { EntityList } from '@/components/entity-list'
+import { HeaderButton } from '@/components/header-button'
 import { SCAN_FAB_SPACE, ScanFab } from '@/components/scan-fab'
 import { useDebounced } from '@/lib/use-debounced'
 
 export default function ItemsScreen() {
+  const router = useRouter()
   const [search, setSearch] = useState('')
   const q = useDebounced(search.trim())
 
@@ -22,6 +24,7 @@ export default function ItemsScreen() {
         onCancelButtonPress={() => setSearch('')}
       />
       <Stack.Toolbar placement="right">
+        <HeaderButton sf="plus" md="add" label="New item" onPress={() => router.push('/new-item')} />
         <Stack.Toolbar.View>
           <AccountButton />
         </Stack.Toolbar.View>
