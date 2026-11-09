@@ -38,6 +38,10 @@ export default function TagsScreen() {
         placeholder="Search tags"
         autoCapitalize="none"
         hideWhenScrolling={false}
+        headerIconColor={theme.colors.text}
+        tintColor={theme.colors.primary}
+        textColor={theme.colors.text}
+        hintTextColor={theme.colors.placeholder}
         onChangeText={(e) => setSearch(e.nativeEvent.text)}
         onCancelButtonPress={() => setSearch('')}
       />

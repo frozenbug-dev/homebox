@@ -1,24 +1,33 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router'
-import { Text, View } from 'react-native'
-import { StyleSheet } from 'react-native-unistyles'
+import { ActivityIndicator, Text, View, useWindowDimensions } from 'react-native'
+import { StyleSheet, useUnistyles } from 'react-native-unistyles'
+
+import { useCover } from '@/components/cover-scroll-view'
 
 import { EntityList } from '@/components/entity-list'
 import { HeaderButton, HeaderMenu } from '@/components/header-button'
 import { Icon, icons } from '@/components/icon'
 import { ListRow, RowSeparator } from '@/components/list-row'
+import { PhotoPager } from '@/components/photo-pager'
 import { SectionHeader } from '@/components/section-header'
 import { confirmDelete, useDeleteEntity, usePatchEntity } from '@/lib/api/mutations'
-import { entityKeys, findInTree, placesTreeQuery } from '@/lib/api/queries'
+import { entityKeys, entityQuery, findInTree, placesTreeQuery } from '@/lib/api/queries'
+import { splitAttachments } from '@/lib/attachments'
 import { useSession } from '@/lib/auth/session'
 import { pluralize } from '@/lib/format'
+import { useAddPhotos } from '@/lib/use-add-photos'
 import { useSheets } from '@/lib/use-sheets'
+import { useUploads } from '@/lib/uploads'
 
 export default function PlaceDetailScreen() {
   const { id, name } = useLocalSearchParams<{ id: string; name?: string }>()
   const router = useRouter()
   const { api } = useSession()
   const tree = useQuery(placesTreeQuery(api))
+  const place = useQuery(entityQuery(api, id))
+  const { theme, rt } = useUnistyles()
+  const { width } = useWindowDimensions()
   const qc = useQueryClient()
   const sheets = useSheets()
   const patch = usePatchEntity(id)
@@ -29,6 +38,14 @@ export default function PlaceDetailScreen() {
   const subPlaces = found?.node.children ?? []
   const trail = found?.trail ?? []
   const parentId = trail.at(-1)?.id ?? null
+
+  const { photos } = splitAttachments(place.data?.attachments)
+  const hasCover = photos.length > 0
+  const uploading = useUploads(id).filter((u) => u.status !== 'failed').length
+  const { addPhotos } = useAddPhotos(id, hasCover)
+  const coverHeight = Math.round(width * 0.8) + rt.insets.top
+  const cover = useCover({ coverHeight, title })
+  const tint = hasCover ? cover.tint : undefined
 
   const rename = () =>
     sheets.editText({
@@ -62,7 +79,14 @@ export default function PlaceDetailScreen() {
   const addItem = () => router.push({ pathname: '/new-item', params: { parentId: id, parentName: title } })
 
   const header = (
-    <View>
+    <View style={hasCover ? cover.sheetStyle : undefined}>
+      {hasCover ? <Text style={styles.title}>{title}</Text> : null}
+      {uploading ? (
+        <View style={styles.uploading}>
+          <ActivityIndicator size="small" color={theme.colors.textMuted} />
+          <Text style={styles.uploadingText}>Uploading {pluralize(uploading, 'photo')}…</Text>
+        </View>
+      ) : null}
       {trail.length ? (
         <Text style={styles.trail} numberOfLines={1}>
           {trail.map((t) => t.name).join(' › ')}
@@ -95,10 +119,10 @@ export default function PlaceDetailScreen() {
 
   return (
     <View style={styles.root}>
-      <Stack.Screen options={{ title }} />
+      {hasCover ? null : <Stack.Screen options={{ title }} />}
       <Stack.Toolbar placement="right">
-        <HeaderButton sf="plus" md="add" label="Add item here" onPress={addItem} />
-        <HeaderMenu>
+        <HeaderButton sf="plus" md="add" label="Add item here" onPress={addItem} tint={tint} />
+        <HeaderMenu tint={tint}>
           <Stack.Toolbar.MenuAction onPress={addItem}>Add item here</Stack.Toolbar.MenuAction>
           <Stack.Toolbar.MenuAction
             onPress={() =>
@@ -106,6 +130,7 @@ export default function PlaceDetailScreen() {
             }>
             Add place inside
           </Stack.Toolbar.MenuAction>
+          <Stack.Toolbar.MenuAction onPress={addPhotos}>{hasCover ? 'Add photos' : 'Add a cover photo'}</Stack.Toolbar.MenuAction>
           <Stack.Toolbar.MenuAction onPress={rename}>Rename</Stack.Toolbar.MenuAction>
           <Stack.Toolbar.MenuAction onPress={move}>Move…</Stack.Toolbar.MenuAction>
           <Stack.Toolbar.MenuAction destructive onPress={onDelete}>
@@ -115,11 +140,25 @@ export default function PlaceDetailScreen() {
       </Stack.Toolbar>
       <EntityList
         filters={{ parentIds: [id] }}
-        header={header}
+        header={
+          hasCover ? (
+            <View>
+              {cover.renderCover(<PhotoPager entityId={id} photos={photos} height={coverHeight} />)}
+              {header}
+            </View>
+          ) : (
+            header
+          )
+        }
         showPlace={false}
         emptyTitle="Nothing here yet"
         emptyMessage={subPlaces.length ? 'Items stored directly in this place show up here.' : undefined}
+        onScroll={hasCover ? cover.onScroll : undefined}
+        edgeToEdge={hasCover}
+        refreshOffset={cover.headerHeight}
+        minContentHeight={hasCover ? cover.minContentHeight : undefined}
       />
+      {hasCover ? cover.chrome : null}
     </View>
   )
 }
@@ -128,6 +167,23 @@ const styles = StyleSheet.create((theme) => ({
   root: {
     flex: 1,
     backgroundColor: theme.colors.background,
+  },
+  title: {
+    ...theme.type.title,
+    color: theme.colors.text,
+    paddingHorizontal: theme.spacing(4),
+    paddingTop: theme.spacing(4),
+  },
+  uploading: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: theme.spacing(2),
+    paddingHorizontal: theme.spacing(4),
+    paddingTop: theme.spacing(2),
+  },
+  uploadingText: {
+    ...theme.type.meta,
+    color: theme.colors.textMuted,
   },
   trail: {
     ...theme.type.meta,

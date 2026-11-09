@@ -1,12 +1,11 @@
 import { useQuery } from '@tanstack/react-query'
-import { Image } from 'expo-image'
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router'
-import { useState } from 'react'
 import { ActivityIndicator, RefreshControl, ScrollView, Text, View, useWindowDimensions } from 'react-native'
 import { StyleSheet, useUnistyles } from 'react-native-unistyles'
 
 import { ActionButton } from '@/components/action-button'
 import { CoverScrollView } from '@/components/cover-scroll-view'
+import { PhotoPager } from '@/components/photo-pager'
 import { EmptyState } from '@/components/empty-state'
 import { HeaderMenu } from '@/components/header-button'
 import { PressableFeedback } from '@/components/pressable-feedback'
@@ -17,9 +16,9 @@ import { SectionHeader } from '@/components/section-header'
 import { TagChip } from '@/components/tag-chip'
 import { confirmDelete, useDeleteEntity, useDuplicateEntity, usePatchEntity, type EntityPatch } from '@/lib/api/mutations'
 import { useSheets } from '@/lib/use-sheets'
-import type { Attachment, Entity } from '@/lib/api/api'
+import type { Entity } from '@/lib/api/api'
 import { entityPathQuery, entityQuery } from '@/lib/api/queries'
-import { attachmentSource, splitAttachments } from '@/lib/attachments'
+import { splitAttachments } from '@/lib/attachments'
 import { useSession } from '@/lib/auth/session'
 import { formatDate, formatPrice } from '@/lib/format'
 
@@ -123,9 +122,9 @@ export default function ItemDetailScreen() {
     />
   )
 
-  const toolbar = (
+  const toolbar = (tint?: string) => (
       <Stack.Toolbar placement="right">
-        <HeaderMenu>
+        <HeaderMenu tint={tint}>
           <Stack.Toolbar.MenuAction onPress={() => editText('Name', e.name, (name) => ({ name }), 'text', true)}>
             Rename
           </Stack.Toolbar.MenuAction>
@@ -257,8 +256,8 @@ export default function ItemDetailScreen() {
         coverHeight={coverHeight}
         title={e.name ?? ''}
         refreshControl={refresh}
-        contentPaddingBottom={paddingBottom}>
-        {toolbar}
+        contentPaddingBottom={paddingBottom}
+        renderToolbar={toolbar}>
         {body}
       </CoverScrollView>
     )
@@ -271,50 +270,9 @@ export default function ItemDetailScreen() {
       contentContainerStyle={{ paddingBottom }}
       refreshControl={refresh}>
       <Stack.Screen options={{ title: '' }} />
-      {toolbar}
+      {toolbar()}
       {body}
     </ScrollView>
-  )
-}
-
-function PhotoPager({ entityId, photos, height }: { entityId: string; photos: Attachment[]; height: number }) {
-  const router = useRouter()
-  const { width } = useWindowDimensions()
-  const { session } = useSession()
-  const [index, setIndex] = useState(0)
-  if (!session) return null
-
-  return (
-    <View>
-      <ScrollView
-        horizontal
-        pagingEnabled
-        showsHorizontalScrollIndicator={false}
-        onMomentumScrollEnd={(ev) => setIndex(Math.round(ev.nativeEvent.contentOffset.x / width))}>
-        {photos.map((p, i) => (
-          <PressableFeedback
-            key={p.id}
-            onPress={() => router.push({ pathname: '/photos', params: { entityId, start: p.id! } })}
-            accessibilityRole="imagebutton"
-            accessibilityLabel={`Photo ${i + 1} of ${photos.length}. Open full screen`}>
-            <Image
-              source={attachmentSource(session, entityId, p.id!)}
-              placeholder={p.thumbnail?.id ? attachmentSource(session, entityId, p.thumbnail.id) : undefined}
-              style={{ width, height }}
-              contentFit="cover"
-              transition={150}
-            />
-          </PressableFeedback>
-        ))}
-      </ScrollView>
-      {photos.length > 1 ? (
-        <View style={styles.dots} pointerEvents="none">
-          {photos.map((p, i) => (
-            <View key={p.id} style={styles.pageDot(i === index)} />
-          ))}
-        </View>
-      ) : null}
-    </View>
   )
 }
 
@@ -474,19 +432,4 @@ const styles = StyleSheet.create((theme) => ({
   rowIcon: {
     width: 40,
   },
-  dots: {
-    position: 'absolute',
-    bottom: theme.spacing(3),
-    left: 0,
-    right: 0,
-    flexDirection: 'row',
-    justifyContent: 'center',
-    gap: theme.spacing(1.5),
-  },
-  pageDot: (active: boolean) => ({
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: active ? '#ffffff' : 'rgba(255, 255, 255, 0.5)',
-  }),
 }))

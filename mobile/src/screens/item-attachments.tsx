@@ -1,6 +1,5 @@
 import * as DocumentPicker from 'expo-document-picker'
 import { Image } from 'expo-image'
-import * as ImagePicker from 'expo-image-picker'
 import { useRouter } from 'expo-router'
 import * as WebBrowser from 'expo-web-browser'
 import { ActivityIndicator, Alert, ScrollView, Text, View } from 'react-native'
@@ -15,6 +14,7 @@ import { apiUrl } from '@/lib/api/client'
 import { confirmDelete, useDeleteAttachment } from '@/lib/api/mutations'
 import { attachmentSource, splitAttachments } from '@/lib/attachments'
 import { useSession } from '@/lib/auth/session'
+import { useAddPhotos } from '@/lib/use-add-photos'
 import { dismissUpload, enqueueUploads, retryUpload, useUploads, type AttachmentKind, type UploadTask } from '@/lib/uploads'
 
 const THUMB = 72
@@ -33,36 +33,7 @@ export function ItemAttachments({ entity }: { entity: Entity }) {
   const pendingPhotos = uploads.filter((u) => u.kind === 'photo')
   const pendingFiles = uploads.filter((u) => u.kind !== 'photo')
 
-  const takePhotos = () =>
-    router.push({ pathname: '/capture', params: { entityId: entity.id!, hasPhotos: photos.length ? '1' : '' } })
-
-  const pickPhotos = async () => {
-    if (!session) return
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ['images'],
-      allowsMultipleSelection: true,
-      quality: 0.8,
-    })
-    if (result.canceled) return
-    enqueueUploads(
-      session,
-      entity.id!,
-      result.assets.map((a, i) => ({
-        uri: a.uri,
-        name: a.fileName ?? `photo-${Date.now()}-${i}.jpg`,
-        mimeType: a.mimeType ?? 'image/jpeg',
-        kind: 'photo',
-        primary: !photos.length && i === 0,
-      })),
-    )
-  }
-
-  const addPhoto = () =>
-    Alert.alert('Add photos', undefined, [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Library', onPress: pickPhotos },
-      { text: 'Camera', onPress: takePhotos },
-    ])
+  const { addPhotos: addPhoto } = useAddPhotos(entity.id!, photos.length > 0)
 
   const pickFiles = async () => {
     if (!session) return

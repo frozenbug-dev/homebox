@@ -1,8 +1,9 @@
 import { FlashList } from '@shopify/flash-list'
 import { useInfiniteQuery } from '@tanstack/react-query'
 import { useRouter } from 'expo-router'
-import type { ReactElement } from 'react'
+import { useState, type ReactElement } from 'react'
 import { ActivityIndicator, RefreshControl, Text, View } from 'react-native'
+import Animated, { type useAnimatedScrollHandler } from 'react-native-reanimated'
 import { StyleSheet, useUnistyles } from 'react-native-unistyles'
 
 import type { EntitySummary } from '@/lib/api/api'
@@ -29,7 +30,20 @@ interface EntityListProps {
   bottomSpace?: number
   /** Show the place in the subtitle (off when listing one place's contents). */
   showPlace?: boolean
+  /** Animated scroll handler (e.g. from `useCover`). */
+  onScroll?: ScrollHandler
+  /** Content starts at the very top (under a transparent header). */
+  edgeToEdge?: boolean
+  /** Top offset for the pull-to-refresh spinner when edge-to-edge. */
+  refreshOffset?: number
+  /** Pads short content to at least this height (so a cover can scroll away). */
+  minContentHeight?: number
 }
+
+type ScrollHandler = ReturnType<typeof useAnimatedScrollHandler>
+
+// Animated so a cover header can follow the scroll position on the UI thread.
+const AnimatedFlashList = Animated.createAnimatedComponent(FlashList) as unknown as typeof FlashList
 
 export function EntityList({
   filters,
@@ -38,6 +52,10 @@ export function EntityList({
   emptyMessage,
   bottomSpace = 0,
   showPlace = true,
+  onScroll,
+  edgeToEdge,
+  refreshOffset,
+  minContentHeight,
 }: EntityListProps) {
   const { theme, rt } = useUnistyles()
   const router = useRouter()
@@ -49,9 +67,20 @@ export function EntityList({
 
   const items = query.data?.pages.flatMap((p) => p.items ?? []) ?? []
 
-  const footer = query.isFetchingNextPage ? (
-    <ActivityIndicator style={styles.footer} color={theme.colors.textMuted} />
-  ) : null
+  // FlashList has no minHeight for its content, so pad with a footer spacer.
+  const [spacer, setSpacer] = useState(0)
+  const onContentSizeChange = (_w: number, h: number) => {
+    if (!minContentHeight) return
+    const next = Math.max(0, Math.round(minContentHeight - (h - spacer)))
+    if (Math.abs(next - spacer) > 1) setSpacer(next)
+  }
+
+  const footer = (
+    <>
+      {query.isFetchingNextPage ? <ActivityIndicator style={styles.footer} color={theme.colors.textMuted} /> : null}
+      {spacer ? <View style={{ height: spacer }} /> : null}
+    </>
+  )
 
   let empty: ReactElement
   if (query.isPending) {
@@ -69,10 +98,13 @@ export function EntityList({
   }
 
   return (
-    <FlashList
+    <AnimatedFlashList
       data={items}
       keyExtractor={(item) => item.id!}
-      contentInsetAdjustmentBehavior="automatic"
+      contentInsetAdjustmentBehavior={edgeToEdge ? 'never' : 'automatic'}
+      onScroll={onScroll as never}
+      scrollEventThrottle={16}
+      onContentSizeChange={onContentSizeChange}
       keyboardDismissMode="on-drag"
       keyboardShouldPersistTaps="handled"
       contentContainerStyle={{ paddingBottom: rt.insets.bottom + bottomSpace + theme.spacing(4) }}
@@ -88,6 +120,7 @@ export function EntityList({
       refreshControl={
         <RefreshControl
           refreshing={query.isRefetching && !query.isFetchingNextPage}
+          progressViewOffset={edgeToEdge ? refreshOffset : undefined}
           onRefresh={() => {
             query.refetch()
           }}

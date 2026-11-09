@@ -1,14 +1,14 @@
-import { Stack } from 'expo-router'
-import { StatusBar } from 'expo-status-bar'
-import { useState, type ReactElement, type ReactNode } from 'react'
-import { Platform, View, type RefreshControlProps } from 'react-native'
+import { Stack, useFocusEffect } from 'expo-router'
+import { setStatusBarStyle } from 'expo-status-bar'
+import { useCallback, useState, type ReactElement, type ReactNode } from 'react'
+import { Platform, View, useWindowDimensions, type RefreshControlProps } from 'react-native'
 import Animated, {
   Extrapolation,
   interpolate,
   useAnimatedReaction,
-  useAnimatedRef,
+  useAnimatedScrollHandler,
   useAnimatedStyle,
-  useScrollOffset,
+  useSharedValue,
 } from 'react-native-reanimated'
 import { StyleSheet, useUnistyles } from 'react-native-unistyles'
 import { scheduleOnRN } from 'react-native-worklets'
@@ -17,40 +17,32 @@ import { scheduleOnRN } from 'react-native-worklets'
 const HEADER_BAR = Platform.OS === 'ios' ? 44 : 64
 const SHEET_RADIUS = 20
 
-interface CoverScrollViewProps {
-  /** Full-bleed cover (e.g. a photo pager) rendered `coverHeight` tall. */
-  cover: ReactNode
-  coverHeight: number
-  /** Shown in the header once the cover has scrolled away. */
-  title: string
-  children: ReactNode
-  refreshControl?: ReactElement<RefreshControlProps>
-  contentPaddingBottom?: number
-}
-
 /**
- * Scroll view with a full-bleed cover under a transparent header. Pulling
- * down stretches the cover; scrolling up moves it at half speed while the
- * content slides over it, and a solid header with the title fades in as it
- * leaves.
+ * Full-bleed cover under a transparent header, for any scrollable (ScrollView
+ * or list). Pulling down stretches the cover; scrolling up moves it at half
+ * speed and dims it while the content slides over it as a rounded sheet, and
+ * a solid header with the title fades in once it's gone.
+ *
+ * Wire `onScroll` to an Animated scrollable, render `renderCover(...)` at the
+ * top of its content, wrap the rest in `sheetStyle`, and render `chrome` as a
+ * sibling after the scrollable.
  */
-export function CoverScrollView({
-  cover,
-  coverHeight,
-  title,
-  children,
-  refreshControl,
-  contentPaddingBottom = 0,
-}: CoverScrollViewProps) {
+export function useCover({ coverHeight, title }: { coverHeight: number; title: string }) {
   const { theme, rt } = useUnistyles()
-  const ref = useAnimatedRef<Animated.ScrollView>()
-  const offset = useScrollOffset(ref)
+  const { height: windowHeight } = useWindowDimensions()
+  const offset = useSharedValue(0)
   const [overCover, setOverCover] = useState(true)
 
   const headerHeight = rt.insets.top + HEADER_BAR
   // The header turns solid over the last stretch before the cover is gone.
   const fadeEnd = coverHeight - headerHeight
   const fadeStart = fadeEnd - 72
+
+  const onScroll = useAnimatedScrollHandler({
+    onScroll: (e) => {
+      offset.value = e.contentOffset.y
+    },
+  })
 
   useAnimatedReaction(
     () => offset.value < fadeStart + 36,
@@ -82,8 +74,25 @@ export function CoverScrollView({
     ],
   }))
 
-  return (
-    <View style={styles.root}>
+  // Light status bar only while this screen shows its cover; restore the
+  // theme default when leaving (the StatusBar component wouldn't).
+  useFocusEffect(
+    useCallback(() => {
+      setStatusBarStyle(overCover ? 'light' : 'auto', true)
+      return () => setStatusBarStyle('auto', true)
+    }, [overCover]),
+  )
+
+  const renderCover = (cover: ReactNode) => (
+    <Animated.View style={[{ height: coverHeight }, styles.cover, coverStyle]}>
+      {cover}
+      {/* Keeps the back button and menu readable on bright photos. */}
+      <View style={[styles.scrim, { height: headerHeight + 48 }]} pointerEvents="none" />
+    </Animated.View>
+  )
+
+  const chrome = (
+    <>
       <Stack.Screen
         options={{
           headerTransparent: true,
@@ -92,26 +101,60 @@ export function CoverScrollView({
           headerTintColor: overCover ? '#ffffff' : theme.colors.text,
         }}
       />
-      <StatusBar style={overCover ? 'light' : 'auto'} animated />
-
-      <Animated.ScrollView
-        ref={ref}
-        scrollEventThrottle={16}
-        refreshControl={refreshControl}
-        contentContainerStyle={{ paddingBottom: contentPaddingBottom }}>
-        <Animated.View style={[{ height: coverHeight }, styles.cover, coverStyle]}>
-          {cover}
-          {/* Keeps the back button and menu readable on bright photos. */}
-          <View style={[styles.scrim, { height: headerHeight + 48 }]} pointerEvents="none" />
-        </Animated.View>
-        <View style={styles.sheet}>{children}</View>
-      </Animated.ScrollView>
-
       <Animated.View style={[styles.header, { height: headerHeight }, headerStyle]} pointerEvents="none">
         <Animated.Text style={[styles.title, { top: rt.insets.top }, titleStyle]} numberOfLines={1}>
           {title}
         </Animated.Text>
       </Animated.View>
+    </>
+  )
+
+  // Content at least this tall can always scroll the cover fully away, even
+  // when there's little below it.
+  const minContentHeight = windowHeight + coverHeight - headerHeight
+
+  const tint = overCover ? '#ffffff' : theme.colors.text
+
+  return { onScroll, renderCover, chrome, sheetStyle: styles.sheet, headerHeight, minContentHeight, tint }
+}
+
+interface CoverScrollViewProps {
+  /** Full-bleed cover (e.g. a photo pager) rendered `coverHeight` tall. */
+  cover: ReactNode
+  coverHeight: number
+  /** Shown in the header once the cover has scrolled away. */
+  title: string
+  children: ReactNode
+  /** Header toolbar, given the icon colour to use over / past the cover. */
+  renderToolbar?: (tint: string) => ReactNode
+  refreshControl?: ReactElement<RefreshControlProps>
+  contentPaddingBottom?: number
+}
+
+/** ScrollView with a collapsing full-bleed cover (see `useCover`). */
+export function CoverScrollView({
+  cover,
+  coverHeight,
+  title,
+  children,
+  renderToolbar,
+  refreshControl,
+  contentPaddingBottom = 0,
+}: CoverScrollViewProps) {
+  const { onScroll, renderCover, chrome, sheetStyle, minContentHeight, tint } = useCover({ coverHeight, title })
+
+  return (
+    <View style={styles.root}>
+      <Animated.ScrollView
+        onScroll={onScroll}
+        scrollEventThrottle={16}
+        refreshControl={refreshControl}
+        contentContainerStyle={{ paddingBottom: contentPaddingBottom, minHeight: minContentHeight }}>
+        {renderToolbar?.(tint)}
+        {renderCover(cover)}
+        <View style={sheetStyle}>{children}</View>
+      </Animated.ScrollView>
+      {chrome}
     </View>
   )
 }

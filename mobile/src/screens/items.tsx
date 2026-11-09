@@ -1,7 +1,7 @@
 import { Stack, useRouter } from 'expo-router'
 import { useState } from 'react'
 import { View } from 'react-native'
-import { StyleSheet } from 'react-native-unistyles'
+import { StyleSheet, useUnistyles } from 'react-native-unistyles'
 
 import { AccountButton } from '@/components/account-button'
 import { EntityList } from '@/components/entity-list'
@@ -11,6 +11,7 @@ import { useDebounced } from '@/lib/use-debounced'
 
 export default function ItemsScreen() {
   const router = useRouter()
+  const { theme } = useUnistyles()
   const [search, setSearch] = useState('')
   const q = useDebounced(search.trim())
 
@@ -20,6 +21,10 @@ export default function ItemsScreen() {
         placeholder="Search items"
         autoCapitalize="none"
         hideWhenScrolling={false}
+        headerIconColor={theme.colors.text}
+        tintColor={theme.colors.primary}
+        textColor={theme.colors.text}
+        hintTextColor={theme.colors.placeholder}
         onChangeText={(e) => setSearch(e.nativeEvent.text)}
         onCancelButtonPress={() => setSearch('')}
       />
