@@ -1,85 +1,69 @@
-# Node dependencies stage
-FROM mirror.gcr.io/library/node:22-alpine AS frontend-dependencies
+# syntax=docker/dockerfile:1
+
+ARG NODE_VERSION=26
+ARG GO_VERSION=1.27
+ARG ALPINE_VERSION=3.24
+
+# Frontend base: Node + the pnpm version pinned in package.json's packageManager field
+FROM mirror.gcr.io/library/node:${NODE_VERSION}-alpine${ALPINE_VERSION} AS frontend-base
 WORKDIR /app
+COPY frontend/package.json ./
+RUN npm install -g "$(node -p 'require("./package.json").packageManager')"
 
-# Install pnpm 10 (latest stable, works reliably in Alpine)
-RUN npm install -g pnpm@10
-
-# Copy package.json and lockfile to leverage caching
-COPY frontend/package.json frontend/pnpm-lock.yaml ./
-RUN pnpm install --frozen-lockfile
+# Node dependencies stage
+FROM frontend-base AS frontend-dependencies
+COPY frontend/pnpm-lock.yaml ./
+RUN --mount=type=cache,id=pnpm-store,target=/root/.local/share/pnpm/store \
+    pnpm install --frozen-lockfile
 
 # Build Nuxt (frontend) stage
-FROM mirror.gcr.io/library/node:22-alpine AS frontend-builder
-WORKDIR /app
-
-# Install pnpm 10 (latest stable)
-RUN npm install -g pnpm@10
-
-# Copy over source files and node_modules from dependencies stage
-COPY frontend . 
+FROM frontend-base AS frontend-builder
+COPY frontend .
 COPY --from=frontend-dependencies /app/node_modules ./node_modules
 RUN pnpm build
 
 # Go dependencies stage
-FROM mirror.gcr.io/library/golang:alpine AS builder-dependencies
+FROM mirror.gcr.io/library/golang:${GO_VERSION}-alpine${ALPINE_VERSION} AS builder-dependencies
 WORKDIR /go/src/app
-
-# Copy go.mod and go.sum for better caching
 COPY ./backend/go.mod ./backend/go.sum ./
 RUN go mod download
 
 # Build API stage
-FROM mirror.gcr.io/library/golang:alpine AS builder
+FROM builder-dependencies AS builder
 ARG TARGETOS
 ARG TARGETARCH
 ARG BUILD_TIME
 ARG COMMIT
 ARG VERSION
 
-# Install necessary build tools
-RUN apk update && \
-    apk upgrade && \
-    apk add --no-cache git build-base gcc g++ && \
-    if [ "$TARGETARCH" != "arm" ] || [ "$TARGETARCH" != "riscv64" ]; then apk --no-cache add libwebp libavif libheif libjxl; fi
-
-WORKDIR /go/src/app
-
-# Copy Go modules (from dependencies stage) and source code
-COPY --from=builder-dependencies /go/pkg/mod /go/pkg/mod
 COPY ./backend .
 
-# Clear old public files and copy new ones from frontend build
-RUN rm -rf ./app/api/public
+# Replace any stale embedded frontend with the fresh build
+RUN rm -rf ./app/api/static/public
 COPY --from=frontend-builder /app/.output/public ./app/api/static/public
 
-# Use cache for Go build artifacts
+# arm and riscv64 build with `nodynamic` (bundled WASM codecs); other arches load
+# libwebp/libavif/libheif/libjxl at runtime via purego, so CGO stays disabled everywhere.
 RUN --mount=type=cache,target=/root/.cache/go-build \
-    if [ "$TARGETARCH" = "arm" ] || [ "$TARGETARCH" = "riscv64" ];  \
-    then echo "nodynamic" $TARGETOS $TARGETARCH; CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH go build \
+    case "$TARGETARCH" in arm|riscv64) TAGS=nodynamic ;; *) TAGS= ;; esac; \
+    echo "building $TARGETOS/$TARGETARCH tags=[$TAGS]"; \
+    CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH go build \
         -ldflags "-s -w -X main.commit=$COMMIT -X main.buildTime=$BUILD_TIME -X main.version=$VERSION" \
-        -tags nodynamic -o /go/bin/api -v ./app/api/*.go; \
-    else \
-         echo $TARGETOS $TARGETARCH; CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH go build \
-        -ldflags "-s -w -X main.commit=$COMMIT -X main.buildTime=$BUILD_TIME -X main.version=$VERSION" \
-        -o /go/bin/api -v ./app/api/*.go; \
-    fi
+        -tags "$TAGS" -o /go/bin/api -v ./app/api/*.go
 
 # Production stage
-FROM mirror.gcr.io/library/alpine:latest
+FROM mirror.gcr.io/library/alpine:${ALPINE_VERSION}
+ARG TARGETARCH
 ENV HBOX_MODE=production
 ENV HBOX_STORAGE_CONN_STRING=file:///?no_tmp_dir=true
 ENV HBOX_STORAGE_PREFIX_PATH=data
 ENV HBOX_DATABASE_SQLITE_PATH=/data/homebox.db?_pragma=busy_timeout=2000&_pragma=journal_mode=WAL&_fk=1&_time_format=sqlite
 
-# Install necessary runtime dependencies
+# Runtime dependencies; image codec libraries only where the binary loads them dynamically
 RUN apk --no-cache add ca-certificates wget mosquitto-clients && \
-    if [ "$TARGETARCH" != "arm" ] || [ "$TARGETARCH" != "riscv64" ]; then apk --no-cache add libwebp libavif libheif libjxl; fi
+    case "$TARGETARCH" in arm|riscv64) ;; *) apk --no-cache add libwebp libavif libheif libjxl ;; esac
 
-# Create application directory and copy over built Go binary
-RUN mkdir /app
-COPY --from=builder /go/bin/api /app
-RUN chmod +x /app/api
+COPY --from=builder --chmod=755 /go/bin/api /app/api
 
 # Labels and configuration for the final image
 LABEL Name=homebox Version=0.0.1
@@ -96,6 +80,6 @@ HEALTHCHECK --interval=30s --timeout=5s --start-period=5s --retries=3 \
 # Persist volume
 VOLUME [ "/data" ]
 
-# Entrypoint and CMD
+# HBOX_AUTH_API_KEY_PEPPER (>= 32 bytes) must be provided at runtime; the server refuses to start without it.
 ENTRYPOINT [ "/app/api" ]
 CMD [ "/data/config.yml" ]

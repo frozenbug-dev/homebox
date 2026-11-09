@@ -33,13 +33,17 @@ The hardened tag is a distroless image and contains no shells or utilities.
 ### Docker Run
 Great for testing the application, but not recommended for production deployments. Check out the docker compose example below for a production deployment.
 
+> [!IMPORTANT]
+> `HBOX_AUTH_API_KEY_PEPPER` is required and must be at least 32 bytes, or Homebox will refuse to start. Generate one
+> with `openssl rand -base64 48` and keep it stable, because changing it invalidates every issued API key.
+
 <Tabs>
     <TabItem label="Regular">
         ```bash
         # Run the container
         docker run -d --name homebox --restart unless-stopped \
         --publish 3100:7745 --env HBOX_OPTIONS_ALLOW_ANALYTICS=false \
-        --env HBOX_AUTH_API_KEY_PEPPER=some_random_string \
+        --env HBOX_AUTH_API_KEY_PEPPER=replace-with-output-of-openssl-rand-base64-48 \
         --volume /path/to/data/folder:/data \
         ghcr.io/sysadminsmedia/homebox:latest
         ```
@@ -53,7 +57,7 @@ Great for testing the application, but not recommended for production deployment
         # Run the container
         docker run -d --name homebox --restart unless-stopped \
         --publish 3100:7745 --env HBOX_OPTIONS_ALLOW_ANALYTICS=false \
-        --env HBOX_AUTH_API_KEY_PEPPER=some_random_string \
+        --env HBOX_AUTH_API_KEY_PEPPER=replace-with-output-of-openssl-rand-base64-48 \
         --volume /path/to/data/folder:/data \
         ghcr.io/sysadminsmedia/homebox:latest-rootless
         ```
@@ -67,7 +71,7 @@ Great for testing the application, but not recommended for production deployment
         # Run the container
         docker run -d --name homebox --restart unless-stopped \
         --publish 3100:7745 --env HBOX_OPTIONS_ALLOW_ANALYTICS=false \
-        --env HBOX_AUTH_API_KEY_PEPPER=some_random_string \
+        --env HBOX_AUTH_API_KEY_PEPPER=replace-with-output-of-openssl-rand-base64-48 \
         --volume /path/to/data/folder:/data \
         ghcr.io/sysadminsmedia/homebox:latest-hardened
         ```
@@ -90,8 +94,9 @@ Great for testing the application, but not recommended for production deployment
                     - HBOX_WEB_MAX_UPLOAD_SIZE=10
                     # Please consider allowing analytics to help us improve Homebox (basic computer information, no personal data)
                     - HBOX_OPTIONS_ALLOW_ANALYTICS=false
-                    # Use a strong random string for the pepper in production, it will be used to hash API keys and make them more secure
-                    - HBOX_AUTH_API_KEY_PEPPER=some_random_string
+                    # Required: at least 32 bytes, used to hash API keys. Generate with `openssl rand -base64 48`
+                    # and keep it stable — changing it invalidates every issued API key.
+                    - HBOX_AUTH_API_KEY_PEPPER=replace-with-output-of-openssl-rand-base64-48
                 volumes:
                     - homebox-data:/data/
                 ports:
@@ -114,8 +119,9 @@ Great for testing the application, but not recommended for production deployment
                     - HBOX_WEB_MAX_UPLOAD_SIZE=10
                     # Please consider allowing analytics to help us improve Homebox (basic computer information, no personal data)
                     - HBOX_OPTIONS_ALLOW_ANALYTICS=false
-                    # Use a strong random string for the pepper in production, it will be used to hash API keys and make them more secure
-                    - HBOX_AUTH_API_KEY_PEPPER=some_random_string
+                    # Required: at least 32 bytes, used to hash API keys. Generate with `openssl rand -base64 48`
+                    # and keep it stable — changing it invalidates every issued API key.
+                    - HBOX_AUTH_API_KEY_PEPPER=replace-with-output-of-openssl-rand-base64-48
                 volumes:
                     - homebox-data:/data/
                 ports:
@@ -142,8 +148,9 @@ Great for testing the application, but not recommended for production deployment
                     - HBOX_WEB_MAX_UPLOAD_SIZE=10
                     # Please consider allowing analytics to help us improve Homebox (basic computer information, no personal data)
                     - HBOX_OPTIONS_ALLOW_ANALYTICS=false
-                    # Use a strong random string for the pepper in production, it will be used to hash API keys and make them more secure
-                    - HBOX_AUTH_API_KEY_PEPPER=some_random_string
+                    # Required: at least 32 bytes, used to hash API keys. Generate with `openssl rand -base64 48`
+                    # and keep it stable — changing it invalidates every issued API key.
+                    - HBOX_AUTH_API_KEY_PEPPER=replace-with-output-of-openssl-rand-base64-48
                 volumes:
                     - homebox-data:/data/
                 ports:
