@@ -429,6 +429,59 @@ func TestEntityRepository_Patch_RejectsNonFiniteQuantity(t *testing.T) {
 	assert.Contains(t, err.Error(), "invalid quantity: must be a finite number")
 }
 
+func TestEntityRepository_Patch_TextAndFlags(t *testing.T) {
+	e := useEntities(t, 1)[0]
+	ctx := context.Background()
+
+	name, notes, insured := "  Renamed drill  ", "Charger in the blue box", true
+	err := tRepos.Entities.Patch(ctx, tGroup.ID, e.ID, EntityPatch{Name: &name, Notes: &notes, Insured: &insured})
+	require.NoError(t, err)
+
+	got, err := tRepos.Entities.GetOneByGroup(ctx, tGroup.ID, e.ID)
+	require.NoError(t, err)
+	assert.Equal(t, "Renamed drill", got.Name)
+	assert.Equal(t, notes, got.Notes)
+	assert.True(t, got.Insured)
+	// Fields that weren't sent stay as they were.
+	assert.Equal(t, e.Description, got.Description)
+	assert.InDelta(t, e.Quantity, got.Quantity, 0.0001)
+
+	empty := "   "
+	err = tRepos.Entities.Patch(ctx, tGroup.ID, e.ID, EntityPatch{Name: &empty})
+	require.Error(t, err)
+
+	long := strings.Repeat("x", 1001)
+	err = tRepos.Entities.Patch(ctx, tGroup.ID, e.ID, EntityPatch{Description: &long})
+	require.Error(t, err)
+}
+
+func TestEntityRepository_Patch_ClearParent(t *testing.T) {
+	ctx := context.Background()
+	containerET := useContainerEntityType(t)
+
+	outer := containerFactory()
+	outer.EntityTypeID = containerET.ID
+	parent, err := tRepos.Entities.Create(ctx, tGroup.ID, outer)
+	require.NoError(t, err)
+	inner := containerFactory()
+	inner.EntityTypeID = containerET.ID
+	inner.ParentID = parent.ID
+	child, err := tRepos.Entities.Create(ctx, tGroup.ID, inner)
+	require.NoError(t, err)
+	t.Cleanup(func() {
+		_ = tRepos.Entities.Delete(ctx, child.ID)
+		_ = tRepos.Entities.Delete(ctx, parent.ID)
+	})
+
+	require.NoError(t, tRepos.Entities.Patch(ctx, tGroup.ID, child.ID, EntityPatch{ClearParent: true}))
+	got, err := tRepos.Entities.GetOneByGroup(ctx, tGroup.ID, child.ID)
+	require.NoError(t, err)
+	assert.Nil(t, got.Parent)
+
+	err = tRepos.Entities.Patch(ctx, tGroup.ID, child.ID, EntityPatch{ClearParent: true, ParentID: parent.ID})
+	require.Error(t, err)
+}
+
 func TestEntityRepository_CreateFromTemplate_RejectsNonFiniteQuantity(t *testing.T) {
 	containerET := useContainerEntityType(t)
 

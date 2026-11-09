@@ -6240,6 +6240,21 @@
             "repo.EntityPatch": {
                 "type": "object",
                 "properties": {
+                    "archived": {
+                        "type": "boolean",
+                        "x-omitempty": true,
+                        "nullable": true
+                    },
+                    "clearParent": {
+                        "description": "ClearParent moves the entity to the top level (parentId can't\nexpress that: a missing or null parentId means \"unchanged\").",
+                        "type": "boolean"
+                    },
+                    "description": {
+                        "type": "string",
+                        "maxLength": 1000,
+                        "x-omitempty": true,
+                        "nullable": true
+                    },
                     "entityTypeId": {
                         "type": "string",
                         "x-omitempty": true,
@@ -6248,8 +6263,39 @@
                     "id": {
                         "type": "string"
                     },
+                    "insured": {
+                        "type": "boolean",
+                        "x-omitempty": true,
+                        "nullable": true
+                    },
                     "locationId": {
                         "type": "string",
+                        "x-omitempty": true,
+                        "nullable": true
+                    },
+                    "manufacturer": {
+                        "type": "string",
+                        "maxLength": 255,
+                        "x-omitempty": true,
+                        "nullable": true
+                    },
+                    "modelNumber": {
+                        "type": "string",
+                        "maxLength": 255,
+                        "x-omitempty": true,
+                        "nullable": true
+                    },
+                    "name": {
+                        "description": "Text and flags; nil leaves the field unchanged.",
+                        "type": "string",
+                        "maxLength": 255,
+                        "minLength": 1,
+                        "x-omitempty": true,
+                        "nullable": true
+                    },
+                    "notes": {
+                        "type": "string",
+                        "maxLength": 1000,
                         "x-omitempty": true,
                         "nullable": true
                     },
@@ -6265,6 +6311,12 @@
                     },
                     "quantity": {
                         "type": "number",
+                        "x-omitempty": true,
+                        "nullable": true
+                    },
+                    "serialNumber": {
+                        "type": "string",
+                        "maxLength": 255,
                         "x-omitempty": true,
                         "nullable": true
                     },

@@ -1001,12 +1001,35 @@ export interface EntityOut {
 }
 
 export interface EntityPatch {
+  archived?: boolean | null;
+  /**
+   * ClearParent moves the entity to the top level (parentId can't
+   * express that?: a missing or null parentId means "unchanged").
+   */
+  clearParent: boolean;
+  /** @maxLength 1000 */
+  description?: string | null;
   entityTypeId?: string | null;
   id: string;
+  insured?: boolean | null;
   locationId?: string | null;
+  /** @maxLength 255 */
+  manufacturer?: string | null;
+  /** @maxLength 255 */
+  modelNumber?: string | null;
+  /**
+   * Text and flags; nil leaves the field unchanged.
+   * @minLength 1
+   * @maxLength 255
+   */
+  name?: string | null;
+  /** @maxLength 1000 */
+  notes?: string | null;
   parentId?: string | null;
   purchasePrice?: number | null;
   quantity?: number | null;
+  /** @maxLength 255 */
+  serialNumber?: string | null;
   tagIds?: string[] | null;
 }
 

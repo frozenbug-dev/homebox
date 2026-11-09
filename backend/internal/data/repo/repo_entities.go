@@ -157,8 +157,23 @@ type (
 		LifetimeWarranty bool `json:"lifetimeWarranty"`
 	}
 
+	// EntityPatch updates only the fields that are set (non-nil / non-zero
+	// IDs), so clients can change one property without resending the entity.
 	EntityPatch struct {
-		ID            uuid.UUID   `json:"id"`
+		ID uuid.UUID `json:"id"`
+		// Text and flags; nil leaves the field unchanged.
+		Name         *string `json:"name,omitempty"         validate:"omitnil,min=1,max=255"    extensions:"x-nullable,x-omitempty"`
+		Description  *string `json:"description,omitempty"  validate:"omitnil,max=1000"         extensions:"x-nullable,x-omitempty"`
+		Notes        *string `json:"notes,omitempty"        validate:"omitnil,max=1000"         extensions:"x-nullable,x-omitempty"`
+		Manufacturer *string `json:"manufacturer,omitempty" validate:"omitnil,max=255"          extensions:"x-nullable,x-omitempty"`
+		ModelNumber  *string `json:"modelNumber,omitempty"  validate:"omitnil,max=255"          extensions:"x-nullable,x-omitempty"`
+		SerialNumber *string `json:"serialNumber,omitempty" validate:"omitnil,max=255"          extensions:"x-nullable,x-omitempty"`
+		Insured      *bool   `json:"insured,omitempty"      extensions:"x-nullable,x-omitempty"`
+		Archived     *bool   `json:"archived,omitempty"     extensions:"x-nullable,x-omitempty"`
+		// ClearParent moves the entity to the top level (parentId can't
+		// express that: a missing or null parentId means "unchanged").
+		ClearParent bool `json:"clearParent,omitempty"`
+
 		Quantity      *float64    `json:"quantity,omitempty"      extensions:"x-nullable,x-omitempty"`
 		PurchasePrice *float64    `json:"purchasePrice,omitempty" extensions:"x-nullable,x-omitempty"`
 		ImportRef     *string     `json:"-"                       extensions:"x-nullable,x-omitempty"`
@@ -2148,6 +2163,60 @@ func (r *EntityRepository) validatePatchRefs(ctx context.Context, gid, id uuid.U
 	return nil
 }
 
+// applyPatchScalars validates and sets a patch's plain fields (text, flags,
+// numbers); relations (parent, location, type, tags) are handled by Patch.
+func applyPatchScalars(q *ent.EntityUpdate, data EntityPatch) error {
+	if data.ClearParent && (data.ParentID != uuid.Nil || data.LocationID != uuid.Nil) {
+		return fmt.Errorf("patch entity: clearParent can't be combined with parentId or locationId")
+	}
+	if data.Quantity != nil {
+		if err := validateQuantity("patch entity", *data.Quantity); err != nil {
+			return err
+		}
+		q.SetQuantity(*data.Quantity)
+	}
+	if data.PurchasePrice != nil {
+		if p := *data.PurchasePrice; math.IsNaN(p) || math.IsInf(p, 0) || p < 0 {
+			return fmt.Errorf("patch entity: invalid purchase price: must be a finite, non-negative number")
+		}
+		q.SetPurchasePrice(*data.PurchasePrice)
+	}
+	if data.Name != nil {
+		name := strings.TrimSpace(*data.Name)
+		if name == "" || len(name) > 255 {
+			return fmt.Errorf("patch entity: name must be 1-255 characters")
+		}
+		q.SetName(name)
+	}
+	for _, f := range []struct {
+		value *string
+		max   int
+		set   func(string) *ent.EntityUpdate
+		label string
+	}{
+		{data.Description, 1000, q.SetDescription, "description"},
+		{data.Notes, 1000, q.SetNotes, "notes"},
+		{data.Manufacturer, 255, q.SetManufacturer, "manufacturer"},
+		{data.ModelNumber, 255, q.SetModelNumber, "model number"},
+		{data.SerialNumber, 255, q.SetSerialNumber, "serial number"},
+	} {
+		if f.value == nil {
+			continue
+		}
+		if len(*f.value) > f.max {
+			return fmt.Errorf("patch entity: %s must be at most %d characters", f.label, f.max)
+		}
+		f.set(*f.value)
+	}
+	if data.Insured != nil {
+		q.SetInsured(*data.Insured)
+	}
+	if data.Archived != nil {
+		q.SetArchived(*data.Archived)
+	}
+	return nil
+}
+
 func (r *EntityRepository) Patch(ctx context.Context, gid, id uuid.UUID, data EntityPatch) error {
 	ctx, span := entityTracer().Start(ctx, "repo.EntityRepository.Patch",
 		trace.WithAttributes(
@@ -2191,25 +2260,16 @@ func (r *EntityRepository) Patch(ctx context.Context, gid, id uuid.UUID, data En
 		q.SetImportRef(*data.ImportRef)
 	}
 
-	if data.Quantity != nil {
-		if err := validateQuantity("patch entity", *data.Quantity); err != nil {
-			recordSpanError(span, err)
-			return err
-		}
-
-		q.SetQuantity(*data.Quantity)
-	}
-
-	if data.PurchasePrice != nil {
-		if p := *data.PurchasePrice; math.IsNaN(p) || math.IsInf(p, 0) || p < 0 {
-			err := fmt.Errorf("patch entity: invalid purchase price: must be a finite, non-negative number")
-			recordSpanError(span, err)
-			return err
-		}
-		q.SetPurchasePrice(*data.PurchasePrice)
+	if err := applyPatchScalars(q, data); err != nil {
+		recordSpanError(span, err)
+		return err
 	}
 
 	switch {
+	case data.ClearParent:
+		q.ClearParent()
+		q.ClearLocation()
+
 	case data.LocationID != uuid.Nil:
 		// Validate against the parent we'll end up with, not the one we were
 		// handed — a location-only patch doesn't carry a parent.
