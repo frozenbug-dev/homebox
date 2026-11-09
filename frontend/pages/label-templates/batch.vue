@@ -259,7 +259,7 @@
   // Destination and output options
   // ---------------------------------------------------------------------------
   const showCutGuides = ref(false);
-  const pageSize = ref<"Letter" | "A4">("Letter");
+  const pageSize = ref<"Letter" | "A4">("A4");
 
   const { printLabels, printLocationLabels } = useDirectPrint();
   const { labelPrinting } = useServerLabelPrinting();
@@ -885,7 +885,7 @@
               class="inline-flex h-7 rounded-md bg-muted p-0.5"
             >
               <button
-                v-for="size in ['Letter', 'A4'] as const"
+                v-for="size in ['A4', 'Letter'] as const"
                 :key="size"
                 type="button"
                 :class="segment(pageSize === size)"

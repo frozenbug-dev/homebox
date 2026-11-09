@@ -45,7 +45,7 @@
   const startAssetId = ref(1);
   const endAssetId = ref(30);
   const skip = ref(0);
-  const pageSize = ref<"Letter" | "A4">("Letter");
+  const pageSize = ref<"Letter" | "A4">("A4");
   const showCutGuides = ref(false);
   const isRendering = ref(false);
 
@@ -232,8 +232,8 @@
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="Letter">Letter ({{ measurement.formatSize(215.9, 279.4) }})</SelectItem>
                 <SelectItem value="A4">A4 ({{ measurement.formatSize(210, 297) }})</SelectItem>
+                <SelectItem value="Letter">Letter ({{ measurement.formatSize(215.9, 279.4) }})</SelectItem>
               </SelectContent>
             </Select>
             <p v-if="sheetCapacity" class="text-xs text-muted-foreground">

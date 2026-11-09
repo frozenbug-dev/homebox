@@ -133,7 +133,7 @@ export function useLabelTemplateActions() {
     id: string,
     itemIds: string[],
     format: string = "png",
-    pageSize: string = "Letter",
+    pageSize: string = "A4",
     showCutGuides: boolean = false,
     canvasData?: string
   ): Promise<Blob> {
@@ -151,7 +151,7 @@ export function useLabelTemplateActions() {
     id: string,
     locationIds: string[],
     format: string = "png",
-    pageSize: string = "Letter",
+    pageSize: string = "A4",
     showCutGuides: boolean = false
   ): Promise<Blob> {
     return api.labelTemplates.renderLocations(id, { locationIds, format, pageSize, showCutGuides, skipLabels: 0 });

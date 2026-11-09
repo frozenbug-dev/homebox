@@ -1,5 +1,5 @@
 <template>
-  <BaseModal :dialog-id="DialogID.PrintLabelTemplate" hide-footer>
+  <BaseModal :dialog-id="DialogID.PrintLabelTemplate" content-class="max-w-3xl" hide-footer>
     <template #title>
       <div class="flex flex-col gap-0.5">
         <span>{{ $t("components.label_template.print_dialog.title") }}</span>
@@ -25,7 +25,7 @@
     </div>
 
     <div v-else class="space-y-4">
-      <div class="grid gap-4 md:grid-cols-[260px_1fr]">
+      <div class="grid gap-4 md:grid-cols-[320px_1fr]">
         <!-- Template picker -->
         <div class="space-y-2">
           <div class="flex items-center justify-between">
@@ -309,7 +309,7 @@
   async function renderBlob(format: "png" | "pdf", ids: string[]): Promise<Blob> {
     const body = {
       format,
-      pageSize: "Letter",
+      pageSize: "A4",
       showCutGuides: false,
       canvasData: "",
       skipLabels: 0,

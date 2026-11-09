@@ -31,10 +31,10 @@
     },
   });
 
-  // A Letter sheet filled with as many labels as fit inside 10 mm margins
+  // An A4 sheet filled with as many labels as fit inside 10 mm margins
   function defaultLayout(): LabelmakerSheetLayout {
-    const pageWidth = 215.9;
-    const pageHeight = 279.4;
+    const pageWidth = 210;
+    const pageHeight = 297;
     const margin = 10;
     const fit = (page: number, label: number) => Math.max(1, Math.floor((page - 2 * margin) / Math.max(label, 1)));
     return {

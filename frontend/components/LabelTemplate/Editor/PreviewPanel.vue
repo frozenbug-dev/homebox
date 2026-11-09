@@ -43,14 +43,7 @@
 
     isRenderingPreview.value = true;
     try {
-      const blob = await render(
-        props.templateId,
-        [selectedItem.value.id],
-        "png",
-        "Letter",
-        false,
-        props.canvasDataJson
-      );
+      const blob = await render(props.templateId, [selectedItem.value.id], "png", "A4", false, props.canvasDataJson);
       previewUrl.value = URL.createObjectURL(blob);
     } catch (err) {
       previewError.value = t("components.label_template.editor.preview.render_failed");
