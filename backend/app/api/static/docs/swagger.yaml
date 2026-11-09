@@ -4673,9 +4673,10 @@ paths:
   /v1/products/search-from-barcode:
     get:
       parameters:
-      - description: barcode to be searched
+      - description: barcode to be searched (EAN, UPC, GS1-128; max 80 characters)
         in: query
-        name: data
+        name: productEAN
+        required: true
         type: string
       produces:
       - application/json

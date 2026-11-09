@@ -1,3 +1,4 @@
+import { File, Paths } from 'expo-file-system'
 import { useSyncExternalStore } from 'react'
 
 import { apiUrl } from '@/lib/api/client'
@@ -162,4 +163,16 @@ const getSnapshot = () => tasks
 export function useUploads(entityId?: string) {
   const all = useSyncExternalStore(subscribe, getSnapshot, getSnapshot)
   return entityId ? all.filter((t) => t.entityId === entityId) : all
+}
+
+/** Downloads an image (e.g. a product photo) and queues it as the entity's cover. */
+export async function attachRemotePhoto(currentSession: Session, entityId: string, url: string) {
+  try {
+    const ext = url.split('?')[0].split('.').pop()?.toLowerCase()
+    const name = `product-${Date.now()}.${ext && ext.length <= 4 ? ext : 'jpg'}`
+    const file = await File.downloadFileAsync(url, new File(Paths.cache, name), { idempotent: true })
+    enqueueUploads(currentSession, entityId, [{ uri: file.uri, name, kind: 'photo', primary: true }])
+  } catch (e) {
+    console.warn('product photo download failed', e)
+  }
 }

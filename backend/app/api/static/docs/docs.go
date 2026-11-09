@@ -2714,9 +2714,10 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "barcode to be searched",
-                        "name": "data",
-                        "in": "query"
+                        "description": "barcode to be searched (EAN, UPC, GS1-128; max 80 characters)",
+                        "name": "productEAN",
+                        "in": "query",
+                        "required": true
                     }
                 ],
                 "responses": {

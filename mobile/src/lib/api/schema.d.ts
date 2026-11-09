@@ -2779,9 +2779,9 @@ export interface paths {
         /** Search EAN from Barcode */
         get: {
             parameters: {
-                query?: {
-                    /** @description barcode to be searched */
-                    data?: string;
+                query: {
+                    /** @description barcode to be searched (EAN, UPC, GS1-128; max 80 characters) */
+                    productEAN: string;
                 };
                 header?: never;
                 path?: never;

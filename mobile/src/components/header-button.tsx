@@ -27,9 +27,9 @@ interface HeaderButtonProps {
 /** Icon button for a screen's `Stack.Toolbar` (SF Symbol on iOS, Material Symbol on Android). */
 export function HeaderButton({ sf, md, label, onPress, tint: override }: HeaderButtonProps) {
   const { icon, tint } = useToolbarIcon(sf, md, override)
-  return (
-    <Stack.Toolbar.Button icon={icon} tintColor={tint} hidden={!icon} accessibilityLabel={label} onPress={onPress} />
-  )
+  // Android needs the Material Symbol image; skip the button until it's ready.
+  if (!icon) return null
+  return <Stack.Toolbar.Button icon={icon} tintColor={tint} accessibilityLabel={label} onPress={onPress} />
 }
 
 /** Overflow ("more") menu for a screen's `Stack.Toolbar`. */
@@ -43,8 +43,9 @@ export function HeaderMenu({
   tint?: string
 }) {
   const { icon, tint } = useToolbarIcon('ellipsis.circle', 'more_vert', override)
+  if (!icon) return null
   return (
-    <Stack.Toolbar.Menu icon={icon} tintColor={tint} hidden={!icon} accessibilityLabel={label}>
+    <Stack.Toolbar.Menu icon={icon} tintColor={tint} accessibilityLabel={label}>
       {children}
     </Stack.Toolbar.Menu>
   )

@@ -16,6 +16,7 @@ import { useCreateEntity } from '@/lib/api/mutations'
 import { entityTypesQuery, tagsQuery } from '@/lib/api/queries'
 import { useSession } from '@/lib/auth/session'
 import { quickAddMemory } from '@/lib/quick-add-memory'
+import { attachRemotePhoto } from '@/lib/uploads'
 import { useSheets } from '@/lib/use-sheets'
 
 /**
@@ -23,10 +24,21 @@ import { useSheets } from '@/lib/use-sheets'
  * (from a place or tag page); otherwise it reuses the last place and tags.
  */
 export default function NewItemSheet() {
-  const params = useLocalSearchParams<{ kind?: 'item' | 'place'; parentId?: string; parentName?: string; tagId?: string }>()
+  const params = useLocalSearchParams<{
+    kind?: 'item' | 'place'
+    parentId?: string
+    parentName?: string
+    tagId?: string
+    // Prefill from a scanned product barcode.
+    name?: string
+    description?: string
+    manufacturer?: string
+    modelNumber?: string
+    imageUrl?: string
+  }>()
   const isPlace = params.kind === 'place'
   const router = useRouter()
-  const { api } = useSession()
+  const { api, session } = useSession()
   const sheets = useSheets()
   const create = useCreateEntity()
   const types = useQuery(entityTypesQuery(api))
@@ -47,18 +59,24 @@ export default function NewItemSheet() {
   const [added, setAdded] = useState(0)
 
   const form = useForm({
-    defaultValues: { name: '', quantity: '1', description: '' },
+    defaultValues: { name: params.name ?? '', quantity: '1', description: params.description ?? '' },
     onSubmit: async ({ value, formApi }) => {
       const quantity = Number(value.quantity.replace(',', '.'))
       const locationType = types.data?.find((t) => t.isLocation)
-      await create.mutateAsync({
+      const created = await create.mutateAsync({
         name: value.name.trim(),
+        manufacturer: params.manufacturer || undefined,
+        modelNumber: params.modelNumber || undefined,
         description: value.description.trim() || undefined,
         quantity: Number.isFinite(quantity) && quantity > 0 ? quantity : 1,
         parentId: place?.id ?? undefined,
         tagIds: tagIds.length ? tagIds : undefined,
         entityTypeId: isPlace ? locationType?.id : undefined,
       })
+      if (params.imageUrl && created.id && session) {
+        // The product photo becomes the cover; failures just mean no photo.
+        void attachRemotePhoto(session, created.id, params.imageUrl)
+      }
       if (!isPlace) {
         quickAddMemory.place = place?.id ? { id: place.id, name: place.name } : null
         quickAddMemory.tagIds = tagIds

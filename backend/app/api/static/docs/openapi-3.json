@@ -2935,9 +2935,10 @@
                 "summary": "Search EAN from Barcode",
                 "parameters": [
                     {
-                        "description": "barcode to be searched",
-                        "name": "data",
+                        "description": "barcode to be searched (EAN, UPC, GS1-128; max 80 characters)",
+                        "name": "productEAN",
                         "in": "query",
+                        "required": true,
                         "schema": {
                             "type": "string"
                         }

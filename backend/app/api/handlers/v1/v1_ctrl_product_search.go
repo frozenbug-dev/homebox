@@ -461,7 +461,7 @@ func fetchImageBase64(imageURL string) (string, error) {
 //	@Summary	Search EAN from Barcode
 //	@Tags		Items
 //	@Produce	json
-//	@Param		data	query		string	false	"barcode to be searched"
+//	@Param		productEAN	query		string	true	"barcode to be searched (EAN, UPC, GS1-128; max 80 characters)"
 //	@Success	200		{object}	[]repo.BarcodeProduct
 //	@Router		/v1/products/search-from-barcode [GET]
 //	@Security	Bearer
