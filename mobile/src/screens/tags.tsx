@@ -6,11 +6,10 @@ import { ActivityIndicator, RefreshControl, View } from 'react-native'
 import { StyleSheet, useUnistyles } from 'react-native-unistyles'
 
 import { AccountButton } from '@/components/account-button'
-import { HeaderButton } from '@/components/header-button'
 import { EmptyState } from '@/components/empty-state'
 import { icons } from '@/components/icon'
 import { ListRow, RowSeparator } from '@/components/list-row'
-import { SCAN_FAB_SPACE, ScanFab } from '@/components/scan-fab'
+import { ActionFab, FAB_SPACE } from '@/components/action-fab'
 import { TagDot } from '@/components/tag-chip'
 import { isNil } from '@/lib/api/api'
 import { tagsQuery } from '@/lib/api/queries'
@@ -46,7 +45,6 @@ export default function TagsScreen() {
         onCancelButtonPress={() => setSearch('')}
       />
       <Stack.Toolbar placement="right">
-        <HeaderButton sf="plus" md="add" label="New tag" onPress={() => router.push('/edit-tag')} />
         <Stack.Toolbar.View>
           <AccountButton />
         </Stack.Toolbar.View>
@@ -57,7 +55,7 @@ export default function TagsScreen() {
         keyExtractor={(t) => t.id!}
         contentInsetAdjustmentBehavior="automatic"
         keyboardDismissMode="on-drag"
-        contentContainerStyle={{ paddingBottom: rt.insets.bottom + SCAN_FAB_SPACE + theme.spacing(4) }}
+        contentContainerStyle={{ paddingBottom: rt.insets.bottom + FAB_SPACE + theme.spacing(4) }}
         ItemSeparatorComponent={RowSeparator}
         ListEmptyComponent={
           tags.isPending ? (
@@ -93,7 +91,7 @@ export default function TagsScreen() {
           />
         )}
       />
-      <ScanFab />
+      <ActionFab />
     </View>
   )
 }

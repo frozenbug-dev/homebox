@@ -6,11 +6,10 @@ import { ActivityIndicator, RefreshControl, View } from 'react-native'
 import { StyleSheet, useUnistyles } from 'react-native-unistyles'
 
 import { AccountButton } from '@/components/account-button'
-import { HeaderButton } from '@/components/header-button'
 import { EmptyState } from '@/components/empty-state'
 import { Icon, icons } from '@/components/icon'
 import { ListRow, RowSeparator } from '@/components/list-row'
-import { SCAN_FAB_SPACE, ScanFab } from '@/components/scan-fab'
+import { ActionFab, FAB_SPACE } from '@/components/action-fab'
 import { flattenTree, placesTreeQuery } from '@/lib/api/queries'
 import { useSession } from '@/lib/auth/session'
 import { pluralize } from '@/lib/format'
@@ -52,12 +51,6 @@ export default function PlacesScreen() {
         onCancelButtonPress={() => setSearch('')}
       />
       <Stack.Toolbar placement="right">
-        <HeaderButton
-          sf="plus"
-          md="add"
-          label="New place"
-          onPress={() => router.push({ pathname: '/new-item', params: { kind: 'place' } })}
-        />
         <Stack.Toolbar.View>
           <AccountButton />
         </Stack.Toolbar.View>
@@ -68,7 +61,7 @@ export default function PlacesScreen() {
         keyExtractor={(p) => p.id}
         contentInsetAdjustmentBehavior="automatic"
         keyboardDismissMode="on-drag"
-        contentContainerStyle={{ paddingBottom: rt.insets.bottom + SCAN_FAB_SPACE + theme.spacing(4) }}
+        contentContainerStyle={{ paddingBottom: rt.insets.bottom + FAB_SPACE + theme.spacing(4) }}
         ItemSeparatorComponent={RowSeparator}
         ListEmptyComponent={
           tree.isPending ? (
@@ -106,7 +99,7 @@ export default function PlacesScreen() {
           />
         )}
       />
-      <ScanFab />
+      <ActionFab />
     </View>
   )
 }

@@ -1,16 +1,14 @@
-import { Stack, useRouter } from 'expo-router'
+import { Stack } from 'expo-router'
 import { useState } from 'react'
 import { View } from 'react-native'
 import { StyleSheet, useUnistyles } from 'react-native-unistyles'
 
 import { AccountButton } from '@/components/account-button'
 import { EntityList } from '@/components/entity-list'
-import { HeaderButton } from '@/components/header-button'
-import { SCAN_FAB_SPACE, ScanFab } from '@/components/scan-fab'
+import { ActionFab, FAB_SPACE } from '@/components/action-fab'
 import { useDebounced } from '@/lib/use-debounced'
 
 export default function ItemsScreen() {
-  const router = useRouter()
   const { theme } = useUnistyles()
   const [search, setSearch] = useState('')
   const q = useDebounced(search.trim())
@@ -29,7 +27,6 @@ export default function ItemsScreen() {
         onCancelButtonPress={() => setSearch('')}
       />
       <Stack.Toolbar placement="right">
-        <HeaderButton sf="plus" md="add" label="New item" onPress={() => router.push('/new-item')} />
         <Stack.Toolbar.View>
           <AccountButton />
         </Stack.Toolbar.View>
@@ -37,11 +34,11 @@ export default function ItemsScreen() {
 
       <EntityList
         filters={{ q }}
-        bottomSpace={SCAN_FAB_SPACE}
+        bottomSpace={FAB_SPACE}
         emptyTitle={q ? 'No matches' : 'No items yet'}
         emptyMessage={q ? `Nothing matches “${q}”.` : 'Items you add show up here.'}
       />
-      <ScanFab />
+      <ActionFab />
     </View>
   )
 }
