@@ -39,7 +39,14 @@
       ],
       "react-native-nitro-fetch",
       "expo-web-browser",
-      "expo-secure-store"
+      "expo-secure-store",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "$(PRODUCT_NAME) lets you attach photos from your library to items.",
+          "microphonePermission": false
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,

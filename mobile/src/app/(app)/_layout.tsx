@@ -28,6 +28,8 @@ export default function AppLayout() {
         }}
       />
       <Stack.Screen name="scan" options={{ presentation: 'fullScreenModal', headerShown: false }} />
+      <Stack.Screen name="capture" options={{ presentation: 'fullScreenModal', headerShown: false }} />
+      <Stack.Screen name="photos" options={{ presentation: 'fullScreenModal', headerShown: false, animation: 'fade' }} />
       <Stack.Screen name="new-item" options={sheet([0.75, 1])} />
       <Stack.Screen name="edit-tag" options={sheet([0.6, 1])} />
       <Stack.Screen name="edit-text" options={sheet([0.5, 1])} />

@@ -4,6 +4,7 @@ import { AppState } from 'react-native'
 import { createApiClient, type ApiClient } from '@/lib/api/api'
 import { ApiError } from '@/lib/api/client'
 import { queryClient } from '@/lib/query-client'
+import { clearUploads } from '@/lib/uploads'
 
 import { refreshSession, revokeSession } from './api'
 import { clearSession, loadSession, saveSession, type Session } from './storage'
@@ -30,6 +31,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   const dropSession = useCallback(async () => {
     setSession(null)
     queryClient.clear()
+    clearUploads()
     await clearSession()
   }, [])
 

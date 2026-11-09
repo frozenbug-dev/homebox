@@ -166,3 +166,40 @@ export function confirmDelete(what: string, detail?: string) {
     ])
   })
 }
+
+export type AttachmentUpdate = Schemas['repo.ItemAttachmentUpdate']
+
+export function useUpdateAttachment(entityId: string) {
+  const qc = useQueryClient()
+  const getApi = useApiOrThrow()
+
+  return useMutation({
+    mutationFn: ({ attachmentId, ...body }: AttachmentUpdate & { attachmentId: string }) =>
+      unwrap(
+        getApi().PUT('/v1/entities/{id}/attachments/{attachment_id}', {
+          params: { path: { id: entityId, attachment_id: attachmentId } },
+          body,
+        }),
+      ),
+    onSuccess: () => Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success),
+    onError: showError('Couldn’t update attachment'),
+    onSettled: () => qc.invalidateQueries({ queryKey: entityKeys.all }),
+  })
+}
+
+export function useDeleteAttachment(entityId: string) {
+  const qc = useQueryClient()
+  const getApi = useApiOrThrow()
+
+  return useMutation({
+    mutationFn: (attachmentId: string) =>
+      unwrap(
+        getApi().DELETE('/v1/entities/{id}/attachments/{attachment_id}', {
+          params: { path: { id: entityId, attachment_id: attachmentId } },
+        }),
+      ),
+    onSuccess: () => Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success),
+    onError: showError('Couldn’t delete attachment'),
+    onSettled: () => qc.invalidateQueries({ queryKey: entityKeys.all }),
+  })
+}

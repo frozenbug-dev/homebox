@@ -1,7 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { Image } from 'expo-image'
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router'
-import * as WebBrowser from 'expo-web-browser'
 import { useState } from 'react'
 import { ActivityIndicator, RefreshControl, ScrollView, Text, View, useWindowDimensions } from 'react-native'
 import { StyleSheet, useUnistyles } from 'react-native-unistyles'
@@ -18,11 +17,12 @@ import { TagChip } from '@/components/tag-chip'
 import { confirmDelete, useDeleteEntity, useDuplicateEntity, usePatchEntity, type EntityPatch } from '@/lib/api/mutations'
 import { useSheets } from '@/lib/use-sheets'
 import type { Attachment, Entity } from '@/lib/api/api'
-import { apiUrl } from '@/lib/api/client'
 import { entityPathQuery, entityQuery } from '@/lib/api/queries'
-import { attachmentSource } from '@/lib/attachments'
+import { attachmentSource, splitAttachments } from '@/lib/attachments'
 import { useSession } from '@/lib/auth/session'
 import { formatDate, formatPrice } from '@/lib/format'
+
+import { ItemAttachments } from './item-attachments'
 
 const PHOTO_HEIGHT = 280
 
@@ -30,7 +30,7 @@ export default function ItemDetailScreen() {
   const { id, name } = useLocalSearchParams<{ id: string; name?: string }>()
   const { theme, rt } = useUnistyles()
   const router = useRouter()
-  const { api, session } = useSession()
+  const { api } = useSession()
   const item = useQuery(entityQuery(api, id))
   const path = useQuery(entityPathQuery(api, id))
   const patch = usePatchEntity(id)
@@ -56,11 +56,7 @@ export default function ItemDetailScreen() {
   }
 
   const e = item.data
-  const attachments = e.attachments ?? []
-  const photos = attachments
-    .filter((a) => a.type === 'photo' || a.mimeType?.startsWith('image/'))
-    .sort((a, b) => Number(!!b.primary) - Number(!!a.primary))
-  const files = attachments.filter((a) => !photos.includes(a))
+  const { photos } = splitAttachments(e.attachments)
 
   // Path to the item, without the item itself: "Downstairs › Kitchen".
   const containers = (path.data ?? []).filter((p) => p.id !== e.id)
@@ -110,11 +106,6 @@ export default function ItemDetailScreen() {
     router.push({ pathname: '/item/[id]', params: { id: copy.id!, name: copy.name } })
   }
 
-  const openFile = (a: Attachment) => {
-    if (!session) return
-    const url = `${apiUrl(session.serverUrl, `/entities/${e.id}/attachments/${a.id}`)}?access_token=${encodeURIComponent(session.attachmentToken)}`
-    WebBrowser.openBrowserAsync(url)
-  }
 
   return (
     <ScrollView
@@ -234,6 +225,8 @@ export default function ItemDetailScreen() {
         </Text>
       </PressableFeedback>
 
+      <ItemAttachments entity={e} />
+
       <Details entity={e} onEdit={editText} />
 
       {e.children?.length ? (
@@ -253,33 +246,12 @@ export default function ItemDetailScreen() {
         </>
       ) : null}
 
-      {files.length ? (
-        <>
-          <SectionHeader title="Attachments" count={files.length} />
-          {files.map((a, i) => (
-            <View key={a.id}>
-              {i > 0 ? <RowSeparator /> : null}
-              <ListRow
-                title={a.title || 'Attachment'}
-                subtitle={attachmentKind(a)}
-                leading={<Icon name={icons.document} size={18} style={styles.rowIcon} />}
-                onPress={() => openFile(a)}
-                accessibilityHint="Opens the file"
-              />
-            </View>
-          ))}
-        </>
-      ) : null}
     </ScrollView>
   )
 }
 
-function attachmentKind(a: Attachment) {
-  const kinds: Record<string, string> = { manual: 'Manual', receipt: 'Receipt', warranty: 'Warranty' }
-  return kinds[a.type ?? ''] ?? a.mimeType ?? 'File'
-}
-
 function PhotoPager({ entityId, photos }: { entityId: string; photos: Attachment[] }) {
+  const router = useRouter()
   const { width } = useWindowDimensions()
   const { session } = useSession()
   const [index, setIndex] = useState(0)
@@ -292,16 +264,20 @@ function PhotoPager({ entityId, photos }: { entityId: string; photos: Attachment
         pagingEnabled
         showsHorizontalScrollIndicator={false}
         onMomentumScrollEnd={(ev) => setIndex(Math.round(ev.nativeEvent.contentOffset.x / width))}>
-        {photos.map((p) => (
-          <Image
+        {photos.map((p, i) => (
+          <PressableFeedback
             key={p.id}
-            source={attachmentSource(session, entityId, p.id!)}
-            placeholder={p.thumbnail?.id ? attachmentSource(session, entityId, p.thumbnail.id) : undefined}
-            style={{ width, height: PHOTO_HEIGHT }}
-            contentFit="cover"
-            transition={150}
-            accessibilityLabel={p.title || 'Photo'}
-          />
+            onPress={() => router.push({ pathname: '/photos', params: { entityId, start: p.id! } })}
+            accessibilityRole="imagebutton"
+            accessibilityLabel={`Photo ${i + 1} of ${photos.length}. Open full screen`}>
+            <Image
+              source={attachmentSource(session, entityId, p.id!)}
+              placeholder={p.thumbnail?.id ? attachmentSource(session, entityId, p.thumbnail.id) : undefined}
+              style={{ width, height: PHOTO_HEIGHT }}
+              contentFit="cover"
+              transition={150}
+            />
+          </PressableFeedback>
         ))}
       </ScrollView>
       {photos.length > 1 ? (
