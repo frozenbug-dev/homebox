@@ -1,4 +1,4 @@
-# Personal mise config (gitignored). The Taskfile remains the source of truth.
+# Dev toolchain and shortcuts. The Taskfile remains the source of truth; these tasks just wrap it.
 [tools]
 go = "1.27"
 node = "lts"
