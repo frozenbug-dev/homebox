@@ -67,7 +67,7 @@ COPY --from=builder --chmod=755 /go/bin/api /app/api
 
 # Labels and configuration for the final image
 LABEL Name=homebox Version=0.0.1
-LABEL org.opencontainers.image.source="https://github.com/sysadminsmedia/homebox"
+LABEL org.opencontainers.image.source="https://github.com/frozenbug-dev/homebox"
 
 # Expose necessary ports for Homebox
 EXPOSE 7745

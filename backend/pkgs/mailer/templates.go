@@ -29,9 +29,9 @@ func (tp *TemplateProps) Set(key, value string) {
 func DefaultTemplateData() TemplateProps {
 	return TemplateProps{
 		Defaults: TemplateDefaults{
-			CompanyName:        "sysadminsmedia.com",
+			CompanyName:        "Homebox",
 			CompanyAddress:     "123 Main St, Anytown, CA 12345",
-			CompanyURL:         "https://sysadminsmedia.com",
+			CompanyURL:         "https://github.com/frozenbug-dev/homebox",
 			ActivateAccountURL: "https://google.com",
 			UnsubscribeURL:     "https://google.com",
 		},

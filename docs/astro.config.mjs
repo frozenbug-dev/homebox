@@ -19,12 +19,6 @@ export default defineConfig({
         contentIntellisense: true,
         clientPrerender: true,
         chromeDevtoolsWorkspace: true,
-        /*csp: {
-            algorithm: 'SHA-384',
-            directives: [
-                "img-src 'self' data: https://translate.sysadminsmedia.com;"
-            ]
-        } Turn this off for now while we work on things, sort it later*/
     },
 
     prefetch: {
@@ -44,7 +38,7 @@ export default defineConfig({
                 src: './src/assets/lilbox.svg',
             },
             editLink: {
-                baseUrl: 'https://github.com/sysadminsmedia/homebox/edit/main/docs/',
+                baseUrl: 'https://github.com/frozenbug-dev/homebox/edit/main/docs/',
             },
             lastUpdated: true,
             // 404 page comes from src/content/docs/404.md via the regular docs route.

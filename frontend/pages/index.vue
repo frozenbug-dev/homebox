@@ -231,7 +231,7 @@
           <div class="z-10 mt-6 ml-auto flex items-center gap-4 sm:mt-0">
             <Tooltip>
               <TooltipTrigger as-child>
-                <a href="https://github.com/sysadminsmedia/homebox" target="_blank" rel="noopener noreferrer">
+                <a href="https://github.com/frozenbug-dev/homebox" target="_blank" rel="noopener noreferrer">
                   <GithubIcon class="size-8" />
                 </a>
               </TooltipTrigger>

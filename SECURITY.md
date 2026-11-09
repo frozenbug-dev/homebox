@@ -2,9 +2,8 @@
 
 ## Supported Versions
 
-Homebox is maintained by [Sysadmins Media](https://github.com/sysadminsmedia), who took over the
-project at **v0.11.0** (June 2024). Everything released before that came from the original upstream
-project and is not maintained here.
+This fork of Homebox is maintained by [Frozenbug](https://github.com/frozenbug-dev). Only releases
+published from this repository are maintained here.
 
 Security reports are accepted for:
 
@@ -40,7 +39,7 @@ are not useful to us.
 Please open a normal public issue for minor security issues or general security inquiries.
 
 For major or critical security issues, please
-[open a private GitHub security advisory](https://github.com/sysadminsmedia/homebox/security/advisories/new).
+[open a private GitHub security advisory](https://github.com/frozenbug-dev/homebox/security/advisories/new).
 
 Please include:
 

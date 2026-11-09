@@ -12,7 +12,7 @@ export const collections = {
 				base: 'changelog',
 				provider: 'github',
 				repo: 'homebox',
-				owner: 'sysadminsmedia',
+				owner: 'frozenbug-dev',
 				// Unauthenticated GitHub API requests are rate limited per IP, which shared CI
 				// builders (e.g. Cloudflare Pages) exhaust quickly. Set GITHUB_TOKEN in the build
 				// environment to use the authenticated limit instead.

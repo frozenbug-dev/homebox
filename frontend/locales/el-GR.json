@@ -460,7 +460,7 @@
         "follow_dev": "Ακολουθήστε τον Προγραμματιστή",
         "footer": {
             "api_link": "'<a href=\"https://homebox.software/en/api/\" target=\"_blank\">'API'</a>'",
-            "version_link": "'<'a href=\"https://github.com/sysadminsmedia/homebox/releases/tag/v{ version }\" target=\"_blank\"'>' Έκδοση: { version } Build: { build } '</a>'"
+            "version_link": "'<'a href=\"https://github.com/frozenbug-dev/homebox/releases/tag/v{ version }\" target=\"_blank\"'>' Έκδοση: { version } Build: { build } '</a>'"
         },
         "github": "Έργο στο GitHub",
         "insured": "Ασφαλισμένο",
@@ -870,7 +870,7 @@
             "input_placeholder": "Πληκτρολογήστε εδώ",
             "instruction_1": "Η γεννήτρια ετικετών HomeBox είναι ένα εργαλείο που σας βοηθά να εκτυπώσετε ετικέτες για την απογραφή σας στο HomeBox. Αυτές προορίζονται για\n προεκτύπωση, ώστε να μπορείτε να εκτυπώσετε πολλές ετικέτες και να τις έχετε έτοιμες για εφαρμογή",
             "instruction_2": "Έτσι, αυτές οι ετικέτες λειτουργούν εκτυπώνοντας ένα QR Code με URL και τις πληροφορίες του ID Στοιχείου. Εάν έχετε απενεργοποιήσει\n τα ID Στοιχείων στις ρυθμίσεις του HomeBox, μπορείτε ακόμα να χρησιμοποιήσετε αυτό το εργαλείο, αλλά τα ID Στοιχείων δεν θα αναφέρονται σε κανένα στοιχείο",
-            "instruction_3": "Αυτή η λειτουργία βρίσκεται σε πρώιμο στάδιο ανάπτυξης και ενδέχεται να αλλάξει σε μελλοντικές εκδόσεις. Εάν έχετε σχόλια, παρακαλούμε\n υποβάλετέ τα στη '<a href=\"https://github.com/sysadminsmedia/homebox/discussions/53\">'Συζήτηση στο GitHub'</a>'",
+            "instruction_3": "Αυτή η λειτουργία βρίσκεται σε πρώιμο στάδιο ανάπτυξης και ενδέχεται να αλλάξει σε μελλοντικές εκδόσεις. Εάν έχετε σχόλια, παρακαλούμε\n υποβάλετέ τα στη '<a href=\"https://github.com/frozenbug-dev/homebox/discussions\">'Συζήτηση στο GitHub'</a>'",
             "label_height": "Ύψος ετικέτας",
             "label_width": "Πλάτος ετικέτας",
             "measure_type": "Μονάδα μέτρησης",

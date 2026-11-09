@@ -8,7 +8,7 @@ import {TabItem, Tabs} from '@astrojs/starlight/components';
 There are two main ways to run Homebox.
 
 1. As a Docker container
-2. Using the correct executable for your platform by downloading it from the [releases page](https://github.com/sysadminsmedia/homebox/releases)
+2. Using the correct executable for your platform by downloading it from the [releases page](https://github.com/frozenbug-dev/homebox/releases)
 
 > [!NOTE]
 > The application can be configured using environment variables. You can find a list of all the available options in the [configuration](/en/quick-start/configure/) section.
@@ -22,7 +22,7 @@ There are two main ways to run Homebox.
 ## Docker
 The following instructions assume you have Docker installed on your machine.
 
-The official image is `ghcr.io/sysadminsmedia/homebox:latest`. For each image there are three tags, respectively the regular
+The official image is `ghcr.io/frozenbug-dev/homebox:latest`. For each image there are three tags, respectively the regular
 tag, the `$tag-rootless` and `$tag-hardened`. The rootless tag is a regular image but with the user `homebox` created.
 The hardened tag is a distroless image and contains no shells or utilities.
 
@@ -45,7 +45,7 @@ Great for testing the application, but not recommended for production deployment
         --publish 3100:7745 --env HBOX_OPTIONS_ALLOW_ANALYTICS=false \
         --env HBOX_AUTH_API_KEY_PEPPER=replace-with-output-of-openssl-rand-base64-48 \
         --volume /path/to/data/folder:/data \
-        ghcr.io/sysadminsmedia/homebox:latest
+        ghcr.io/frozenbug-dev/homebox:latest
         ```
     </TabItem>
     <TabItem label="Rootless">
@@ -59,7 +59,7 @@ Great for testing the application, but not recommended for production deployment
         --publish 3100:7745 --env HBOX_OPTIONS_ALLOW_ANALYTICS=false \
         --env HBOX_AUTH_API_KEY_PEPPER=replace-with-output-of-openssl-rand-base64-48 \
         --volume /path/to/data/folder:/data \
-        ghcr.io/sysadminsmedia/homebox:latest-rootless
+        ghcr.io/frozenbug-dev/homebox:latest-rootless
         ```
     </TabItem>
     <TabItem label="Hardened">
@@ -73,7 +73,7 @@ Great for testing the application, but not recommended for production deployment
         --publish 3100:7745 --env HBOX_OPTIONS_ALLOW_ANALYTICS=false \
         --env HBOX_AUTH_API_KEY_PEPPER=replace-with-output-of-openssl-rand-base64-48 \
         --volume /path/to/data/folder:/data \
-        ghcr.io/sysadminsmedia/homebox:latest-hardened
+        ghcr.io/frozenbug-dev/homebox:latest-hardened
         ```
     </TabItem>
 </Tabs>
@@ -86,7 +86,7 @@ Great for testing the application, but not recommended for production deployment
         ```yaml title="compose.yml"
         services:
             homebox:
-                image: ghcr.io/sysadminsmedia/homebox:latest
+                image: ghcr.io/frozenbug-dev/homebox:latest
                 restart: always
                 environment:
                     - HBOX_LOG_LEVEL=info
@@ -111,7 +111,7 @@ Great for testing the application, but not recommended for production deployment
         ```yaml title="compose.yml"
         services:
             homebox:
-                image: ghcr.io/sysadminsmedia/homebox:latest-rootless
+                image: ghcr.io/frozenbug-dev/homebox:latest-rootless
                 restart: always
                 environment:
                     - HBOX_LOG_LEVEL=info
@@ -140,7 +140,7 @@ Great for testing the application, but not recommended for production deployment
         ```yaml title="compose.yml"
         services:
             homebox:
-                image: ghcr.io/sysadminsmedia/homebox:latest-hardened
+                image: ghcr.io/frozenbug-dev/homebox:latest-hardened
                 restart: always
                 environment:
                     - HBOX_LOG_LEVEL=info
@@ -189,24 +189,24 @@ We supply a wide range of binaries for different platforms and CPU architectures
 > Windows is not a primary platform for us, but we do provide binaries for it as well. There have been known issues with Windows binaries due to the way Windows handles file permissions and other system features, so we **heavily recommend** using Docker on Windows.
 
 ### Windows
-1. Download the latest version from the [releases page](https://github.com/sysadminsmedia/homebox/releases).
+1. Download the latest version from the [releases page](https://github.com/frozenbug-dev/homebox/releases).
 2. Extract the archive and run `homebox.exe`.
 3. The web interface will be available at `http://localhost:7745` by default. Access the page by navigating to
 `http://server.local.ip.address:7745/` (replace with the right ip address)
 
 ### macOS
-1. Download the latest version from the [releases page](https://github.com/sysadminsmedia/homebox/releases). (Use
+1. Download the latest version from the [releases page](https://github.com/frozenbug-dev/homebox/releases). (Use
 `homebox_Darwin_x86_64.tar.gz` for Intel-based Macs and `homebox_Darwin_arm64.tar.gz` for Apple Silicon)
 2. Extract the archive and run `./homebox` from a terminal.
 3. The web interface will be available at `http://localhost:7745` by default. Access the page by navigating to
 `http://server.local.ip.address:7745/` (replace with the right ip address)
 
 ### Linux
-1. Download the latest version from the [releases page](https://github.com/sysadminsmedia/homebox/releases).
+1. Download the latest version from the [releases page](https://github.com/frozenbug-dev/homebox/releases).
 2. Extract the archive and run `./homebox` from a terminal.
 3. The web interface will be available at `http://localhost:7745` by default. Access the page by navigating to
 `http://server.local.ip.address:7745/` (replace with the right ip address)
 
 > [!NOTE]
 > RISC-V binaries are experimental and not recommended for production deployments. Use at your own risk. Please provide feedback
-> on the [discussions page](https://github.com/sysadminsmedia/homebox/discussions) if you encounter any issues.
+> on the [discussions page](https://github.com/frozenbug-dev/homebox/discussions) if you encounter any issues.

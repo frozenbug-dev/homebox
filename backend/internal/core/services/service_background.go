@@ -106,7 +106,7 @@ func (svc *BackgroundService) SendNotifiersToday(ctx context.Context) error {
 }
 
 func (svc *BackgroundService) GetLatestGithubRelease(ctx context.Context) error {
-	url := "https://api.github.com/repos/sysadminsmedia/homebox/releases/latest"
+	url := "https://api.github.com/repos/frozenbug-dev/homebox/releases/latest"
 
 	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
 	if err != nil {
