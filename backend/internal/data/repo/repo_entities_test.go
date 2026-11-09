@@ -2,7 +2,6 @@ package repo
 
 import (
 	"context"
-	"github.com/sysadminsmedia/homebox/backend/internal/sys/validate"
 	"math"
 	"strings"
 	"testing"
@@ -13,6 +12,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/sysadminsmedia/homebox/backend/internal/data/ent/attachment"
 	"github.com/sysadminsmedia/homebox/backend/internal/data/types"
+	"github.com/sysadminsmedia/homebox/backend/internal/sys/validate"
 )
 
 func containerFactory() EntityCreate {

@@ -159,13 +159,13 @@ type (
 
 	EntityPatch struct {
 		ID            uuid.UUID   `json:"id"`
-		Quantity      *float64    `json:"quantity,omitempty" extensions:"x-nullable,x-omitempty"`
+		Quantity      *float64    `json:"quantity,omitempty"      extensions:"x-nullable,x-omitempty"`
 		PurchasePrice *float64    `json:"purchasePrice,omitempty" extensions:"x-nullable,x-omitempty"`
-		ImportRef     *string     `json:"-"                  extensions:"x-nullable,x-omitempty"`
-		ParentID      uuid.UUID   `json:"parentId"           extensions:"x-nullable,x-omitempty"`
-		LocationID    uuid.UUID   `json:"locationId"         extensions:"x-nullable,x-omitempty"`
-		EntityTypeID  uuid.UUID   `json:"entityTypeId"       extensions:"x-nullable,x-omitempty"`
-		TagIDs        []uuid.UUID `json:"tagIds"             extensions:"x-nullable,x-omitempty"`
+		ImportRef     *string     `json:"-"                       extensions:"x-nullable,x-omitempty"`
+		ParentID      uuid.UUID   `json:"parentId"                extensions:"x-nullable,x-omitempty"`
+		LocationID    uuid.UUID   `json:"locationId"              extensions:"x-nullable,x-omitempty"`
+		EntityTypeID  uuid.UUID   `json:"entityTypeId"            extensions:"x-nullable,x-omitempty"`
+		TagIDs        []uuid.UUID `json:"tagIds"                  extensions:"x-nullable,x-omitempty"`
 	}
 
 	EntitySummary struct {
@@ -2121,6 +2121,33 @@ func patchSyncTags(ctx context.Context, tx *ent.Tx, gid, id uuid.UUID, want []uu
 	return nil
 }
 
+// validatePatchRefs runs the reference checks a patch needs before its
+// transaction opens. See EntityRepository.Create for the rationale on the
+// cross-group checks. data.TagIDs == nil means "leave tags alone"; a non-nil
+// (possibly empty) slice means "set tags to this exact list", and only the
+// latter needs validation.
+func (r *EntityRepository) validatePatchRefs(ctx context.Context, gid, id uuid.UUID, data EntityPatch) error {
+	if err := assertEntityInGroup(ctx, r.db.Entity, gid, data.ParentID); err != nil {
+		return err
+	}
+	if err := assertEntityTypeInGroup(ctx, r.db.EntityType, gid, data.EntityTypeID); err != nil {
+		return err
+	}
+	if data.TagIDs != nil {
+		if err := assertTagsInGroup(ctx, r.db.Tag, gid, data.TagIDs); err != nil {
+			return err
+		}
+	}
+	// A location-only patch can make the location the parent, so it gets the
+	// same cycle check.
+	for _, candidate := range []uuid.UUID{data.ParentID, data.LocationID} {
+		if err := r.assertNoParentCycle(ctx, id, candidate); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func (r *EntityRepository) Patch(ctx context.Context, gid, id uuid.UUID, data EntityPatch) error {
 	ctx, span := entityTracer().Start(ctx, "repo.EntityRepository.Patch",
 		trace.WithAttributes(
@@ -2135,31 +2162,9 @@ func (r *EntityRepository) Patch(ctx context.Context, gid, id uuid.UUID, data En
 		))
 	defer span.End()
 
-	// See EntityRepository.Create for the rationale on these cross-group
-	// reference checks. data.TagIDs == nil means "leave tags alone"; a non-nil
-	// (possibly empty) slice means "set tags to this exact list", and only the
-	// latter needs validation.
-	if err := assertEntityInGroup(ctx, r.db.Entity, gid, data.ParentID); err != nil {
+	if err := r.validatePatchRefs(ctx, gid, id, data); err != nil {
 		recordSpanError(span, err)
 		return err
-	}
-	if err := assertEntityTypeInGroup(ctx, r.db.EntityType, gid, data.EntityTypeID); err != nil {
-		recordSpanError(span, err)
-		return err
-	}
-	if data.TagIDs != nil {
-		if err := assertTagsInGroup(ctx, r.db.Tag, gid, data.TagIDs); err != nil {
-			recordSpanError(span, err)
-			return err
-		}
-	}
-	// Checked before the transaction opens; a location-only patch can make the
-	// location the parent, so it gets the same check.
-	for _, candidate := range []uuid.UUID{data.ParentID, data.LocationID} {
-		if err := r.assertNoParentCycle(ctx, id, candidate); err != nil {
-			recordSpanError(span, err)
-			return err
-		}
 	}
 
 	tx, err := r.db.Tx(ctx)
