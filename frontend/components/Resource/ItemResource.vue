@@ -6,14 +6,13 @@
     Copy,
     ExternalLink,
     FolderInput,
-    Hash,
+    Tally5,
     Link,
     MapPin,
     Plus,
     Printer,
     Tags,
     Trash2,
-    X,
   } from "@lucide/vue";
   import type { EntitySummary } from "~/lib/api/types/data-contracts";
   import { SHORTCUTS } from "~/lib/shortcuts";
@@ -35,7 +34,9 @@
    * An item as a list row: asset ID and name (and, for an item inside another
    * item, that parent) on the left; tags, place, quantity, price and date as
    * right-aligned pills on the right (each a fixed width so they line up
-   * between rows). Tags, place, quantity and price can be changed in the row.
+   * between rows). In a list narrower than 56rem the pills move to a second
+   * line under the name. Tags are hidden on phone-sized screens. Tags, place,
+   * quantity and price can be changed in the row.
    */
   const props = defineProps<{
     item: EntitySummary;
@@ -124,7 +125,7 @@
             {
               id: "quantity",
               label: t("shell.resource.change_quantity"),
-              icon: Hash,
+              icon: Tally5,
               onSelect: () => actions.editNumber(one, "quantity"),
             },
             {
@@ -183,7 +184,7 @@
 </script>
 
 <template>
-  <ResourceRow :id="item.id" :drag-data="draggable ? dragData : undefined">
+  <ResourceRow :id="item.id" stack :drag-data="draggable ? dragData : undefined">
     <template #left>
       <span v-if="show('asset') && item.assetId" class="shrink-0 font-mono text-xs text-muted-foreground tabular-nums">
         {{ item.assetId }}
@@ -205,12 +206,12 @@
     </template>
 
     <template #right>
-      <span class="flex min-w-0 items-center justify-end gap-1">
+      <span class="flex min-w-0 flex-wrap items-center gap-1 @4xl/list:flex-nowrap @4xl/list:justify-end">
         <TagPicker v-if="show('tags')" v-model="tagIds" v-model:open="tagsOpen" align="end">
           <button
             type="button"
-            class="hidden max-w-72 min-w-0 cursor-pointer items-center justify-end gap-1 rounded-full focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
-            :class="item.tags.length || tagsOpen ? 'lg:flex' : 'lg:group-hover/row:flex lg:focus-visible:flex'"
+            class="max-w-72 min-w-0 cursor-pointer items-center justify-end gap-1 rounded-full focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none max-md:hidden"
+            :class="item.tags.length || tagsOpen ? 'flex' : 'hidden group-hover/row:flex focus-visible:flex'"
             :aria-label="t('global.tags')"
             @click.stop
           >
@@ -233,7 +234,7 @@
         <NumberPill
           v-if="show('quantity')"
           :value="item.quantity"
-          :icon="X"
+          :icon="Tally5"
           :label="t('global.quantity')"
           @commit="n => actions.setQuantity(item, Math.round(n))"
         >
@@ -250,7 +251,7 @@
       </span>
       <span
         v-if="show('added')"
-        class="w-16 text-right text-xs whitespace-nowrap"
+        class="ml-auto text-xs whitespace-nowrap @4xl/list:ml-0 @4xl/list:w-16 @4xl/list:text-right"
         :title="new Date(item.createdAt).toLocaleString(locale)"
       >
         {{ added }}

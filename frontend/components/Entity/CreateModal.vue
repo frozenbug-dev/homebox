@@ -7,7 +7,7 @@
     CornerDownRight,
     DollarSign,
     FileText,
-    Hash,
+    Tally5,
     MapPin,
     Package,
     Paperclip,
@@ -791,7 +791,7 @@
       <CreateChip
         v-if="!isLocation"
         :label="t('global.quantity')"
-        :icon="Hash"
+        :icon="Tally5"
         :value="String(form.quantity)"
         :prefix="t('shell.create.qty')"
         content-class="w-auto p-1.5"

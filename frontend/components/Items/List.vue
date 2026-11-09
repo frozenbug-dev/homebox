@@ -79,6 +79,7 @@
       :get-key="i => i.id"
       :to="i => `/item/${i.id}`"
       :label="t('shell.items')"
+      auto-height
       :virtual="virtual"
       :hotkeys="hotkeys"
       :has-next-page="hasNextPage"

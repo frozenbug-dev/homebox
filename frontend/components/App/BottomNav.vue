@@ -29,6 +29,15 @@
     if (!el) return false;
     return el.isContentEditable || ["INPUT", "TEXTAREA", "SELECT"].includes(el.tagName);
   });
+
+  /** Each layer blurs more and covers a lower band (it fades in over one band and stays to the bottom). */
+  const BLUR_LAYERS = [0.5, 1, 2, 4, 8].map((blur, i, all) => {
+    const step = 100 / all.length;
+    return {
+      blur,
+      mask: `linear-gradient(to bottom, transparent ${i * step}%, black ${(i + 1) * step}%)`,
+    };
+  });
 </script>
 
 <template>
@@ -40,6 +49,28 @@
   >
     <div v-if="createOpen" class="fixed inset-0 z-35 bg-foreground/30 md:hidden" aria-hidden="true" />
   </Transition>
+
+  <!-- Progressive blur behind the nav: stacked layers, each stronger and masked to a lower band,
+       so content softens gradually as it scrolls under the bar. -->
+  <div
+    class="pointer-events-none fixed inset-x-0 bottom-0 z-30 transition-opacity duration-200 md:hidden"
+    :class="typing ? 'opacity-0' : ''"
+    style="height: calc(7rem + env(safe-area-inset-bottom))"
+    aria-hidden="true"
+  >
+    <div
+      v-for="(layer, i) in BLUR_LAYERS"
+      :key="i"
+      class="absolute inset-0"
+      :style="{
+        backdropFilter: `blur(${layer.blur}px)`,
+        WebkitBackdropFilter: `blur(${layer.blur}px)`,
+        maskImage: layer.mask,
+        WebkitMaskImage: layer.mask,
+      }"
+    />
+    <div class="absolute inset-0 bg-linear-to-b from-transparent to-background/50" />
+  </div>
 
   <nav
     :aria-label="t('shell.bottom_nav')"

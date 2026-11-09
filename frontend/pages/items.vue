@@ -143,12 +143,6 @@
     price: true,
     added: true,
   });
-  const wide = useMediaQuery("(width >= 48rem)");
-  const visibleColumns = computed<Record<ItemColumn, boolean>>(() =>
-    wide.value
-      ? columns.value
-      : { asset: false, place: columns.value.place, tags: false, quantity: false, price: false, added: false }
-  );
 
   const columnOptions = computed<{ id: ItemColumn; label: string }[]>(() => [
     { id: "asset", label: t("items.asset_id") },
@@ -324,7 +318,7 @@
       :has-next-page="!!hasNextPage"
       :is-fetching-next-page="isFetchingNextPage"
       :is-loading="isLoading"
-      :columns="visibleColumns"
+      :columns="columns"
       :filtered="filtered"
       @load-more="fetchNextPage()"
       @clear-filters="clearFilters"

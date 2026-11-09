@@ -28,7 +28,13 @@
       label: string;
       /** Window-scroll virtualization, for long (infinite) lists. */
       virtual?: boolean;
+      /** The row height; with `autoHeight`, the minimum (and the virtualizer's first guess). */
       rowHeight?: number;
+      /**
+       * Rows grow to fit their content, e.g. stacked rows (`<ResourceRow stack>`)
+       * that wrap onto a second line in a narrow list; virtualized rows are measured.
+       */
+      autoHeight?: boolean;
       selectable?: boolean;
       /** Register the page-wide shortcuts (turn off when another list owns them). */
       hotkeys?: boolean;
@@ -152,6 +158,8 @@
     computed(() => ({
       count: props.virtual ? props.items.length : 0,
       estimateSize: () => props.rowHeight,
+      // Keyed by item, so measured heights follow rows when the list reorders
+      getItemKey: (index: number) => keys.value[index] ?? index,
       overscan: 12,
       scrollMargin: scrollMargin.value,
     }))
@@ -161,6 +169,12 @@
   };
   onMounted(measure);
   useResizeObserver(listEl, measure);
+
+  /** Fixed rows get the height; auto rows get it as a minimum (their `grid` wrapper stretches the row to fill it;
+   * its one column is `minmax(0,1fr)` so a long row truncates instead of widening past the list). */
+  const rowSize = computed(() =>
+    props.autoHeight ? { minHeight: `${props.rowHeight}px` } : { height: `${props.rowHeight}px` }
+  );
 
   const virtualRows = computed(() => (props.virtual ? virtualizer.value.getVirtualItems() : []));
   watch(virtualRows, rows => {
@@ -203,10 +217,20 @@
     enabled: () => on() && props.selectable && keys.value.length > 0,
     ignoreInputs: true,
   });
-  useHotkey(SHORTCUTS.selectionClear, clear, {
-    ...meta("shell.shortcuts.selection_clear"),
-    enabled: () => on() && hasSelection.value,
-  });
+  // Escape belongs to whatever overlay is on top (dialog, menu, popover). This listener runs
+  // before Reka's, so let the event through and only clear when no dismissable layer is open.
+  useHotkey(
+    SHORTCUTS.selectionClear,
+    () => {
+      if (!document.querySelector("[data-dismissable-layer]")) clear();
+    },
+    {
+      ...meta("shell.shortcuts.selection_clear"),
+      enabled: () => on() && hasSelection.value,
+      preventDefault: false,
+      stopPropagation: false,
+    }
+  );
 
   /** Keys that only apply while the list itself has focus (so they don't clash with the page's). */
   function onKeydown(e: KeyboardEvent) {
@@ -292,7 +316,7 @@
       :aria-multiselectable="selectable || undefined"
       :aria-rowcount="items.length"
       :aria-activedescendant="focused ? rowId(focused) : undefined"
-      class="relative px-1.5 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring/40 focus-visible:ring-inset"
+      class="@container/list relative px-1.5 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring/40 focus-visible:ring-inset"
       :style="virtual ? { height: `${virtualizer.getTotalSize()}px` } : undefined"
       @keydown="onKeydown"
       @focus="onFocus"
@@ -302,9 +326,12 @@
         <div
           v-for="vRow in virtualRows"
           :key="keys[vRow.index]"
+          :ref="autoHeight ? el => virtualizer.measureElement(el as HTMLElement | null) : undefined"
+          :data-index="vRow.index"
           class="absolute inset-x-1.5 top-0"
+          :class="autoHeight && 'grid grid-cols-[minmax(0,1fr)]'"
           :style="{
-            height: `${rowHeight}px`,
+            ...rowSize,
             transform: `translateY(${vRow.start - virtualizer.options.scrollMargin}px)`,
           }"
         >
@@ -312,7 +339,12 @@
         </div>
       </template>
       <template v-else>
-        <div v-for="(item, index) in items" :key="keys[index]" :style="{ height: `${rowHeight}px` }">
+        <div
+          v-for="(item, index) in items"
+          :key="keys[index]"
+          :class="autoHeight && 'grid grid-cols-[minmax(0,1fr)]'"
+          :style="rowSize"
+        >
           <slot :item="item" :index="index" />
         </div>
       </template>

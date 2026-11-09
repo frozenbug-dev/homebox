@@ -11,12 +11,18 @@
    * and an optional context menu (`menu` slot, given what it acts on; opened by
    * right-click, long-press or the keyboard). ⌘/Ctrl/⌥-click selects.
    * Selection, focus and opening are handled by the list.
+   *
+   * With `stack`, the `right` slot drops onto a second line under `left` when
+   * the list is narrower than 56rem (a container query on the list, so it
+   * follows the list's width, not the window's). Give the list `auto-height`.
    */
   const props = defineProps<{
     /** The key the list knows this row by. */
     id: string;
     /** Makes the row draggable (e.g. onto places); shows a ⋮⋮ grip in the selection box. */
     dragData?: () => DragData;
+    /** Below a 56rem-wide list, put `right` on a second line instead of beside `left`. */
+    stack?: boolean;
     class?: string;
   }>();
 
@@ -79,6 +85,7 @@
         :class="
           cn(
             'group/row flex h-full cursor-pointer items-center gap-3 rounded-md pr-3 pl-1 select-none',
+            stack && '@max-4xl/list:items-start @max-4xl/list:py-1.5',
             focused || menuOpen ? 'bg-muted/70' : 'hover:bg-muted/70',
             selected && 'bg-primary/8 hover:bg-primary/12',
             selected && (focused || menuOpen) && 'bg-primary/12',
@@ -121,16 +128,33 @@
         </span>
         <span v-else class="w-1 shrink-0" />
 
-        <span role="gridcell" class="flex min-w-0 flex-1 items-center gap-2.5">
-          <slot name="left" />
-        </span>
         <span
-          v-if="$slots.right"
-          role="gridcell"
-          class="flex shrink-0 items-center gap-3 text-[13px] text-muted-foreground"
+          v-if="stack"
+          class="flex min-w-0 flex-1 flex-col gap-1 @4xl/list:flex-row @4xl/list:items-center @4xl/list:gap-3"
         >
-          <slot name="right" />
+          <span role="gridcell" class="flex min-h-7 min-w-0 items-center gap-2.5 @4xl/list:flex-1">
+            <slot name="left" />
+          </span>
+          <span
+            v-if="$slots.right"
+            role="gridcell"
+            class="flex min-w-0 items-center gap-3 text-[13px] text-muted-foreground @4xl/list:shrink-0"
+          >
+            <slot name="right" />
+          </span>
         </span>
+        <template v-else>
+          <span role="gridcell" class="flex min-w-0 flex-1 items-center gap-2.5">
+            <slot name="left" />
+          </span>
+          <span
+            v-if="$slots.right"
+            role="gridcell"
+            class="flex shrink-0 items-center gap-3 text-[13px] text-muted-foreground"
+          >
+            <slot name="right" />
+          </span>
+        </template>
       </div>
     </ContextMenuTrigger>
     <ContextMenuContent v-if="$slots.menu" class="w-56">
