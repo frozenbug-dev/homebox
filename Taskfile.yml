@@ -20,6 +20,7 @@ tasks:
       - go install github.com/pressly/goose/v3/cmd/goose@v3.8.0
       - cd backend && go mod tidy
       - cd frontend && pnpm install
+      - cd mobile && pnpm install
 
   swag:
     desc: Generate swagger docs
@@ -234,6 +235,31 @@ tasks:
     dir: frontend
     cmds:
       - pnpm run typecheck
+
+  mobile:dev:
+    desc: Start the Homecrate (Expo) dev server
+    dir: mobile
+    cmds:
+      - pnpm start
+
+  mobile:ios:
+    desc: Build and run the Homecrate dev client on iOS
+    dir: mobile
+    cmds:
+      - pnpm ios
+
+  mobile:android:
+    desc: Build and run the Homecrate dev client on Android
+    dir: mobile
+    cmds:
+      - pnpm android
+
+  mobile:check:
+    desc: Lint and typecheck the Homecrate app
+    dir: mobile
+    cmds:
+      - pnpm lint
+      - pnpm typecheck
 
   test:ci:
     env:
