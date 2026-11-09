@@ -235,10 +235,11 @@
     user-select: none;
     -webkit-touch-callout: none;
   }
-  /* Installed to the home screen: no rubber-band bounce revealing the backdrop, no pull-to-refresh */
+  /* Installed to the home screen: no rubber-band bounce revealing the backdrop, no pull-to-refresh.
+     <html> only: overflow-x above makes <body> a scroll container too, and since it never overflows,
+     `overscroll-behavior: none` on it stops touch scrolls from chaining up to <html> (Android Chrome). */
   @media (display-mode: standalone) {
-    html,
-    body {
+    html {
       overscroll-behavior: none;
     }
   }

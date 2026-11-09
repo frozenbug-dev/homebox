@@ -5,7 +5,7 @@
   import { useHotkey, type RegisterableHotkey } from "@tanstack/vue-hotkeys";
   import { useRouteQuery } from "@vueuse/router";
   import { monitorForElements } from "@atlaskit/pragmatic-drag-and-drop/element/adapter";
-  import { ArrowLeft, Ellipsis, Link as LinkIcon, MapPin, Plus, Printer, Search, Trash2 } from "@lucide/vue";
+  import { Ellipsis, Link as LinkIcon, MapPin, Plus, Printer, Search, Trash2 } from "@lucide/vue";
   import { isDragData, vDropTarget, type DragData } from "~/lib/dnd";
   import { ancestors, filterTree, indexPlaces, subtreeIds } from "~/lib/place-tree";
   import { toEntityUpdate } from "~/lib/entity-update";
@@ -266,7 +266,8 @@
     }
     toast.success(t("shell.places_page.created_place", { name }));
     refreshPlaces();
-    select(data.id);
+    // Phones stay on the list (selecting would swap it for the new place's pane).
+    if (wide.value) select(data.id);
   }
 
   function rename(name: string) {
@@ -287,7 +288,23 @@
   }
 
   function addInside() {
-    if (selectedId.value) addingIn.value = selectedId.value;
+    if (!selectedId.value) return;
+    addingIn.value = selectedId.value;
+    // On phones the pane covers the tree, where the new place is typed; go back to it.
+    if (!wide.value) placeParam.value = "";
+  }
+
+  /** The ⋯ menu's "Add place inside": the new-place input mounts while the menu traps focus, so focus it once closed. */
+  let focusNewPlace = false;
+  function addInsideFromMenu() {
+    focusNewPlace = true;
+    addInside();
+  }
+  function onMoreMenuCloseFocus(e: Event) {
+    if (!focusNewPlace) return;
+    focusNewPlace = false;
+    e.preventDefault();
+    nextTick(() => document.querySelector<HTMLInputElement>("input[data-new-place]")?.focus());
   }
 
   /** Actions from a tree row's context menu: select that place, then act on it. */
@@ -298,6 +315,11 @@
     }
     if (action === "delete") {
       deletePlace(id);
+      return;
+    }
+    // On phones selecting swaps the list for the place pane; adding inside happens in the list.
+    if (action === "add-inside" && !wide.value) {
+      addingIn.value = id;
       return;
     }
     select(id);
@@ -509,14 +531,8 @@
     <!-- The selected place -->
     <section v-if="selected" class="flex min-w-0 flex-col" :class="{ 'max-md:hidden': !placeParam }">
       <header class="flex flex-col gap-2.5 border-b border-border/70 px-4 pt-[22px] pb-4 sm:px-6">
-        <NuxtLink
-          to="/locations"
-          class="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground md:hidden"
-        >
-          <ArrowLeft class="size-3.5" />
-          {{ t("shell.places_page.all_places") }}
-        </NuxtLink>
-        <nav v-if="path.length" class="flex flex-wrap items-center gap-1 text-xs text-muted-foreground">
+        <!-- Phones get the parent from the app header's breadcrumb instead -->
+        <nav v-if="path.length" class="flex flex-wrap items-center gap-1 text-xs text-muted-foreground max-md:hidden">
           <template v-for="(p, i) in path" :key="p.id">
             <button type="button" class="hover:text-foreground hover:underline" @click="select(p.id)">
               {{ p.name }}
@@ -555,8 +571,8 @@
                     <Ellipsis class="size-4" />
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" class="w-56">
-                  <DropdownMenuItem @select="addInside">
+                <DropdownMenuContent align="end" class="w-56" @close-auto-focus="onMoreMenuCloseFocus">
+                  <DropdownMenuItem @select="addInsideFromMenu">
                     <Plus class="size-4" />
                     {{ t("shell.places_page.add_inside") }}
                     <ShortcutHint :hotkey="SHORTCUTS.placeAddInside" class="ml-auto" />

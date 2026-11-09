@@ -1678,7 +1678,6 @@
             "failed_create": "Couldn't add that",
             "no_places": "No places yet. Add one to start organising.",
             "no_match": "No places match",
-            "all_places": "All places",
             "expand": "Expand",
             "collapse": "Collapse"
         },

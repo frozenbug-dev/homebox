@@ -59,13 +59,18 @@
   const menuFor = ref<string | null>(null);
   /** Set when an action moves focus elsewhere (rename, add inside), so the closing menu doesn't take it back. */
   let keepFocusAway = false;
+  let lastAction: PlaceAction | null = null;
   const run = (action: PlaceAction, id: string) => {
     keepFocusAway = action === "rename" || action === "add-inside" || action === "move-items-here";
+    lastAction = action;
     emit("action", action, id);
   };
   function onMenuCloseFocus(e: Event) {
     if (keepFocusAway) e.preventDefault();
+    // The new-place input mounts while the menu still traps focus, so its autofocus is lost; focus it now.
+    if (lastAction === "add-inside") nextTick(() => newPlaceInput()?.focus());
     keepFocusAway = false;
+    lastAction = null;
   }
 
   const expanded = defineModel<string[]>("expanded", { default: () => [] });
@@ -96,6 +101,7 @@
 
   const newName = ref("");
   const vAutofocus = { mounted: (el: HTMLElement) => el.focus() };
+  const newPlaceInput = () => document.querySelector<HTMLInputElement>("input[data-new-place]");
 
   watch(
     () => props.addingIn,
@@ -292,6 +298,7 @@
         <input
           v-model="newName"
           v-autofocus
+          data-new-place
           class="h-[26px] min-w-0 flex-1 rounded-[7px] border-[1.5px] border-primary bg-background px-2 text-sm ring-3 ring-primary/12 outline-none"
           :placeholder="t('shell.places_page.new_place_placeholder')"
           :aria-label="t('shell.places_page.new_place_placeholder')"
