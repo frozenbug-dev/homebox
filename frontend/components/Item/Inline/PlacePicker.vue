@@ -10,6 +10,8 @@
     excludeIds?: string[];
     /** Offer "Top level" (no parent); picking it emits `top`. */
     allowTop?: boolean;
+    /** Replaces the "Top level" wording, for pickers where `top` means something else. */
+    topLabel?: string;
   }>();
   const emit = defineEmits<{ pick: [place: FlatTreeItem]; top: [] }>();
 
@@ -44,7 +46,7 @@
               class="text-muted-foreground"
               @select="((open = false), currentId && emit('top'))"
             >
-              {{ $t("shell.places_page.top_level") }}
+              {{ topLabel ?? $t("shell.places_page.top_level") }}
             </CommandItem>
             <CommandItem v-for="place in places" :key="place.id" :value="place.treeString" @select="pick(place)">
               <span class="truncate" :class="{ 'font-medium': place.id === currentId }">{{ place.name }}</span>

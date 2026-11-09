@@ -5,8 +5,8 @@
   import MdiLoading from "~icons/mdi/loading";
   import MdiPrinter from "~icons/mdi/printer";
   import { Button } from "@/components/ui/button";
-  import { Input } from "@/components/ui/input";
   import { Label } from "@/components/ui/label";
+  import { NumberField } from "@/components/ui/number-field";
   import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
   import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
   import { Checkbox } from "@/components/ui/checkbox";
@@ -177,15 +177,36 @@
         <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
           <div class="space-y-2">
             <Label for="startAssetId">{{ $t("reports.label_generator.asset_start") }}</Label>
-            <Input id="startAssetId" v-model.number="startAssetId" type="number" min="1" step="1" />
+            <NumberField
+              id="startAssetId"
+              :model-value="startAssetId"
+              :min="1"
+              step-snapping
+              class="h-9"
+              @update:model-value="v => (startAssetId = v ?? 1)"
+            />
           </div>
           <div class="space-y-2">
             <Label for="endAssetId">{{ $t("reports.label_generator.asset_end") }}</Label>
-            <Input id="endAssetId" v-model.number="endAssetId" type="number" min="1" step="1" />
+            <NumberField
+              id="endAssetId"
+              :model-value="endAssetId"
+              :min="1"
+              step-snapping
+              class="h-9"
+              @update:model-value="v => (endAssetId = v ?? 1)"
+            />
           </div>
           <div class="space-y-2">
             <Label for="skip">{{ $t("reports.label_generator.skip_first_labels") }}</Label>
-            <Input id="skip" v-model.number="skip" type="number" min="0" step="1" />
+            <NumberField
+              id="skip"
+              :model-value="skip"
+              :min="0"
+              step-snapping
+              class="h-9"
+              @update:model-value="v => (skip = v ?? 0)"
+            />
           </div>
         </div>
         <p v-if="rangeError" class="text-sm text-destructive">{{ rangeError }}</p>

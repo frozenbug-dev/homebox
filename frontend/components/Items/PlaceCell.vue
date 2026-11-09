@@ -2,11 +2,15 @@
   import { MapPin } from "@lucide/vue";
   import type { EntitySummary } from "~/lib/api/types/data-contracts";
   import PlacePicker from "~/components/Item/Inline/PlacePicker.vue";
+  import { Pill } from "@/components/ui/pill";
+
+  /** Places have no color of their own, so they all share one tint. */
+  const PLACE_COLOR = "#0284c7";
 
   /**
-   * The Place cell: click to move the item to another place. Only offered when
-   * the item sits directly in a place; an item inside another item keeps its
-   * container, so moving it goes through the full edit form.
+   * The Place cell, as a pill: click to move the item to another place. Only
+   * offered when the item sits directly in a place (or nowhere); an item
+   * inside another item shows that parent next to its name instead.
    */
   const props = defineProps<{ item: EntitySummary; placeIds: Set<string> }>();
   const emit = defineEmits<{ move: [place: FlatTreeItem] }>();
@@ -16,22 +20,27 @@
 </script>
 
 <template>
-  <PlacePicker v-if="editable" v-model:open="open" :current-id="item.parent?.id" @pick="p => emit('move', p)">
-    <button
-      type="button"
-      class="inline-flex max-w-full items-center gap-1.5 rounded-md px-1.5 py-1 text-left text-sm text-foreground/80 hover:bg-accent hover:text-foreground"
-      @click.stop
-    >
-      <MapPin class="size-3.5 shrink-0 text-muted-foreground" aria-hidden="true" />
-      <span class="truncate">{{ item.parent?.name ?? "—" }}</span>
-    </button>
-  </PlacePicker>
-  <NuxtLink
-    v-else-if="item.parent"
-    :to="`/item/${item.parent.id}`"
-    class="inline-flex max-w-full items-center gap-1.5 px-1.5 text-sm text-muted-foreground hover:underline"
-    @click.stop
+  <PlacePicker
+    v-if="editable"
+    v-model:open="open"
+    align="end"
+    :current-id="item.parent?.id"
+    @pick="p => emit('move', p)"
   >
-    <span class="truncate">{{ item.parent.name }}</span>
-  </NuxtLink>
+    <Pill v-if="item.parent" as="button" :color="PLACE_COLOR" :icon="MapPin" :title="item.parent.name" @click.stop>
+      {{ item.parent.name }}
+    </Pill>
+    <Pill
+      v-else
+      as="button"
+      dashed
+      :icon="MapPin"
+      :aria-label="$t('global.location')"
+      :class="[
+        'hidden group-hover/row:inline-flex focus-visible:inline-flex pointer-coarse:inline-flex',
+        open && 'inline-flex',
+      ]"
+      @click.stop
+    />
+  </PlacePicker>
 </template>

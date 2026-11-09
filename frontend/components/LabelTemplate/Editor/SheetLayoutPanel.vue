@@ -1,6 +1,6 @@
 <script setup lang="ts">
   import { Button } from "@/components/ui/button";
-  import { Input } from "@/components/ui/input";
+  import { NumberField } from "@/components/ui/number-field";
   import { Label } from "@/components/ui/label";
   import { Switch } from "@/components/ui/switch";
   import LabelTemplateMeasurementInput from "@/components/LabelTemplate/MeasurementInput.vue";
@@ -118,22 +118,22 @@
         </div>
         <div class="space-y-1">
           <Label class="text-xs">{{ $t("components.label_template.editor.sheet.columns") }}</Label>
-          <Input
+          <NumberField
             :model-value="layout.columns"
-            type="number"
-            min="1"
-            step="1"
-            @update:model-value="v => setCount('columns', v)"
+            :min="1"
+            step-snapping
+            class="h-9"
+            @update:model-value="v => setCount('columns', v ?? 1)"
           />
         </div>
         <div class="space-y-1">
           <Label class="text-xs">{{ $t("components.label_template.editor.sheet.rows") }}</Label>
-          <Input
+          <NumberField
             :model-value="layout.rows"
-            type="number"
-            min="1"
-            step="1"
-            @update:model-value="v => setCount('rows', v)"
+            :min="1"
+            step-snapping
+            class="h-9"
+            @update:model-value="v => setCount('rows', v ?? 1)"
           />
         </div>
         <div class="space-y-1">

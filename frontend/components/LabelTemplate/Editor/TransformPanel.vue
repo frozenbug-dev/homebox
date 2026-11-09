@@ -1,6 +1,6 @@
 <script setup lang="ts">
-  import { Input } from "@/components/ui/input";
   import { Label } from "@/components/ui/label";
+  import { NumberField } from "@/components/ui/number-field";
 
   export type EditorUnit = "mm" | "in";
 
@@ -103,13 +103,12 @@
       <div class="space-y-1">
         <Label for="tp-left" class="text-xs text-muted-foreground">X</Label>
         <div class="flex items-center gap-1">
-          <Input
+          <NumberField
             id="tp-left"
-            type="number"
             :step="step"
-            :model-value="objectProps.left"
+            :model-value="Number(objectProps.left)"
             class="h-8"
-            @change="handlePositionChange('left', ($event.target as HTMLInputElement).value)"
+            @update:model-value="v => handlePositionChange('left', String(v ?? ''))"
           />
           <span class="w-6 shrink-0 text-xs text-muted-foreground">{{ unit }}</span>
         </div>
@@ -117,13 +116,12 @@
       <div class="space-y-1">
         <Label for="tp-top" class="text-xs text-muted-foreground">Y</Label>
         <div class="flex items-center gap-1">
-          <Input
+          <NumberField
             id="tp-top"
-            type="number"
             :step="step"
-            :model-value="objectProps.top"
+            :model-value="Number(objectProps.top)"
             class="h-8"
-            @change="handlePositionChange('top', ($event.target as HTMLInputElement).value)"
+            @update:model-value="v => handlePositionChange('top', String(v ?? ''))"
           />
           <span class="w-6 shrink-0 text-xs text-muted-foreground">{{ unit }}</span>
         </div>
@@ -133,14 +131,13 @@
           {{ $t("components.label_template.form.width") }}
         </Label>
         <div class="flex items-center gap-1">
-          <Input
+          <NumberField
             id="tp-width"
-            type="number"
             :step="step"
-            :model-value="objectProps.width"
+            :model-value="Number(objectProps.width)"
             class="h-8"
             :disabled="!canResizeWidth"
-            @change="handleSizeChange('width', ($event.target as HTMLInputElement).value)"
+            @update:model-value="v => handleSizeChange('width', String(v ?? ''))"
           />
           <span class="w-6 shrink-0 text-xs text-muted-foreground">{{ unit }}</span>
         </div>
@@ -150,14 +147,13 @@
           {{ $t("components.label_template.form.height") }}
         </Label>
         <div class="flex items-center gap-1">
-          <Input
+          <NumberField
             id="tp-height"
-            type="number"
             :step="step"
-            :model-value="objectProps.height"
+            :model-value="Number(objectProps.height)"
             class="h-8"
             :disabled="!canResizeHeight"
-            @change="handleSizeChange('height', ($event.target as HTMLInputElement).value)"
+            @update:model-value="v => handleSizeChange('height', String(v ?? ''))"
           />
           <span class="w-6 shrink-0 text-xs text-muted-foreground">{{ unit }}</span>
         </div>
@@ -169,15 +165,14 @@
         {{ $t("components.label_template.editor.properties.rotation") }}
       </Label>
       <div class="flex items-center gap-1">
-        <Input
+        <NumberField
           id="tp-angle"
-          type="number"
           :model-value="objectProps.angle"
           class="h-8 w-28"
-          min="0"
-          max="360"
-          step="1"
-          @change="handleAngleChange(($event.target as HTMLInputElement).value)"
+          :min="0"
+          :max="360"
+          :step="1"
+          @update:model-value="v => handleAngleChange(String(v ?? ''))"
         />
         <span class="text-xs text-muted-foreground">°</span>
       </div>

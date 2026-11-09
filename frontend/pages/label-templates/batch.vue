@@ -15,6 +15,7 @@
   import { Input } from "~/components/ui/input";
   import { Button } from "@/components/ui/button";
   import { Label } from "@/components/ui/label";
+  import { NumberField } from "@/components/ui/number-field";
   import { Checkbox } from "@/components/ui/checkbox";
   import { Badge } from "@/components/ui/badge";
   import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -455,15 +456,16 @@
                 </template>
               </div>
             </div>
-            <Input
+            <NumberField
               :model-value="getQuantity(row.id)"
-              type="number"
-              min="1"
-              max="100"
-              class="h-8 w-16 text-center"
+              :min="1"
+              :max="100"
+              step-snapping
+              class="w-20"
+              input-class="text-center"
               :disabled="!isSelected(row.id)"
               :aria-label="$t('components.label_template.print_dialog.copies')"
-              @update:model-value="setQuantity(row.id, Number($event))"
+              @update:model-value="v => setQuantity(row.id, v ?? 1)"
             />
           </li>
         </ul>
@@ -521,12 +523,14 @@
           <div v-if="isSheet" class="flex flex-wrap items-center gap-3 text-sm">
             <label class="flex items-center gap-2">
               {{ $t("pages.label_templates.batch.skip_first") }}
-              <Input
-                v-model.number="skipLabels"
-                type="number"
-                min="0"
+              <NumberField
+                :model-value="skipLabels"
+                :min="0"
                 :max="Math.max(perSheet - 1, 0)"
-                class="h-8 w-16 text-center"
+                step-snapping
+                class="w-20"
+                input-class="text-center"
+                @update:model-value="v => (skipLabels = v ?? 0)"
               />
             </label>
             <label class="flex items-center gap-2">

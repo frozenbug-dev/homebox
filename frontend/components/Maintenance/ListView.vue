@@ -1,5 +1,6 @@
 <script setup lang="ts">
   import AppSubheader from "~/components/App/Subheader.vue";
+  import AppHeaderActions from "~/components/App/HeaderActions.vue";
   import { useI18n } from "vue-i18n";
   import { Plus } from "@lucide/vue";
   import { MaintenanceFilterStatus } from "~~/lib/api/types/data-contracts";
@@ -44,14 +45,14 @@
 
   // ----- Actions -----
 
-  const afterDialog = (changed?: boolean) => changed && refresh();
+  // Always refresh: with "Create more" on, entries are added before the dialog closes without a result.
+  const afterDialog = () => refresh();
 
   function create() {
-    if (props.currentItemId)
-      openDialog(DialogID.EditMaintenance, {
-        params: { type: "create", itemId: props.currentItemId },
-        onClose: afterDialog,
-      });
+    openDialog(DialogID.EditMaintenance, {
+      params: { type: "create", itemId: props.currentItemId },
+      onClose: afterDialog,
+    });
   }
   function edit(entry: MaintenanceRow) {
     openDialog(DialogID.EditMaintenance, { params: { type: "update", maintenanceEntry: entry }, onClose: afterDialog });
@@ -95,6 +96,14 @@
 <template>
   <section class="flex flex-col">
     <MaintenanceEditModal />
+
+    <!-- Global list: the header CTA creates an entry instead of an item -->
+    <AppHeaderActions v-if="!currentItemId">
+      <Button size="sm" class="h-[30px] text-[13px]" @click="create">
+        <Plus />
+        {{ t("shell.maintenance_page.new_entry") }}
+      </Button>
+    </AppHeaderActions>
 
     <AppSubheader>
       <div class="flex rounded-lg bg-muted p-0.5 text-xs" role="tablist">
@@ -156,7 +165,7 @@
       class="flex flex-col items-center gap-3 px-4 py-10 text-sm text-muted-foreground"
     >
       <p>{{ t("shell.maintenance_page.empty") }}</p>
-      <Button v-if="currentItemId" variant="outline" size="sm" @click="create">
+      <Button variant="outline" size="sm" @click="create">
         {{ t("maintenance.list.create_first") }}
       </Button>
     </div>

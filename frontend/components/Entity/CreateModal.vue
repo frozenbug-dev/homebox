@@ -9,7 +9,6 @@
     FileText,
     Hash,
     MapPin,
-    Minus,
     Package,
     Paperclip,
     Plus,
@@ -31,6 +30,8 @@
   } from "@/components/ui/dropdown-menu";
   import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
   import { Checkbox } from "@/components/ui/checkbox";
+  import { NumberField } from "@/components/ui/number-field";
+  import { Calendar } from "@/components/ui/calendar";
   import CreateDialog from "~/components/Create/Dialog.vue";
   import CreateChip from "~/components/Create/Chip.vue";
   import OptionPicker, { type PickerOption } from "~/components/Create/OptionPicker.vue";
@@ -58,7 +59,8 @@
   import { useFlatLocations } from "~~/composables/use-location-helpers";
   import { useEntityTypeStore } from "~~/stores/entityTypes";
 
-  const { t, locale } = useI18n();
+  const { t } = useI18n();
+  const locale = useFormatLocale();
   const { openDialog, closeDialog, registerOpenDialogCallback } = useDialog();
 
   useDialogHotkey(DialogID.CreateEntity, { code: "Digit1", shift: true }, () => ({
@@ -84,7 +86,10 @@
   const { query, results, isLoading, triggerSearch } = useItemSearch(api, { immediate: false });
   const subItemCreate = ref();
 
-  const tagId = computed(() => (route.fullPath.includes("/tag/") ? route.params.id : null));
+  // On the Tags page the selected tag (?tag=) is tagged by default.
+  const tagId = computed(() =>
+    route.path === "/tags" && typeof route.query.tag === "string" ? route.query.tag : null
+  );
   // On the Places page the selected place (?place=) is the default parent.
   const locationId = computed(() =>
     route.path === "/locations" && typeof route.query.place === "string" ? route.query.place : null
@@ -777,33 +782,15 @@
         content-class="w-auto p-1.5"
       >
         <template #default="{ close }">
-          <div class="flex items-center gap-1">
-            <button
-              type="button"
-              class="flex size-8 items-center justify-center rounded-md hover:bg-muted"
-              :aria-label="t('shell.create.decrease')"
-              @click="form.quantity = Math.max(0, (form.quantity || 0) - 1)"
-            >
-              <Minus class="size-4" />
-            </button>
-            <input
-              v-model.number="form.quantity"
-              type="number"
-              min="0"
-              step="any"
-              :aria-label="t('global.quantity')"
-              class="h-8 w-20 rounded-md border border-input bg-background px-2 text-center text-sm tabular-nums outline-none focus:border-ring"
-              @keydown.enter.prevent="close"
-            />
-            <button
-              type="button"
-              class="flex size-8 items-center justify-center rounded-md hover:bg-muted"
-              :aria-label="t('shell.create.increase')"
-              @click="form.quantity = (form.quantity || 0) + 1"
-            >
-              <Plus class="size-4" />
-            </button>
-          </div>
+          <NumberField
+            :model-value="form.quantity"
+            :min="0"
+            :aria-label="t('global.quantity')"
+            class="w-32"
+            input-class="text-center"
+            @update:model-value="v => (form.quantity = v ?? 0)"
+            @enter="close"
+          />
         </template>
       </CreateChip>
 
@@ -841,13 +828,13 @@
           <template #default="{ close }">
             <label class="flex flex-col gap-1.5 text-xs text-muted-foreground">
               {{ t("shell.create.purchase_price") }}
-              <input
-                v-model.number="form.purchasePrice"
-                type="number"
-                min="0"
-                step="0.01"
-                class="h-8 rounded-md border border-input bg-background px-2 text-sm text-foreground tabular-nums outline-none focus:border-ring"
-                @keydown.enter.prevent="close"
+              <NumberField
+                :model-value="form.purchasePrice"
+                :min="0"
+                :format-options="{ minimumFractionDigits: 0, maximumFractionDigits: 2 }"
+                placeholder="0.00"
+                @update:model-value="v => (form.purchasePrice = v)"
+                @enter="close"
               />
             </label>
           </template>
@@ -857,24 +844,31 @@
           :label="t('shell.create.warranty')"
           :icon="ShieldCheck"
           :value="warrantyLabel"
-          content-class="w-60 p-2"
+          content-class="w-auto p-2.5"
         >
           <template #default="{ close }">
-            <div class="flex flex-col gap-2.5">
-              <label class="flex flex-col gap-1.5 text-xs text-muted-foreground">
-                {{ t("shell.create.warranty_expires") }}
-                <input
-                  v-model="form.warrantyExpires"
-                  type="date"
-                  :disabled="form.lifetimeWarranty"
-                  class="h-8 rounded-md border border-input bg-background px-2 text-sm text-foreground outline-none focus:border-ring disabled:opacity-50"
-                  @keydown.enter.prevent="close"
-                />
-              </label>
-              <label class="flex items-center gap-2 text-sm">
-                <Checkbox v-model="form.lifetimeWarranty" />
-                {{ t("shell.create.warranty_lifetime") }}
-              </label>
+            <div class="flex flex-col">
+              <span class="px-1.5 pb-2 text-xs text-muted-foreground">{{ t("shell.create.warranty_expires") }}</span>
+              <Calendar
+                v-model="form.warrantyExpires"
+                :disabled="form.lifetimeWarranty"
+                :class="form.lifetimeWarranty ? 'opacity-50' : undefined"
+                @pick="v => v && close()"
+              />
+              <div class="mt-2 flex items-center justify-between gap-2 border-t border-border pt-2">
+                <label class="flex items-center gap-2 px-1 text-[13px]">
+                  <Checkbox v-model="form.lifetimeWarranty" />
+                  {{ t("shell.create.warranty_lifetime") }}
+                </label>
+                <button
+                  v-if="form.warrantyExpires && !form.lifetimeWarranty"
+                  type="button"
+                  class="rounded-md px-2 py-1 text-xs text-muted-foreground hover:bg-muted hover:text-foreground"
+                  @click="form.warrantyExpires = ''"
+                >
+                  {{ t("global.clear") }}
+                </button>
+              </div>
             </div>
           </template>
         </CreateChip>

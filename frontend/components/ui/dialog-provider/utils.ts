@@ -5,6 +5,7 @@ import type {
   BarcodeProduct,
   GroupInvitation,
   EntitySummary,
+  ItemAttachment,
   MaintenanceEntry,
   MaintenanceEntryWithDetails,
 } from "~~/lib/api/types/data-contracts";
@@ -39,6 +40,7 @@ export enum DialogID {
   UpdateLocation = "update-location",
   UpdateTemplate = "update-template",
   ItemChangeDetails = "item-table-updater",
+  ItemEditNumber = "item-edit-number",
   CreateEntityType = "create-entity-type",
   UpdateEntityType = "update-entity-type",
   WipeInventory = "wipe-inventory",
@@ -66,10 +68,11 @@ export type DialogParamsMap = {
     itemId: string;
     attachmentId: string;
   };
+  [DialogID.AttachmentEdit]: { itemId: string; attachment: ItemAttachment };
   [DialogID.CreateEntity]: { baseType: "item"; product?: BarcodeProduct; subItem?: true } | { baseType: "location" };
   [DialogID.ProductImport]?: { barcode?: string };
   [DialogID.EditMaintenance]:
-    | { type: "create"; itemId: string | string[] }
+    | { type: "create"; itemId?: string | string[] }
     | { type: "update"; maintenanceEntry: MaintenanceEntry | MaintenanceEntryWithDetails }
     | { type: "duplicate"; maintenanceEntry: MaintenanceEntry | MaintenanceEntryWithDetails; itemId: string };
   [DialogID.ItemChangeDetails]: {
@@ -78,6 +81,7 @@ export type DialogParamsMap = {
     addTags?: boolean;
     removeTags?: boolean;
   };
+  [DialogID.ItemEditNumber]: { item: EntitySummary; field: "quantity" | "purchasePrice" };
   [DialogID.CreateCollection]?: { redirectTo?: string };
   [DialogID.JoinCollection]?: { redirectTo?: string; inviteCode?: string };
   [DialogID.PrintLabelTemplate]: {
@@ -95,9 +99,12 @@ export type DialogParamsMap = {
  * Defines the payload type for a dialog's onClose callback.
  */
 export type DialogResultMap = {
-  [DialogID.ItemImage]?: { action: "delete"; id: string };
+  [DialogID.ItemImage]?: { action: "delete" | "edit"; id: string };
+  /** The item's attachments after the change, whether edited or deleted. */
+  [DialogID.AttachmentEdit]?: { attachments: ItemAttachment[] };
   [DialogID.EditMaintenance]?: boolean;
   [DialogID.ItemChangeDetails]?: boolean;
+  [DialogID.ItemEditNumber]?: boolean;
   [DialogID.WipeInventory]?: { wipeTags: boolean; wipeLocations: boolean; wipeMaintenance: boolean };
   [DialogID.CreateGroupInvite]?: GroupInvitation;
   [DialogID.CommandPalette]?: { moved: number };

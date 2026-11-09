@@ -67,7 +67,7 @@
       <DropdownMenuTrigger as-child>
         <button
           type="button"
-          class="group flex size-16 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg shadow-primary/30 transition-colors data-[state=open]:bg-foreground data-[state=open]:text-background"
+          class="group flex size-16 shrink-0 items-center justify-center rounded-full border border-[color-mix(in_oklab,hsl(var(--primary))_92%,black)] bg-primary text-primary-foreground shadow-lg shadow-primary/30 transition-colors data-[state=open]:border-foreground data-[state=open]:bg-foreground data-[state=open]:text-background"
           :aria-label="t('shell.create_menu')"
         >
           <Plus

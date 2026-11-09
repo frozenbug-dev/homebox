@@ -66,7 +66,7 @@
             <UserPlus class="mr-2 size-4" /> {{ t("components.collection.selector.join_collection") }}
           </CommandItem>
           <CommandItem as-child value="collection-settings">
-            <NuxtLink to="/collection/members" class="flex w-full items-center" @click="open = false">
+            <NuxtLink to="/collection/settings" class="flex w-full items-center" @click="open = false">
               <Settings class="mr-2 size-4" />
               {{ t("components.collection.selector.collection_options") }}
             </NuxtLink>

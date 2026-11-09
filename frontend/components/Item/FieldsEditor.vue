@@ -9,7 +9,11 @@
    * × removes the row. `add()` opens a new row with its name focused; the row is
    * saved once it has a name and dropped if you leave it empty.
    */
-  const props = defineProps<{ fields: EntityFieldData[] }>();
+  const props = defineProps<{
+    fields: EntityFieldData[];
+    /** Sidebar look: no heading or frame, label column matches the properties panel. */
+    compact?: boolean;
+  }>();
   const emit = defineEmits<{ save: [fields: EntityFieldData[]] }>();
 
   const { t } = useI18n();
@@ -66,6 +70,12 @@
     );
   }
 
+  const rowClass = computed(() =>
+    props.compact
+      ? "grid min-h-8 grid-cols-[96px_minmax(0,1fr)_auto] items-center gap-2"
+      : "grid grid-cols-[minmax(0,10rem)_minmax(0,1fr)_auto] items-center gap-2 px-2 py-1"
+  );
+
   function asUrl(v: string): string | null {
     try {
       const u = new URL(v);
@@ -78,17 +88,20 @@
 
 <template>
   <section v-if="fields.length > 0 || adding">
-    <h2 class="mb-2 text-[13px] font-semibold text-foreground/80">{{ t("shell.item_page.fields") }}</h2>
-    <div class="divide-y divide-border/70 overflow-hidden rounded-lg border border-border text-sm">
-      <div
-        v-for="(field, i) in fields"
-        :key="i"
-        class="group grid grid-cols-[minmax(0,10rem)_minmax(0,1fr)_auto] items-center gap-2 px-2 py-1"
-      >
+    <h2 v-if="!compact" class="mb-2 text-[13px] font-semibold text-foreground/80">
+      {{ t("shell.item_page.fields") }}
+    </h2>
+    <div
+      :class="
+        compact ? 'flex flex-col' : 'divide-y divide-border/70 overflow-hidden rounded-lg border border-border text-sm'
+      "
+    >
+      <div v-for="(field, i) in fields" :key="i" class="group" :class="rowClass">
         <InlineText
           :value="field.name"
           :label="t('global.name')"
           class="text-muted-foreground"
+          :class="compact && '-ml-1.5'"
           @save="name => name && change(i, { name })"
         />
         <div class="flex min-w-0 items-center gap-1">
@@ -121,7 +134,7 @@
         </button>
       </div>
 
-      <div v-if="adding" class="grid grid-cols-[minmax(0,10rem)_minmax(0,1fr)_auto] items-center gap-2 px-2 py-1">
+      <div v-if="adding" :class="rowClass">
         <InlineText
           ref="draftName"
           value=""

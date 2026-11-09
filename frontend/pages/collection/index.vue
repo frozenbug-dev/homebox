@@ -1,261 +1,145 @@
 <script setup lang="ts">
   import { useI18n } from "vue-i18n";
-  import BaseContainer from "@/components/Base/Container.vue";
-  import { Card } from "@/components/ui/card";
-  import { Button, ButtonGroup } from "@/components/ui/button";
-  import { toast } from "@/components/ui/sonner";
+  import {
+    Archive,
+    ArrowDownUp,
+    Bell,
+    ChevronLeft,
+    Printer,
+    Shapes,
+    SlidersHorizontal,
+    Ticket,
+    Users,
+    Wrench,
+  } from "@lucide/vue";
+  import type { Component } from "vue";
+  import { useEntityTypeStore } from "~/stores/entityTypes";
 
-  import MdiAccountMultiple from "~icons/mdi/account-multiple";
-  import MdiEmailPlus from "~icons/mdi/email-plus";
-  import MdiBell from "~icons/mdi/bell";
-  import MdiCog from "~icons/mdi/cog";
-  import MdiShape from "~icons/mdi/shape";
-  import MdiWrench from "~icons/mdi/wrench";
-  import MdiLogout from "~icons/mdi/logout";
-  import MdiDelete from "~icons/mdi/delete";
-  import type { UserSummary } from "~/lib/api/types/data-contracts";
-
-  definePageMeta({
-    middleware: ["auth"],
-  });
+  /**
+   * Collection settings in two panes: a grouped nav of sections on the left,
+   * the open section on the right. On phones `/collection` is the nav alone and
+   * each section opens full screen with a way back.
+   */
+  definePageMeta({ middleware: ["auth"] });
 
   const { t } = useI18n();
-
-  useHead({ title: `HomeBox | ${t("menu.collection")}` });
-
   const route = useRoute();
-  const api = useUserApi();
-  const auth = useAuthContext();
-  const confirm = useConfirm();
+  const entityTypeStore = useEntityTypeStore();
+  const { collection, group, members } = useCollectionSettingsData();
 
-  const currentPath = computed(() => route.path);
+  onMounted(() => entityTypeStore.refresh());
 
-  const tabs = computed(() => [
+  type Link = { to: string; label: string; icon: Component; count?: number };
+
+  const groups = computed<{ label: string; links: Link[] }[]>(() => [
     {
-      id: "members",
-      label: "collection.tabs.members",
-      to: "/collection/members",
-      icon: MdiAccountMultiple,
+      label: t("collection.settings.groups.collection"),
+      links: [
+        { to: "/collection/settings", label: t("collection.settings.nav.general"), icon: SlidersHorizontal },
+        {
+          to: "/collection/members",
+          label: t("collection.settings.nav.members"),
+          icon: Users,
+          count: members.data.value.length || undefined,
+        },
+        { to: "/collection/invites", label: t("collection.settings.nav.invites"), icon: Ticket },
+        { to: "/collection/notifiers", label: t("collection.settings.nav.notifiers"), icon: Bell },
+      ],
     },
     {
-      id: "invites",
-      label: "collection.tabs.invites",
-      to: "/collection/invites",
-      icon: MdiEmailPlus,
+      label: t("collection.settings.groups.inventory"),
+      links: [
+        {
+          to: "/collection/entity-types",
+          label: t("collection.settings.nav.entity_types"),
+          icon: Shapes,
+          count: entityTypeStore.allTypes.length || undefined,
+        },
+        { to: "/collection/labels", label: t("collection.settings.nav.labels"), icon: Printer },
+      ],
     },
     {
-      id: "notifiers",
-      label: "collection.tabs.notifiers",
-      to: "/collection/notifiers",
-      icon: MdiBell,
-    },
-    {
-      id: "settings",
-      label: "collection.tabs.settings",
-      to: "/collection/settings",
-      icon: MdiCog,
-    },
-    {
-      id: "entity-types",
-      label: "collection.tabs.entity_types",
-      to: "/collection/entity-types",
-      icon: MdiShape,
-    },
-    {
-      id: "tools",
-      label: "collection.tabs.tools",
-      to: "/collection/tools",
-      icon: MdiWrench,
+      label: t("collection.settings.groups.data"),
+      links: [
+        { to: "/collection/data", label: t("collection.settings.nav.data"), icon: ArrowDownUp },
+        { to: "/collection/backups", label: t("collection.settings.nav.backups"), icon: Archive },
+        { to: "/collection/actions", label: t("collection.settings.nav.actions"), icon: Wrench },
+      ],
     },
   ]);
 
-  const { selectedCollection, load: reloadCollections } = useCollections();
+  const isIndex = computed(() => route.path.replace(/\/$/, "") === "/collection");
+  const current = computed(() => groups.value.flatMap(g => g.links).find(l => route.path.startsWith(l.to)));
 
-  const members = ref<Array<UserSummary>>([]);
-  const membersLoading = ref(false);
-  const actionLoading = ref(false);
+  usePageHeader(() => [
+    { label: t("shell.collection_settings"), to: current.value ? "/collection" : undefined },
+    ...(current.value ? [{ label: current.value.label }] : []),
+  ]);
+  useHead({ title: () => `HomeBox | ${current.value?.label ?? t("shell.collection_settings")}` });
 
-  const currentUserId = computed(() => auth.user?.id ?? "");
-
-  const membersCount = computed(() => members.value.length);
-
-  const isOnlyMember = computed(() => {
-    if (membersCount.value !== 1 || !currentUserId.value) return false;
-    const member = members.value[0];
-    return Boolean(member && member.id && member.id === currentUserId.value);
-  });
-  const isActionDisabled = computed(() => !selectedCollection.value || membersLoading.value || actionLoading.value);
-
-  const loadMembers = async () => {
-    if (!selectedCollection.value) {
-      members.value = [];
-      return;
-    }
-
-    membersLoading.value = true;
-    try {
-      const res = await api.group.getMembers();
-      if (res.error) {
-        const msg = t("errors.api_failure") + String(res.error);
-        toast.error(msg);
-        members.value = [];
-      } else {
-        members.value = Array.isArray(res.data) ? (res.data as Array<UserSummary>) : [];
-      }
-    } catch (e) {
-      const msg = (e as Error).message ?? String(e);
-      toast.error(msg);
-      members.value = [];
-    } finally {
-      membersLoading.value = false;
-    }
-  };
-
-  watch(
-    () => selectedCollection.value?.id,
-    () => {
-      void loadMembers();
-    },
-    { immediate: true }
-  );
-
-  const handleLeaveCollection = async () => {
-    if (!selectedCollection.value) return;
-
-    const result = await confirm.open(t("collection.leave_confirm"));
-    if (result.isCanceled) {
-      return;
-    }
-
-    actionLoading.value = true;
-
-    try {
-      let userId = currentUserId.value;
-      if (!userId) {
-        const { data } = await api.user.self();
-        userId = data?.item.id ?? "";
-      }
-
-      if (!userId) {
-        const msg = t("errors.api_failure") + "Missing user id";
-        toast.error(msg);
-        return;
-      }
-
-      const res = await api.group.removeMember(userId);
-      if (res.error) {
-        const msg = t("errors.api_failure") + String(res.error);
-        toast.error(msg);
-        return;
-      }
-
-      toast.success(t("collection.left_collection"));
-      await reloadCollections();
-      window.location.reload();
-    } catch (e) {
-      const msg = (e as Error).message ?? String(e);
-      toast.error(msg);
-    } finally {
-      actionLoading.value = false;
-    }
-  };
-
-  const handleDeleteCollection = async () => {
-    if (!selectedCollection.value) return;
-
-    const result = await confirm.open(t("collection.delete_confirm"));
-    if (result.isCanceled) {
-      return;
-    }
-
-    actionLoading.value = true;
-
-    try {
-      const res = await api.group.delete(selectedCollection.value.id);
-      if (res.error) {
-        const msg = t("errors.api_failure") + String(res.error);
-        toast.error(msg);
-        return;
-      }
-
-      toast.success(t("collection.deleted_collection"));
-      await reloadCollections();
-      window.location.reload();
-    } catch (e) {
-      const msg = (e as Error).message ?? String(e);
-      toast.error(msg);
-    } finally {
-      actionLoading.value = false;
-    }
-  };
-
-  const handleCollectionPrimaryAction = async () => {
-    if (!selectedCollection.value) return;
-
-    if (isOnlyMember.value) {
-      await handleDeleteCollection();
-    } else {
-      await handleLeaveCollection();
-    }
-  };
+  const name = computed(() => group.data.value?.name ?? collection.value?.name ?? "");
+  const initial = computed(() => name.value.trim().charAt(0).toUpperCase() || "?");
 </script>
 
 <template>
-  <BaseContainer>
-    <Title>{{ t("menu.collection_options") }}</Title>
-
-    <section>
-      <Card class="p-3">
-        <header>
-          <div class="flex flex-wrap items-center justify-between gap-2">
-            <div>
-              <h1 class="text-2xl">
-                {{
-                  selectedCollection?.name
-                    ? t("collection.manage_collection") + " - " + selectedCollection.name
-                    : t("global.loading")
-                }}
-              </h1>
-            </div>
-          </div>
-        </header>
-      </Card>
-
-      <div class="my-3 flex flex-wrap items-center justify-between gap-2">
-        <ButtonGroup>
-          <Button
-            v-for="tab in tabs"
-            :key="tab.id"
-            as-child
-            :variant="tab.to === currentPath ? 'default' : 'outline'"
-            size="sm"
+  <div class="grid flex-1 md:grid-cols-[15.5rem_minmax(0,1fr)]">
+    <!-- Sections -->
+    <aside
+      class="border-border/70 bg-muted/30 md:border-r"
+      :class="{ 'max-md:hidden': !isIndex }"
+      :aria-label="t('shell.collection_settings')"
+    >
+      <nav class="flex flex-col p-3 md:sticky md:top-(--header-height)">
+        <div class="flex items-center gap-3 px-2.5 py-2">
+          <span
+            class="flex size-10 shrink-0 items-center justify-center rounded-[10px] bg-primary text-base font-semibold text-primary-foreground"
+            aria-hidden="true"
           >
-            <NuxtLink :to="tab.to" class="flex items-center gap-2">
-              <component :is="tab.icon" v-if="tab.icon" class="size-4" />
-              <span class="hidden sm:block">{{ t(tab.label) }}</span>
-            </NuxtLink>
-          </Button>
-        </ButtonGroup>
-
-        <div id="collection-header-actions" class="ml-auto flex items-center gap-1">
-          <Button
-            variant="outline"
-            size="icon"
-            class="size-8"
-            :aria-label="$t(isOnlyMember ? 'collection.delete_collection' : 'collection.leave_collection')"
-            :disabled="isActionDisabled"
-            @click="handleCollectionPrimaryAction"
-          >
-            <component :is="isOnlyMember ? MdiDelete : MdiLogout" class="size-4" />
-          </Button>
+            {{ initial }}
+          </span>
+          <span class="flex min-w-0 flex-col leading-tight">
+            <span class="truncate text-[15px] font-semibold">{{ name || t("global.loading") }}</span>
+            <span class="truncate text-[12.5px] text-muted-foreground">
+              <template v-if="members.data.value.length">
+                {{ t("collection.settings.members_count", { n: members.data.value.length }) }}
+              </template>
+              <template v-if="members.data.value.length && group.data.value"> · </template>
+              <template v-if="group.data.value">{{ group.data.value.currency }}</template>
+            </span>
+          </span>
         </div>
-      </div>
-    </section>
 
-    <section>
-      <div class="space-y-6">
+        <template v-for="g in groups" :key="g.label">
+          <div class="px-2.5 pt-4 pb-1.5 text-xs font-medium text-muted-foreground">{{ g.label }}</div>
+          <div class="flex flex-col gap-0.5 max-md:overflow-hidden max-md:rounded-xl max-md:border max-md:bg-card">
+            <NuxtLink
+              v-for="l in g.links"
+              :key="l.to"
+              :to="l.to"
+              class="flex h-8 items-center gap-2.5 rounded-lg px-2.5 text-[13.5px] text-foreground transition-colors hover:bg-muted max-md:h-12 max-md:rounded-none max-md:text-[15px] max-md:not-last:border-b"
+              active-class="bg-accent! font-medium text-accent-foreground!"
+            >
+              <component :is="l.icon" class="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+              <span class="truncate">{{ l.label }}</span>
+              <span v-if="l.count" class="ml-auto text-xs text-muted-foreground tabular-nums">{{ l.count }}</span>
+            </NuxtLink>
+          </div>
+        </template>
+      </nav>
+    </aside>
+
+    <!-- Open section -->
+    <main class="min-w-0 px-4 pt-6 pb-24 sm:px-8 md:pt-10 lg:px-12" :class="{ 'max-md:hidden': isIndex }">
+      <div class="mx-auto max-w-190">
+        <NuxtLink
+          to="/collection"
+          class="mb-4 -ml-1 inline-flex items-center gap-1 text-[13px] text-muted-foreground hover:text-foreground md:hidden"
+        >
+          <ChevronLeft class="size-4" aria-hidden="true" />
+          {{ t("collection.settings.back") }}
+        </NuxtLink>
         <NuxtPage />
       </div>
-    </section>
-  </BaseContainer>
+    </main>
+  </div>
 </template>

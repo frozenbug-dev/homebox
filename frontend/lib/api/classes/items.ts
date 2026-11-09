@@ -24,6 +24,8 @@ export type ItemsQuery = {
   page?: number;
   pageSize?: number;
   parentIds?: string[];
+  /** Direct children of these entities, wherever they are stored (unlike parentIds, which matches by place). */
+  parentItemIds?: string[];
   entityTypeIds?: string[];
   tags?: string[];
   negateTags?: boolean;

@@ -1,6 +1,6 @@
 <script setup lang="ts">
   import { useI18n } from "vue-i18n";
-  import { Check, Ellipsis, GripVertical } from "@lucide/vue";
+  import { Check, GripVertical } from "@lucide/vue";
   import { vDragSource, type DragData } from "~/lib/dnd";
   import { cn } from "@/lib/utils";
   import { ContextMenu, ContextMenuContent, ContextMenuTrigger } from "@/components/ui/context-menu";
@@ -8,7 +8,8 @@
 
   /**
    * One row of a <ResourceList>: a selection box, a `left` and a `right` slot,
-   * and an optional context menu (`menu` slot, given what it acts on).
+   * and an optional context menu (`menu` slot, given what it acts on; opened by
+   * right-click, long-press or the keyboard). ⌘/Ctrl/⌥-click selects.
    * Selection, focus and opening are handled by the list.
    */
   const props = defineProps<{
@@ -41,8 +42,16 @@
     if (e.button !== 0 || !list.selectable.value) return;
     const box = (e.target as Element).closest("[data-row-select]");
     if (e.shiftKey) list.extendTo(props.id);
-    else if (e.metaKey || e.ctrlKey || box) list.toggle(props.id);
+    else if (e.metaKey || e.ctrlKey || e.altKey || box) list.toggle(props.id);
     else return;
+    e.preventDefault();
+    e.stopPropagation();
+  }
+
+  /** On a Mac, Ctrl-click arrives as a context menu (left button): select instead, like ⌘-click. */
+  function onContextMenuCapture(e: MouseEvent) {
+    if (!e.ctrlKey || e.button !== 0 || !list.selectable.value) return;
+    list.toggle(props.id);
     e.preventDefault();
     e.stopPropagation();
   }
@@ -51,17 +60,6 @@
     const control = (e.target as Element).closest(INTERACTIVE);
     if (e.defaultPrevented || (control && control !== e.currentTarget)) return;
     list.open(props.id);
-  }
-
-  /** The ⋯ button opens the same menu as a right-click, below the button. */
-  function openMenuFrom(e: MouseEvent) {
-    const button = e.currentTarget as HTMLElement;
-    const rect = button.getBoundingClientRect();
-    document
-      .getElementById(list.rowId(props.id))
-      ?.dispatchEvent(
-        new MouseEvent("contextmenu", { bubbles: true, cancelable: true, clientX: rect.left, clientY: rect.bottom + 4 })
-      );
   }
 
   function onMenuOpen(open: boolean) {
@@ -88,9 +86,10 @@
           )
         "
         @click.capture="onClickCapture"
+        @contextmenu.capture="onContextMenuCapture"
         @click="onClick"
         @mousedown="e => e.shiftKey && e.preventDefault()"
-        @mouseenter="list.focus(id)"
+        @mouseenter="list.hover(id)"
       >
         <span
           v-if="list.selectable.value"
@@ -132,17 +131,6 @@
         >
           <slot name="right" />
         </span>
-        <button
-          v-if="$slots.menu"
-          type="button"
-          tabindex="-1"
-          class="-mr-1.5 flex size-6 shrink-0 items-center justify-center rounded text-muted-foreground opacity-0 group-hover/row:opacity-100 hover:bg-accent hover:text-foreground pointer-coarse:opacity-100"
-          :class="{ 'opacity-100': focused || menuOpen }"
-          :aria-label="t('shell.resource.more_actions')"
-          @click.stop="openMenuFrom"
-        >
-          <Ellipsis class="size-4" />
-        </button>
       </div>
     </ContextMenuTrigger>
     <ContextMenuContent v-if="$slots.menu" class="w-56">

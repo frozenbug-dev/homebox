@@ -5,6 +5,7 @@
   import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 
   /** Toggle tags on and off from a searchable list. The trigger is the default slot. */
+  defineProps<{ align?: "start" | "end" }>();
   const selected = defineModel<string[]>({ required: true });
   const open = defineModel<boolean>("open", { default: false });
 
@@ -20,7 +21,7 @@
     <PopoverTrigger as-child>
       <slot />
     </PopoverTrigger>
-    <PopoverContent class="w-64 p-0" align="start">
+    <PopoverContent class="w-64 p-0" :align="align ?? 'start'" @click.stop>
       <Command>
         <CommandInput :placeholder="$t('components.search.filter.search_placeholder')" @keydown.esc="open = false" />
         <CommandList class="max-h-64">

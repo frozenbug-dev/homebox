@@ -46,9 +46,10 @@
   const sort = useRouteQuery<string>("sort", "createdAt", opts);
   const dir = useRouteQuery<string>("dir", "desc", opts);
 
+  // What's typed in the filter menu; only applied (to `q`) on Enter, so the list and the
+  // chips don't shift under the open menu while typing.
   const search = ref(q.value);
-  const debouncedSearch = refDebounced(search, 250);
-  watch(debouncedSearch, v => (q.value = v));
+  watch(q, v => (search.value = v));
 
   // A chip can exist before it has values (it was just added and its picker is open).
   const showPlaceChip = ref(placeIds.value.length > 0);
@@ -84,6 +85,8 @@
 
   // Text search lives at the top of the filter menu and gets focus whenever the menu opens.
   const filterMenuOpen = ref(false);
+  // Closed without Enter: forget the unapplied text.
+  watch(filterMenuOpen, open => !open && (search.value = q.value));
   const searchInput = useTemplateRef<HTMLInputElement>("searchInput");
   useHotkey("/", () => (filterMenuOpen.value = true), {
     meta: { name: t("shell.items_page.focus_search"), group: "list" },
@@ -169,7 +172,7 @@
   <div class="flex flex-col">
     <AppSubheader>
       <span
-        v-if="search"
+        v-if="q"
         class="inline-flex h-7 max-w-56 min-w-0 items-center rounded-md border border-border bg-background text-xs"
       >
         <button
@@ -178,7 +181,7 @@
           @click="filterMenuOpen = true"
         >
           <span class="shrink-0 text-muted-foreground">{{ t("shell.items_page.text_matches") }}</span>
-          <span class="truncate font-medium">“{{ search }}”</span>
+          <span class="truncate font-medium">“{{ q }}”</span>
         </button>
         <button
           type="button"
@@ -253,7 +256,8 @@
               class="h-full min-w-0 flex-1 bg-transparent text-foreground outline-none placeholder:text-muted-foreground"
               @keydown="onSearchKeydown"
             />
-            <ShortcutHint hotkey="/" />
+            <kbd v-if="search !== q" class="text-[11px] text-muted-foreground max-md:hidden">↵</kbd>
+            <ShortcutHint v-else hotkey="/" />
           </label>
           <DropdownMenuSeparator />
           <DropdownMenuItem @select="addPlaceFilter">{{ t("shell.items_page.filter_place") }}…</DropdownMenuItem>

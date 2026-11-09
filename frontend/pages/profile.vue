@@ -17,6 +17,7 @@
   import ItemDuplicateSettings from "~/components/Item/DuplicateSettings.vue";
   import FormPassword from "~/components/Form/Password.vue";
   import FormTextField from "~/components/Form/TextField.vue";
+  import FormDatePicker from "~/components/Form/DatePicker.vue";
   import FormCheckbox from "~/components/Form/Checkbox.vue";
   import BaseContainer from "@/components/Base/Container.vue";
   import BaseCard from "@/components/Base/Card.vue";
@@ -263,12 +264,11 @@
             {{ $t("profile.api_key_default_expiration") }}
           </p>
           <div v-if="apiKeyForm.setExpiration" class="mb-2">
-            <label class="mb-1 block text-sm font-medium">{{ $t("profile.api_key_expires_at") }}</label>
-            <input
-              v-model="apiKeyForm.expiresAt"
-              type="date"
-              class="w-full rounded-md border bg-background px-3 py-2 text-sm"
-              :required="apiKeyForm.setExpiration"
+            <FormDatePicker
+              :model-value="apiKeyForm.expiresAt"
+              :label="$t('profile.api_key_expires_at')"
+              :clearable="false"
+              @update:model-value="v => (apiKeyForm.expiresAt = typeof v === 'string' ? v : '')"
             />
           </div>
 

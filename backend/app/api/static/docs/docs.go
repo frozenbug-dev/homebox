@@ -295,6 +295,16 @@ const docTemplate = `{
                             "type": "string"
                         },
                         "collectionFormat": "multi",
+                        "description": "direct parent IDs; matches the actual parent, wherever the entity is stored",
+                        "name": "parentItemIds",
+                        "in": "query"
+                    },
+                    {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "collectionFormat": "multi",
                         "description": "entity type IDs; when provided this filter takes precedence over isLocation",
                         "name": "entityTypeIds",
                         "in": "query"
@@ -5908,6 +5918,11 @@ const docTemplate = `{
                 },
                 "parentId": {
                     "type": "string",
+                    "x-nullable": true,
+                    "x-omitempty": true
+                },
+                "purchasePrice": {
+                    "type": "number",
                     "x-nullable": true,
                     "x-omitempty": true
                 },

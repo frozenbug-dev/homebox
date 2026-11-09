@@ -29,9 +29,9 @@
   <ResourceRow :id="template.id">
     <template #left>
       <FileText class="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
-      <NuxtLink :to="`/template/${template.id}`" class="shrink-0 truncate font-medium" tabindex="-1">
+      <span class="shrink-0 truncate font-medium">
         {{ template.name }}
-      </NuxtLink>
+      </span>
       <span v-if="template.description" class="truncate text-[13px] text-muted-foreground">
         {{ template.description }}
       </span>

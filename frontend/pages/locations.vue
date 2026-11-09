@@ -30,6 +30,9 @@
   import TagPicker from "~/components/Item/Inline/TagPicker.vue";
   import TagChip from "~/components/Tag/Chip.vue";
   import PlaceDetails from "~/components/Places/PlaceDetails.vue";
+  import CoverPhoto from "~/components/Entity/CoverPhoto.vue";
+  import ItemImageDialog from "~/components/Item/ImageDialog.vue";
+  import { entityPhotos, type EntityPhoto } from "~/lib/entity-photos";
   import type { EntityOut, EntityUpdate } from "~/lib/api/types/data-contracts";
   import ShortcutHint from "~/components/App/ShortcutHint.vue";
   import AppHeaderActions from "~/components/App/HeaderActions.vue";
@@ -161,6 +164,16 @@
 
   function reloadPlace() {
     queryClient.invalidateQueries({ queryKey: placeKey.value });
+  }
+
+  /** The cover beside the name (the primary photo); the Details tab shows the rest. */
+  const cover = computed(() => (place.value ? entityPhotos(place.value, path => api.authURL(path))[0] : undefined));
+  function openPhoto(photo: EntityPhoto) {
+    if (!place.value) return;
+    openDialog(DialogID.ItemImage, {
+      params: { type: "preloaded", ...photo, itemId: place.value.id },
+      onClose: result => result?.action === "delete" && reloadPlace(),
+    });
   }
 
   const placeTags = computed(() => tagStore.withAncestors(place.value?.tags ?? []));
@@ -393,6 +406,7 @@
 
 <template>
   <div class="grid flex-1 md:grid-cols-[21rem_minmax(0,1fr)] xl:grid-cols-[24rem_minmax(0,1fr)]">
+    <ItemImageDialog />
     <AppHeaderActions>
       <Button variant="outline" size="sm" class="h-[30px] text-[13px] max-sm:hidden" @click="printAllLabels">
         {{ t("shell.places_page.print_labels") }}
@@ -448,6 +462,7 @@
           @create="createPlace"
           @cancel-create="addingIn = undefined"
           @action="onTreeAction"
+          @move="(id, parentId) => (parentId ? drop({ kind: 'place', id }, parentId) : moveToTopLevel(id))"
         />
         <div
           v-if="canMoveToTop"
@@ -485,60 +500,64 @@
           </template>
         </nav>
 
-        <div class="flex flex-wrap items-center gap-3">
-          <div class="min-w-0 flex-1">
-            <InlineText
-              ref="title"
-              :value="place?.name ?? selected.name"
-              :label="t('shell.places_page.rename')"
-              wrap
-              class="-mx-1.5 text-2xl font-semibold tracking-tight"
-              @save="rename"
-            />
-          </div>
-          <Button variant="outline" size="sm" class="h-[30px] text-[13px] max-sm:hidden" @click="printLabel">
-            {{ t("shell.places_page.print_label") }}
-            <ShortcutHint :hotkey="SHORTCUTS.placePrint" />
-          </Button>
-          <DropdownMenu>
-            <DropdownMenuTrigger as-child>
-              <Button variant="outline" size="icon" class="size-[30px]" :aria-label="t('shell.item_page.more')">
-                <Ellipsis class="size-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" class="w-56">
-              <DropdownMenuItem @select="addInside">
-                <Plus class="size-4" />
-                {{ t("shell.places_page.add_inside") }}
-                <ShortcutHint :hotkey="SHORTCUTS.placeAddInside" class="ml-auto" />
-              </DropdownMenuItem>
-              <DropdownMenuItem class="sm:hidden" @select="printLabel">
-                <Printer class="size-4" />
+        <div class="flex items-start gap-4">
+          <CoverPhoto v-if="place" :entity-id="place.id" :photo="cover" @uploaded="reloadPlace" @view="openPhoto" />
+          <div class="flex min-w-0 flex-1 flex-col gap-1">
+            <div class="flex flex-wrap items-center gap-3">
+              <div class="min-w-0 flex-1">
+                <InlineText
+                  ref="title"
+                  :value="place?.name ?? selected.name"
+                  :label="t('shell.places_page.rename')"
+                  wrap
+                  class="-mx-1.5 text-2xl font-semibold tracking-tight"
+                  @save="rename"
+                />
+              </div>
+              <Button variant="outline" size="sm" class="h-[30px] text-[13px] max-sm:hidden" @click="printLabel">
                 {{ t("shell.places_page.print_label") }}
-              </DropdownMenuItem>
-              <DropdownMenuItem @select="copyLink">
-                <LinkIcon class="size-4" />
-                {{ t("shell.item_page.copy_link") }}
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem class="text-destructive focus:text-destructive" @select="deletePlace(selected.id)">
-                <Trash2 class="size-4" />
-                {{ t("shell.places_page.delete_place") }}
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+                <ShortcutHint :hotkey="SHORTCUTS.placePrint" />
+              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger as-child>
+                  <Button variant="outline" size="icon" class="size-[30px]" :aria-label="t('shell.item_page.more')">
+                    <Ellipsis class="size-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" class="w-56">
+                  <DropdownMenuItem @select="addInside">
+                    <Plus class="size-4" />
+                    {{ t("shell.places_page.add_inside") }}
+                    <ShortcutHint :hotkey="SHORTCUTS.placeAddInside" class="ml-auto" />
+                  </DropdownMenuItem>
+                  <DropdownMenuItem class="sm:hidden" @select="printLabel">
+                    <Printer class="size-4" />
+                    {{ t("shell.places_page.print_label") }}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem @select="copyLink">
+                    <LinkIcon class="size-4" />
+                    {{ t("shell.item_page.copy_link") }}
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem class="text-destructive focus:text-destructive" @select="deletePlace(selected.id)">
+                    <Trash2 class="size-4" />
+                    {{ t("shell.places_page.delete_place") }}
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+            <div v-if="place" class="max-w-160">
+              <InlineMarkdown
+                :value="place.description"
+                :label="$t('items.description')"
+                :placeholder="t('shell.item_page.add_description')"
+                @save="description => updatePlace({ description })"
+              />
+            </div>
+          </div>
         </div>
 
         <template v-if="place">
-          <div class="-mt-1 max-w-160">
-            <InlineMarkdown
-              :value="place.description"
-              :label="$t('items.description')"
-              :placeholder="t('shell.item_page.add_description')"
-              @save="description => updatePlace({ description })"
-            />
-          </div>
-
           <!-- Properties, each edited where it sits -->
           <div class="flex flex-wrap items-center gap-1.5 text-[12.5px]">
             <PlacePicker
@@ -630,16 +649,6 @@
             }}</span>
           </button>
         </div>
-        <span class="flex-1" />
-        <template v-if="tab !== 'details'">
-          <button
-            type="button"
-            class="flex h-7 shrink-0 items-center gap-1.5 rounded-[7px] border border-primary bg-primary/10 px-2.5 font-medium text-foreground hover:bg-primary/15"
-            @click="moveItemsHere"
-          >
-            {{ t("shell.places_page.move_items_here") }}
-          </button>
-        </template>
       </AppSubheader>
 
       <PlaceDetails v-if="tab === 'details' && place" :place="place" @update="updatePlace" @reload="reloadPlace" />

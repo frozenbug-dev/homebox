@@ -1005,6 +1005,7 @@ export interface EntityPatch {
   id: string;
   locationId?: string | null;
   parentId?: string | null;
+  purchasePrice?: number | null;
   quantity?: number | null;
   tagIds?: string[] | null;
 }

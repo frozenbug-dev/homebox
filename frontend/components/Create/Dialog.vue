@@ -23,8 +23,10 @@
       submitLabel: string;
       loading?: boolean;
       size?: "md" | "sm";
+      /** Shows the "Create more" switch; off for dialogs that edit. */
+      allowCreateMore?: boolean;
     }>(),
-    { loading: false, size: "md" }
+    { loading: false, size: "md", allowCreateMore: true }
   );
 
   /** `keepOpen` is the "Create more" switch: create, clear the form and stay. */
@@ -47,7 +49,7 @@
   const createMore = useLocalStorage(`homebox:create-more:${props.dialogId}`, false);
 
   function submit() {
-    if (!props.loading) emit("submit", createMore.value);
+    if (!props.loading) emit("submit", props.allowCreateMore && createMore.value);
   }
 
   /**
@@ -121,6 +123,7 @@
           <slot name="footer-left" />
           <span class="flex-1" />
           <label
+            v-if="allowCreateMore"
             class="mr-3 flex cursor-pointer items-center gap-2 text-[13px] text-muted-foreground select-none max-md:mr-0 max-md:min-h-11"
           >
             <Switch

@@ -44,7 +44,7 @@
         ? { backgroundColor: tag.color, color: getContrastTextColor(tag.color) }
         : { backgroundColor: 'hsl(var(--accent))' }
     "
-    :to="`/tag/${tag.id}`"
+    :to="`/tags?tag=${tag.id}`"
   >
     <template v-if="!hideIcon">
       <div class="relative">

@@ -7,9 +7,9 @@
   import MdiFormatAlignRight from "~icons/mdi/format-align-right";
   import MdiFormatSize from "~icons/mdi/format-size";
   import MdiTextBoxPlus from "~icons/mdi/text-box-plus";
-  import { Input } from "@/components/ui/input";
   import { Button } from "@/components/ui/button";
   import { Label } from "@/components/ui/label";
+  import { NumberField } from "@/components/ui/number-field";
   import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
   import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
@@ -231,13 +231,12 @@
     <!-- Font Size -->
     <div class="flex items-center gap-1">
       <MdiFormatSize class="size-4 text-muted-foreground" />
-      <Input
-        type="number"
+      <NumberField
         :model-value="objectProps.fontSize"
         class="h-8 w-16"
-        min="6"
-        max="72"
-        @update:model-value="handleFontSizeChange(String($event))"
+        :min="6"
+        :max="72"
+        @update:model-value="v => handleFontSizeChange(String(v ?? ''))"
       />
     </div>
 
@@ -313,13 +312,12 @@
     <!-- Text Width -->
     <div class="flex items-center gap-1">
       <Label class="text-xs text-muted-foreground">W</Label>
-      <Input
-        type="number"
-        :model-value="textboxWidthInUnit"
+      <NumberField
+        :model-value="Number(textboxWidthInUnit)"
         :step="widthStep"
         class="h-8 w-20"
-        min="0"
-        @change="handleTextboxWidthChange(($event.target as HTMLInputElement).value)"
+        :min="0"
+        @update:model-value="v => handleTextboxWidthChange(String(v ?? ''))"
       />
       <span class="shrink-0 text-xs text-muted-foreground">{{ unit }}</span>
     </div>
@@ -354,14 +352,13 @@
                   {{ $t("components.label_template.editor.properties.max_width") }}
                 </Label>
                 <div class="flex items-center gap-1">
-                  <Input
+                  <NumberField
                     id="fixedWidth"
-                    type="number"
-                    :model-value="objectProps.fixedWidth || ''"
+                    :model-value="objectProps.fixedWidth || null"
                     :placeholder="$t('components.label_template.editor.properties.auto')"
                     class="h-7 text-xs"
-                    min="20"
-                    @update:model-value="handleFixedWidthChange(String($event))"
+                    :min="20"
+                    @update:model-value="v => handleFixedWidthChange(String(v ?? ''))"
                   />
                   <span class="text-xs text-muted-foreground">px</span>
                 </div>
@@ -371,14 +368,13 @@
                   {{ $t("components.label_template.editor.properties.max_height") }}
                 </Label>
                 <div class="flex items-center gap-1">
-                  <Input
+                  <NumberField
                     id="fixedHeight"
-                    type="number"
-                    :model-value="objectProps.fixedHeight || ''"
+                    :model-value="objectProps.fixedHeight || null"
                     :placeholder="$t('components.label_template.editor.properties.auto')"
                     class="h-7 text-xs"
-                    min="10"
-                    @update:model-value="handleFixedHeightChange(String($event))"
+                    :min="10"
+                    @update:model-value="v => handleFixedHeightChange(String(v ?? ''))"
                   />
                   <span class="text-xs text-muted-foreground">px</span>
                 </div>

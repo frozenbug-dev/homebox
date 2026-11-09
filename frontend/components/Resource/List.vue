@@ -14,7 +14,7 @@
    *     <template #default="{ item }"><ItemResource :item="item" /></template>
    *   </ResourceList>
    *
-   * Mouse: click opens, ⌘/Ctrl-click toggles one row, ⇧-click selects a range.
+   * Mouse: click opens, ⌘/Ctrl/⌥-click toggles one row, ⇧-click selects a range.
    * Keys anywhere on the page: J/K move, ⇧J/⇧K extend, X toggles, Enter opens,
    * ⌘A selects all, Esc clears. With the list focused: ↑/↓ (and ⇧), Home/End,
    * Space toggles, ⇧F10 or the menu key opens the row's context menu.
@@ -68,6 +68,16 @@
   // ----- Focus (one "active" row, moved by keys and by hovering) -----
 
   const focused = ref<string | null>(null);
+  /** The active row came from hovering (not the keyboard), so it's dropped when the pointer leaves. */
+  const focusedByPointer = ref(false);
+  watch(focused, () => (focusedByPointer.value = false), { flush: "sync" });
+  function hover(key: string) {
+    focused.value = key;
+    focusedByPointer.value = true;
+  }
+  function onPointerLeave() {
+    if (focusedByPointer.value && !menuKey.value) focused.value = null;
+  }
   const focusedIndex = computed(() => (focused.value ? (indexOf.value.get(focused.value) ?? -1) : -1));
   watch(keys, k => {
     if (focused.value && !indexOf.value.has(focused.value))
@@ -115,6 +125,8 @@
       focused.value = key;
     } else if (menuKey.value === key) {
       menuKey.value = null;
+      // Closed with the pointer elsewhere: don't leave the row looking hovered.
+      if (!refocusAfterMenu && !listEl.value?.matches(":hover")) focused.value = null;
       if (refocusAfterMenu) nextTick(() => listEl.value?.focus());
       refocusAfterMenu = false;
     }
@@ -249,6 +261,7 @@
     selectable: computed(() => props.selectable),
     rowId,
     focus: key => (focused.value = key),
+    hover,
     toggle: toggleKey,
     extendTo,
     open,
@@ -283,6 +296,7 @@
       :style="virtual ? { height: `${virtualizer.getTotalSize()}px` } : undefined"
       @keydown="onKeydown"
       @focus="onFocus"
+      @mouseleave="onPointerLeave"
     >
       <template v-if="virtual">
         <div

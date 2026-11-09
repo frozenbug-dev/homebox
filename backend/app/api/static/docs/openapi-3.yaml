@@ -183,6 +183,15 @@ paths:
             type: array
             items:
               type: string
+        - description: direct parent IDs; matches the actual parent, wherever the entity
+            is stored
+          name: parentItemIds
+          in: query
+          explode: true
+          schema:
+            type: array
+            items:
+              type: string
         - description: entity type IDs; when provided this filter takes precedence over
             isLocation
           name: entityTypeIds
@@ -3957,6 +3966,10 @@ components:
           nullable: true
         parentId:
           type: string
+          x-omitempty: true
+          nullable: true
+        purchasePrice:
+          type: number
           x-omitempty: true
           nullable: true
         quantity:

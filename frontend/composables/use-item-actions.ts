@@ -1,6 +1,6 @@
 import { useI18n } from "vue-i18n";
 import { useQueryClient } from "@tanstack/vue-query";
-import type { EntitySummary } from "~/lib/api/types/data-contracts";
+import type { EntitySummary, TagSummary } from "~/lib/api/types/data-contracts";
 import { toast } from "@/components/ui/sonner";
 import { useDialog } from "@/components/ui/dialog-provider";
 import { DialogID } from "@/components/ui/dialog-provider/utils";
@@ -86,10 +86,76 @@ export function useItemActions({ clear, changed }: { clear?: () => void; changed
     );
   }
 
+  /** Move several items into a place at once (the context menu's "Move to" submenu). */
+  function moveAllTo(items: EntitySummary[], place: { id: string; name: string }) {
+    const moving = items.filter(i => i.parent?.id !== place.id);
+    if (!moving.length) return;
+    let left = moving.length;
+    for (const item of moving) {
+      patch(
+        {
+          patch: { id: item.id, parentId: place.id },
+          optimistic: { parent: { ...(item.parent ?? item), id: place.id, name: place.name } },
+        },
+        {
+          onSuccess: () => {
+            if (--left > 0) return;
+            toast.success(t("shell.items_page.moved_to", { place: place.name }));
+            clear?.();
+            changed?.();
+          },
+        }
+      );
+    }
+  }
+
+  /** Add a tag to every item, or take it off all of them when they all have it already. */
+  function toggleTag(items: EntitySummary[], tag: TagSummary) {
+    const all = items.every(i => i.tags.some(x => x.id === tag.id));
+    for (const item of items) {
+      const tags = all ? item.tags.filter(x => x.id !== tag.id) : [...item.tags.filter(x => x.id !== tag.id), tag];
+      patch(
+        { patch: { id: item.id, tagIds: tags.map(x => x.id) }, optimistic: { tags } },
+        { onSuccess: () => changed?.() }
+      );
+    }
+  }
+
   function setQuantity(item: EntitySummary, quantity: number) {
     if (quantity >= 0)
       patch({ patch: { id: item.id, quantity }, optimistic: { quantity } }, { onSuccess: () => changed?.() });
   }
 
-  return { move, tag, print, duplicate, copyLink, remove, moveTo, setQuantity };
+  function setTags(item: EntitySummary, tags: TagSummary[]) {
+    patch(
+      { patch: { id: item.id, tagIds: tags.map(x => x.id) }, optimistic: { tags } },
+      { onSuccess: () => changed?.() }
+    );
+  }
+
+  function setPrice(item: EntitySummary, purchasePrice: number) {
+    if (purchasePrice >= 0)
+      patch({ patch: { id: item.id, purchasePrice }, optimistic: { purchasePrice } }, { onSuccess: () => changed?.() });
+  }
+
+  /** Edit an item's quantity or price in a dialog (the context menu's "Change …" entries). */
+  function editNumber(item: EntitySummary, field: "quantity" | "purchasePrice") {
+    openDialog(DialogID.ItemEditNumber, { params: { item, field }, onClose: saved => saved && changed?.() });
+  }
+
+  return {
+    editNumber,
+    move,
+    tag,
+    print,
+    duplicate,
+    copyLink,
+    remove,
+    moveTo,
+    moveAllTo,
+    toggleTag,
+    setTags,
+    setQuantity,
+    setPrice,
+  };
 }

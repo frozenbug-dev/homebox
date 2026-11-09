@@ -103,14 +103,13 @@
               <tr v-for="id in currentIds" :key="id" class="border-t">
                 <td class="truncate py-1.5 pr-2">{{ nameFor(id) }}</td>
                 <td class="w-20 py-1.5 text-right">
-                  <Input
+                  <NumberField
                     :model-value="getQuantity(id)"
-                    type="number"
-                    min="1"
-                    max="100"
+                    :min="1"
+                    :max="100"
                     class="h-8 w-16 text-center"
                     :aria-label="$t('components.label_template.print_dialog.copies')"
-                    @update:model-value="setQuantity(id, Number($event))"
+                    @update:model-value="v => setQuantity(id, v ?? 1)"
                   />
                 </td>
               </tr>
@@ -189,7 +188,7 @@
   import MdiDesktopClassic from "~icons/mdi/desktop-classic";
   import { Button } from "@/components/ui/button";
   import { Label } from "@/components/ui/label";
-  import { Input } from "@/components/ui/input";
+  import { NumberField } from "@/components/ui/number-field";
   import { useDialog, DialogID } from "@/components/ui/dialog-provider/utils";
   import BaseModal from "@/components/App/CreateModal.vue";
 

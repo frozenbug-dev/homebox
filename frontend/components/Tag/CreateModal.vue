@@ -109,7 +109,7 @@
 
     if (close) {
       closeDialog(DialogID.CreateTag);
-      await navigateTo(`/tag/${data.id}`);
+      await navigateTo(`/tags?tag=${data.id}`);
     } else {
       form.parentId = keepParent;
       nameInput.value?.focus();

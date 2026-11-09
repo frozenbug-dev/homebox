@@ -1,14 +1,15 @@
 <script setup lang="ts">
   import { useI18n } from "vue-i18n";
+  import { Info, Link as LinkIcon, Plus, Ticket, Trash2 } from "@lucide/vue";
   import { Button } from "@/components/ui/button";
-  import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-  import MdiPlus from "~icons/mdi/plus";
+  import { DropdownMenuItem, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
+  import SettingsSection from "~/components/Settings/Section.vue";
+  import SettingsGroup from "~/components/Settings/Group.vue";
+  import SettingsListRow from "~/components/Settings/ListRow.vue";
   import { toast } from "@/components/ui/sonner";
   import { useUserApi } from "~/composables/use-api";
   import { useDialog } from "~/components/ui/dialog-provider";
   import { DialogID } from "@/components/ui/dialog-provider/utils";
-  import ResourceList from "~/components/Resource/List.vue";
-  import InviteResource from "~/components/Resource/InviteResource.vue";
   import type { Group, GroupInvitation } from "~~/lib/api/types/data-contracts";
 
   definePageMeta({
@@ -18,9 +19,7 @@
   type Invitation = GroupInvitation & { id: string; group?: Group };
   type InvitationResult = GroupInvitation & { id: string; group?: Group };
 
-  const { t } = useI18n();
-
-  useHead({ title: `HomeBox | ${t("collection.tabs.invites")}` });
+  const { t, locale } = useI18n();
 
   const api = useUserApi();
   const { openDialog } = useDialog();
@@ -58,7 +57,6 @@
         toast.error(msg);
       } else {
         invites.value = (res.data || []) as Invitation[];
-        console.log("Loaded invites:", invites.value);
       }
     } catch (e) {
       const msg = (e as Error).message ?? String(e);
@@ -74,8 +72,6 @@
     openDialog(DialogID.CreateGroupInvite, {
       onClose: (result?: InvitationResult) => {
         if (!result) return;
-
-        console.log("Created invite:", result);
 
         const localInvite: Invitation = {
           ...(result as InvitationResult),
@@ -114,60 +110,81 @@
     }
   };
 
+  const inviteLink = (inv: Invitation) => `${window.location.protocol}//${window.location.host}?token=${inv.token}`;
+
+  async function copyLink(inv: Invitation) {
+    if (!inv.token) return;
+    await navigator.clipboard.writeText(inviteLink(inv));
+    toast.success(t("shell.resource.link_copied"));
+  }
+
+  const describe = (inv: Invitation) =>
+    [
+      inv.expiresAt
+        ? t("collection.settings.invite_expires", {
+            date: new Date(inv.expiresAt).toLocaleString(locale.value, { dateStyle: "medium", timeStyle: "short" }),
+          })
+        : "",
+      t("shell.invites_page.uses", { n: inv.uses }),
+    ]
+      .filter(Boolean)
+      .join(" · ");
+
   onMounted(() => {
     loadInvites();
   });
 </script>
 
 <template>
-  <div class="space-y-4">
-    <Teleport to="#collection-header-actions" defer>
-      <TooltipProvider :delay-duration="0">
-        <Tooltip>
-          <TooltipTrigger as-child>
-            <Button
-              class="size-8"
-              variant="outline"
-              size="icon"
-              :aria-label="$t('collection.create_invite')"
-              :disabled="loading"
-              @click="handleOpenCreate"
-            >
-              <MdiPlus class="size-4" />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>
-            {{ $t("collection.create_invite") }}
-          </TooltipContent>
-        </Tooltip>
-      </TooltipProvider>
-    </Teleport>
-
-    <div v-if="loading" class="rounded-md border bg-card p-4 text-sm text-muted-foreground">
-      {{ $t("global.loading") }}
-    </div>
-
-    <div v-else class="space-y-3">
-      <div v-if="localInvites.length" class="rounded-md bg-secondary p-3 text-xs font-bold text-secondary-foreground">
-        {{ $t("collection.invite_token_warning") }}
-      </div>
-
-      <div v-if="!allInvites.length" class="rounded-md border bg-card p-4 text-sm text-muted-foreground">
-        {{ $t("collection.no_invites") }}
-      </div>
-
-      <ResourceList
-        v-else
-        class="rounded-md border bg-card py-1.5"
-        :items="allInvites"
-        :get-key="inv => inv.id || inv.token"
-        :label="$t('collection.tabs.invites')"
-        :selectable="false"
+  <SettingsSection :title="t('collection.settings.nav.invites')" :description="t('collection.settings.invites_sub')">
+    <template #actions>
+      <Button size="sm" :disabled="loading" @click="handleOpenCreate"
+        ><Plus /> {{ t("collection.create_invite") }}</Button
       >
-        <template #default="{ item }">
-          <InviteResource :invite="item" :row-key="item.id || item.token" @delete="handleDelete" />
-        </template>
-      </ResourceList>
+    </template>
+
+    <p v-if="loading" class="text-sm text-muted-foreground">{{ t("global.loading") }}</p>
+
+    <div v-else>
+      <div
+        v-if="localInvites.length"
+        class="mb-3 flex items-start gap-2.5 rounded-[10px] bg-muted px-3.5 py-3 text-[13px]"
+      >
+        <Info class="mt-px size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+        <span>{{ t("collection.invite_token_warning") }}</span>
+      </div>
+
+      <p v-if="!allInvites.length" class="text-sm text-muted-foreground">{{ t("collection.no_invites") }}</p>
+
+      <SettingsGroup v-else>
+        <SettingsListRow v-for="inv in allInvites" :key="inv.id || inv.token" :subtitle="describe(inv)">
+          <template #icon><Ticket /></template>
+          <template #title>
+            <span v-if="inv.token" class="truncate font-mono text-[13px]">{{ inv.token }}</span>
+            <span v-else class="truncate font-normal text-muted-foreground">{{
+              t("collection.invite_token_hidden")
+            }}</span>
+          </template>
+          <Button v-if="inv.token" variant="outline" size="sm" @click="copyLink(inv)">
+            <LinkIcon /> {{ t("collection.copy_invite") }}
+          </Button>
+          <template #menu>
+            <template v-if="inv.token">
+              <DropdownMenuItem @select="copyLink(inv)"
+                ><LinkIcon /> {{ t("collection.copy_invite") }}</DropdownMenuItem
+              >
+              <DropdownMenuSeparator />
+            </template>
+            <DropdownMenuItem
+              class="text-destructive focus:text-destructive"
+              :disabled="removing[inv.id]"
+              @select="handleDelete(inv)"
+            >
+              <Trash2 /> {{ t("global.delete") }}
+            </DropdownMenuItem>
+          </template>
+        </SettingsListRow>
+      </SettingsGroup>
     </div>
-  </div>
+  </SettingsSection>
 </template>

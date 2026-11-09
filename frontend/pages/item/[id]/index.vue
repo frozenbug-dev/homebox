@@ -6,8 +6,8 @@
     CopyPlus,
     Ellipsis,
     LayoutTemplate,
-    Pencil,
     Printer,
+    HandCoins,
     QrCode,
     Link as LinkIcon,
     Plus,
@@ -15,17 +15,15 @@
     Wrench,
   } from "@lucide/vue";
   import { toast } from "@/components/ui/sonner";
-  import FieldsEditor from "~/components/Item/FieldsEditor.vue";
   import AddAttachmentTiles from "~/components/Entity/AddAttachmentTiles.vue";
-  import type { Detail, Details } from "~~/components/global/DetailsSection/types";
-  import { filterZeroValues } from "~~/components/global/DetailsSection/types";
-  import type { EntityPatch, EntityUpdate, ItemAttachment } from "~~/lib/api/types/data-contracts";
+  import CoverPhoto from "~/components/Entity/CoverPhoto.vue";
+  import { entityPhotos, type EntityPhoto } from "~/lib/entity-photos";
+  import type { EntityPatch, EntitySummary, EntityUpdate, ItemAttachment } from "~~/lib/api/types/data-contracts";
   import { templateField } from "~~/lib/api/template-fields";
   import { toEntityUpdate } from "~/lib/entity-update";
   import { SHORTCUTS } from "~/lib/shortcuts";
   import {
     DropdownMenu,
-    DropdownMenuCheckboxItem,
     DropdownMenuContent,
     DropdownMenuItem,
     DropdownMenuSeparator,
@@ -35,17 +33,18 @@
   import { useDialog } from "@/components/ui/dialog-provider";
   import { DialogID } from "~/components/ui/dialog-provider/utils";
   import ItemImageDialog from "~/components/Item/ImageDialog.vue";
+  import AttachmentEditDialog from "~/components/Item/AttachmentEditDialog.vue";
   import ItemDuplicateSettings from "~/components/Item/DuplicateSettings.vue";
   import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
   import PageQRCode from "~/components/global/PageQRCode.vue";
   import AppHeaderActions from "~/components/App/HeaderActions.vue";
-  import DetailsSection from "~/components/global/DetailsSection/DetailsSection.vue";
   import ItemAttachmentsList from "~/components/Item/AttachmentsList.vue";
   import ItemList from "~/components/Items/List.vue";
   import PropertiesPanel from "~/components/Item/PropertiesPanel.vue";
   import ShortcutHint from "~/components/App/ShortcutHint.vue";
   import InlineText from "~/components/Item/Inline/Text.vue";
   import InlineMarkdown from "~/components/Item/Inline/Markdown.vue";
+  import InlineDate from "~/components/Item/Inline/Date.vue";
 
   const { t } = useI18n();
 
@@ -70,7 +69,7 @@
     copyPrefixOverride: preferences.value.duplicateSettings.copyPrefixOverride,
   });
 
-  /** True on the Maintenance and Edit sub-pages, which render through <NuxtPage>. */
+  /** True on the Maintenance sub-page, which renders through <NuxtPage>. */
   const hasNested = computed<boolean>(() => {
     return route.fullPath.split("/").at(-1) !== itemId.value;
   });
@@ -89,15 +88,6 @@
   );
   onMounted(() => {
     refresh();
-  });
-
-  const lastRoute = ref(route.fullPath);
-  watchEffect(() => {
-    if (lastRoute.value.endsWith("edit")) {
-      refresh();
-    }
-
-    lastRoute.value = route.fullPath;
   });
 
   // ----- Saving single fields -----
@@ -186,155 +176,71 @@
     toast.success(t("shell.item_page.link_copied"));
   }
 
-  type FilteredAttachments = {
-    attachments: ItemAttachment[];
-    warranty: ItemAttachment[];
-    manuals: ItemAttachment[];
-    receipts: ItemAttachment[];
-  };
+  type Photo = EntityPhoto;
 
-  type Photo = {
-    thumbnailSrc?: string;
-    originalSrc: string;
-    attachmentId: string;
-    originalType?: string;
-  };
+  /** Primary photo first: it's the cover beside the title, the rest sit below. */
+  const photos = computed<Photo[]>(() => (item.value ? entityPhotos(item.value, path => api.authURL(path)) : []));
+  const cover = computed(() => photos.value[0]);
+  const morePhotos = computed(() => photos.value.slice(1));
 
-  const photos = computed<Photo[]>(() => {
-    if (!item.value) {
-      return [];
+  /** Files other than photos, plain attachments first, then manuals, warranties and receipts. */
+  const typeOrder: Record<string, number> = { manual: 1, warranty: 2, receipt: 3 };
+  const files = computed<ItemAttachment[]>(() =>
+    (item.value?.attachments ?? [])
+      .filter(a => a.type !== "photo")
+      .sort((a, b) => (typeOrder[a.type] ?? 0) - (typeOrder[b.type] ?? 0))
+  );
+
+  /** The Sold section shows once anything about a sale is recorded, or after "Mark as sold". */
+  const markingSold = ref(false);
+  const isSold = computed(
+    () =>
+      !!item.value &&
+      (!!item.value.soldTo || item.value.soldPrice !== 0 || validDate(item.value.soldDate) || !!item.value.soldNotes)
+  );
+  const showSold = computed(() => isSold.value || markingSold.value);
+  watch(itemId, () => (markingSold.value = false));
+
+  const formatCurrency = shallowRef<((value: number | string) => string) | null>(null);
+  useFormatCurrency().then(fn => (formatCurrency.value = fn));
+  const soldPrice = computed(() =>
+    item.value?.soldPrice ? (formatCurrency.value?.(item.value.soldPrice) ?? String(item.value.soldPrice)) : ""
+  );
+  function saveSoldPrice(value: string) {
+    const n = Number.parseFloat(value.replace(/[^\d.,-]/g, "").replace(",", "."));
+    update({ soldPrice: Number.isFinite(n) ? n : 0 });
+  }
+
+  /** Warranty notes only matter once there's a warranty, unless some were written already. */
+  const showWarrantyDetails = computed(
+    () =>
+      !!item.value &&
+      (!!item.value.warrantyDetails || item.value.lifetimeWarranty || validDate(item.value.warrantyExpires))
+  );
+
+  /** Put the item inside another one, or take it out and leave it in the place it was in. */
+  async function setContainer(container: EntitySummary | null) {
+    if (!item.value) return;
+    if (container) {
+      await patch({ parentId: container.id });
+    } else if (item.value.location) {
+      await patch({ parentId: item.value.location.id });
+    } else {
+      await update({ parentId: null, locationId: null });
     }
-    return (
-      item.value.attachments.reduce((acc, cur) => {
-        if (cur.type === "photo") {
-          const photo: Photo = {
-            originalSrc: api.authURL(`/entities/${item.value!.id}/attachments/${cur.id}`),
-            originalType: cur.mimeType,
-            attachmentId: cur.id,
-          };
-          if (cur.thumbnail) {
-            photo.thumbnailSrc = api.authURL(`/entities/${item.value!.id}/attachments/${cur.thumbnail.id}`);
-          } else {
-            photo.thumbnailSrc = photo.originalSrc; // fallback to itself if no thumbnail
-          }
-          acc.push(photo);
+  }
+
+  function editAttachment(attachment: ItemAttachment) {
+    openDialog(DialogID.AttachmentEdit, {
+      params: { itemId: itemId.value, attachment },
+      onClose: result => {
+        if (result && item.value) {
+          item.value = { ...item.value, attachments: result.attachments };
+          queryClient.invalidateQueries({ queryKey: ["entities"] });
         }
-        return acc;
-      }, [] as Photo[]) || []
-    );
-  });
-
-  const attachments = computed<FilteredAttachments>(() => {
-    if (!item.value) {
-      return {
-        attachments: [],
-        manuals: [],
-        warranty: [],
-        receipts: [],
-      };
-    }
-
-    return item.value.attachments.reduce(
-      (acc, attachment) => {
-        if (attachment.type === "photo") {
-          return acc;
-        }
-        if (attachment.type === "warranty") {
-          acc.warranty.push(attachment);
-        } else if (attachment.type === "manual") {
-          acc.manuals.push(attachment);
-        } else if (attachment.type === "receipt") {
-          acc.receipts.push(attachment);
-        } else {
-          acc.attachments.push(attachment);
-        }
-        return acc;
       },
-      {
-        attachments: [] as ItemAttachment[],
-        warranty: [] as ItemAttachment[],
-        manuals: [] as ItemAttachment[],
-        receipts: [] as ItemAttachment[],
-      }
-    );
-  });
-
-  // Only sections with content show; "Add photo / Attach file" covers the empty case.
-  const showAttachments = computed(() => {
-    return (
-      attachments.value.attachments.length > 0 ||
-      attachments.value.warranty.length > 0 ||
-      attachments.value.manuals.length > 0 ||
-      attachments.value.receipts.length > 0
-    );
-  });
-
-  const attachmentDetails = computed(() => {
-    const details: Detail[] = [];
-
-    const push = (name: string, slot: string) => {
-      details.push({
-        name,
-        text: "",
-        slot,
-      });
-    };
-
-    if (attachments.value.attachments.length > 0) {
-      push("items.attachments", "attachments");
-    }
-
-    if (attachments.value.warranty.length > 0) {
-      push("items.warranty", "warranty");
-    }
-
-    if (attachments.value.manuals.length > 0) {
-      push("items.manuals", "manuals");
-    }
-
-    if (attachments.value.receipts.length > 0) {
-      push("items.receipts", "receipts");
-    }
-
-    return details;
-  });
-
-  const showSold = computed(() => {
-    return (
-      item.value?.soldTo || item.value?.soldPrice !== 0 || validDate(item.value?.soldDate) || item.value?.soldNotes
-    );
-  });
-
-  const soldDetails = computed<Details>(() => {
-    const v: Details = [
-      {
-        name: "items.sold_to",
-        text: item.value?.soldTo || "",
-      },
-      {
-        name: "items.sold_price",
-        text: String(item.value?.soldPrice) || "",
-        type: "currency",
-      },
-      {
-        name: "items.sold_at",
-        text: item.value?.soldDate || "",
-        type: "date",
-        date: true,
-      },
-      {
-        name: "items.sold_notes",
-        type: "markdown",
-        text: item.value?.soldNotes || "",
-      },
-    ];
-
-    if (!preferences.value.showEmpty) {
-      return filterZeroValues(v);
-    }
-
-    return v;
-  });
+    });
+  }
 
   function openImageDialog(img: Photo, itemId: string) {
     openDialog(DialogID.ItemImage, {
@@ -349,6 +255,9 @@
       onClose: result => {
         if (result?.action === "delete") {
           item.value!.attachments = item.value!.attachments.filter(a => a.id !== result.id);
+        } else if (result?.action === "edit") {
+          const attachment = item.value?.attachments.find(a => a.id === result.id);
+          if (attachment) editAttachment(attachment);
         }
       },
     });
@@ -375,8 +284,9 @@
         return [];
       }
 
+      // By actual parent: a part stored somewhere else is still part of this item.
       const resp = await api.items.getAll({
-        parentIds: [itemId.value],
+        parentItemIds: [itemId.value],
       });
 
       if (resp.error) {
@@ -487,18 +397,8 @@
     });
   }
 
-  /** Sold details and warranty notes; purchase and warranty dates live in the properties column. */
-  const detailBlocks = computed(() =>
-    [
-      item.value?.warrantyDetails && {
-        title: "items.warranty_details",
-        details: [{ name: "items.warranty_details", type: "markdown", text: item.value.warrantyDetails }] as Details,
-      },
-      showSold.value && { title: "items.sold_details", details: soldDetails.value },
-    ].filter((b): b is { title: string; details: Details } => !!b && b.details.length > 0)
-  );
-
-  const fieldsEditor = useTemplateRef<InstanceType<typeof FieldsEditor>>("fieldsEditor");
+  const soldRow =
+    "grid min-h-8 grid-cols-[96px_minmax(0,1fr)] items-center gap-2 [&>dt]:text-muted-foreground [&>dd]:min-w-0";
 
   async function onUploaded() {
     await refresh();
@@ -517,7 +417,7 @@
         ? [
             { label: item.value?.name ?? "", to: `/item/${itemId.value}` },
             {
-              label: route.path.endsWith("/edit") ? t("shell.item_page.edit") : t("shell.item_page.maintenance"),
+              label: t("shell.item_page.maintenance"),
             },
           ]
         : [{ label: item.value?.name ?? "" }]),
@@ -531,6 +431,7 @@
     <Title>{{ item.name }}</Title>
 
     <ItemImageDialog />
+    <AttachmentEditDialog />
     <Dialog :dialog-id="DialogID.DuplicateTemporarySettings">
       <DialogContent>
         <DialogHeader>
@@ -593,12 +494,6 @@
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" class="w-60">
           <DropdownMenuItem as-child>
-            <NuxtLink :to="`/item/${item.id}/edit`">
-              <Pencil class="size-4" />
-              {{ t("shell.item_page.edit") }}
-            </NuxtLink>
-          </DropdownMenuItem>
-          <DropdownMenuItem as-child>
             <NuxtLink :to="`/item/${item.id}/maintenance`">
               <Wrench class="size-4" />
               {{ t("shell.item_page.maintenance") }}
@@ -615,7 +510,11 @@
           </DropdownMenuItem>
           <DropdownMenuItem @select="openDialog(DialogID.DuplicateTemporarySettings)">
             <CopyPlus class="size-4" />
-            {{ $t("items.duplicate.temporary_title") }}…
+            {{ t("shell.item_page.duplicate_with_options") }}
+          </DropdownMenuItem>
+          <DropdownMenuItem v-if="!showSold" @select="markingSold = true">
+            <HandCoins class="size-4" />
+            {{ t("shell.item_page.mark_sold") }}
           </DropdownMenuItem>
           <DropdownMenuItem @select="saveAsTemplate">
             <LayoutTemplate class="size-4" />
@@ -630,10 +529,6 @@
             {{ t("shell.item_page.show_qr") }}
           </DropdownMenuItem>
           <DropdownMenuSeparator />
-          <DropdownMenuCheckboxItem v-model="preferences.showEmpty" @select.prevent>
-            {{ t("shell.item_page.show_empty") }}
-          </DropdownMenuCheckboxItem>
-          <DropdownMenuSeparator />
           <DropdownMenuItem class="text-destructive focus:text-destructive" @select="deleteItem">
             <Trash2 class="size-4" />
             {{ $t("global.delete") }}
@@ -643,7 +538,7 @@
     </AppHeaderActions>
     <PageQRCode buttonless />
 
-    <!-- Maintenance and Edit -->
+    <!-- Maintenance -->
     <div v-if="hasNested" class="px-3 py-4 sm:px-6">
       <NuxtPage :item="item" :page-key="itemId" />
     </div>
@@ -651,38 +546,45 @@
     <!-- Properties sit beside the content on wide screens and right below the title on narrow ones -->
     <div v-else class="grid flex-1 lg:grid-cols-[minmax(0,1fr)_minmax(300px,22rem)]">
       <div class="flex min-w-0 flex-col gap-[22px] px-4 py-6 sm:px-10 sm:pt-7 sm:pb-10">
-        <header class="flex max-w-190 flex-col gap-1.5">
-          <InlineText
-            :value="item.name"
-            :label="t('items.name')"
-            wrap
-            class="-mx-1.5 text-[26px] leading-tight font-semibold tracking-tight"
-            @save="name => name && update({ name })"
+        <header class="flex max-w-190 items-start gap-4">
+          <CoverPhoto
+            :entity-id="item.id"
+            :photo="cover"
+            @uploaded="onUploaded"
+            @view="p => openImageDialog(p, item!.id)"
           />
-          <InlineMarkdown
-            :value="item.description"
-            :label="t('items.description')"
-            :placeholder="t('shell.item_page.add_description')"
-            @save="description => update({ description })"
-          />
+          <div class="flex min-w-0 flex-1 flex-col gap-1.5">
+            <InlineText
+              :value="item.name"
+              :label="t('items.name')"
+              wrap
+              class="-mx-1.5 text-[26px] leading-tight font-semibold tracking-tight"
+              @save="name => name && update({ name })"
+            />
+            <InlineMarkdown
+              :value="item.description"
+              :label="t('items.description')"
+              :placeholder="t('shell.item_page.add_description')"
+              @save="description => update({ description })"
+            />
+          </div>
         </header>
 
         <div v-if="!wide" class="-mx-4 border-y border-border/70 bg-muted/20 p-4 sm:-mx-10 sm:px-10">
           <PropertiesPanel
             v-model:place-open="placePickerOpen"
             :item="item"
+            :contents="items ?? []"
             @patch="patch"
             @update="update"
             @quantity="setQuantity"
+            @container="setContainer"
           />
         </div>
-        <!-- Photos, then quick ways to add more. On narrow screens they lead the page. -->
-        <section
-          class="flex gap-2.5 *:shrink-0 max-lg:-order-1 max-lg:-mx-4 max-lg:overflow-x-auto max-lg:px-4 max-lg:pb-1 sm:max-lg:-mx-10 sm:max-lg:px-10 lg:flex-wrap"
-          :aria-label="t('items.photos')"
-        >
+        <!-- The other photos, then quick ways to add more -->
+        <section class="flex flex-wrap gap-2.5" :aria-label="t('items.photos')">
           <button
-            v-for="img in photos"
+            v-for="img in morePhotos"
             :key="img.attachmentId"
             type="button"
             class="h-[90px] w-30 overflow-hidden rounded-[10px] border border-border bg-muted transition-opacity hover:opacity-90"
@@ -693,10 +595,12 @@
           <AddAttachmentTiles :entity-id="item.id" @uploaded="onUploaded" />
         </section>
 
-        <div class="h-px bg-border/70 max-lg:hidden" />
+        <div class="h-px bg-border/70" />
 
         <section>
-          <h2 class="mb-1 text-[13px] font-semibold text-foreground/80">{{ $t("items.notes") }}</h2>
+          <h2 class="mb-1 text-[13px] font-semibold text-foreground/80">
+            {{ $t("items.notes") }}
+          </h2>
           <InlineMarkdown
             :value="item.notes"
             :label="t('items.notes')"
@@ -705,43 +609,67 @@
           />
         </section>
 
-        <div>
-          <FieldsEditor ref="fieldsEditor" :fields="item.fields" @save="fields => update({ fields })" />
-          <button
-            type="button"
-            class="mt-1.5 rounded-md px-1.5 py-1 text-[13px] font-medium text-primary hover:bg-muted"
-            @click="fieldsEditor?.add()"
-          >
-            + {{ t("shell.item_page.add_field") }}
-          </button>
-        </div>
-
-        <section v-if="showAttachments">
-          <h2 class="mb-2 text-[13px] font-semibold text-foreground/80">{{ $t("items.attachments") }}</h2>
-          <div class="overflow-hidden rounded-lg border border-border [&>div]:border-t-0">
-            <DetailsSection v-if="attachmentDetails.length > 0" :details="attachmentDetails">
-              <template #manuals>
-                <ItemAttachmentsList :attachments="attachments.manuals" :item-id="item.id" />
-              </template>
-              <template #attachments>
-                <ItemAttachmentsList :attachments="attachments.attachments" :item-id="item.id" />
-              </template>
-              <template #warranty>
-                <ItemAttachmentsList :attachments="attachments.warranty" :item-id="item.id" />
-              </template>
-              <template #receipts>
-                <ItemAttachmentsList :attachments="attachments.receipts" :item-id="item.id" />
-              </template>
-            </DetailsSection>
-            <p v-else class="px-4 py-3 text-sm text-muted-foreground">{{ $t("items.no_attachments") }}</p>
-          </div>
+        <section v-if="files.length > 0">
+          <h2 class="mb-2 text-[13px] font-semibold text-foreground/80">
+            {{ $t("items.attachments") }}
+          </h2>
+          <ItemAttachmentsList :attachments="files" :item-id="item.id" editable @edit="editAttachment" />
         </section>
 
-        <section v-for="block in detailBlocks" :key="block.title">
-          <h2 class="mb-2 text-[13px] font-semibold text-foreground/80">{{ $t(block.title) }}</h2>
-          <div class="overflow-hidden rounded-lg border border-border [&>div]:border-t-0">
-            <DetailsSection :details="block.details" />
-          </div>
+        <section v-if="showWarrantyDetails">
+          <h2 class="mb-1 text-[13px] font-semibold text-foreground/80">
+            {{ t("shell.item_page.warranty_details") }}
+          </h2>
+          <InlineMarkdown
+            :value="item.warrantyDetails"
+            :label="t('shell.item_page.warranty_details')"
+            :placeholder="t('shell.item_page.add_warranty_details')"
+            @save="warrantyDetails => update({ warrantyDetails })"
+          />
+        </section>
+
+        <section v-if="showSold">
+          <h2 class="mb-1 text-[13px] font-semibold text-foreground/80">
+            {{ t("shell.item_page.sold") }}
+          </h2>
+          <dl class="flex max-w-md flex-col text-[13px]">
+            <div :class="soldRow">
+              <dt>{{ t("shell.item_page.sold_to") }}</dt>
+              <dd>
+                <InlineText :value="item.soldTo" :label="$t('items.sold_to')" @save="soldTo => update({ soldTo })" />
+              </dd>
+            </div>
+            <div :class="soldRow">
+              <dt>{{ t("shell.item_page.sold_price") }}</dt>
+              <dd>
+                <InlineText
+                  :value="item.soldPrice ? String(item.soldPrice) : ''"
+                  :display="soldPrice"
+                  :label="$t('items.sold_price')"
+                  class="tabular-nums"
+                  @save="saveSoldPrice"
+                />
+              </dd>
+            </div>
+            <div :class="soldRow">
+              <dt>{{ t("shell.item_page.sold_date") }}</dt>
+              <dd>
+                <InlineDate
+                  :value="item.soldDate"
+                  :placeholder="t('shell.item_page.set_date')"
+                  :label="$t('items.sold_at')"
+                  @save="soldDate => update({ soldDate })"
+                />
+              </dd>
+            </div>
+          </dl>
+          <InlineMarkdown
+            class="mt-1"
+            :value="item.soldNotes"
+            :label="$t('items.sold_notes')"
+            :placeholder="t('shell.item_page.add_sold_notes')"
+            @save="soldNotes => update({ soldNotes })"
+          />
         </section>
 
         <section v-if="items && items.length > 0">
@@ -767,9 +695,11 @@
           <PropertiesPanel
             v-model:place-open="placePickerOpen"
             :item="item"
+            :contents="items ?? []"
             @patch="patch"
             @update="update"
             @quantity="setQuantity"
+            @container="setContainer"
           />
         </div>
       </aside>

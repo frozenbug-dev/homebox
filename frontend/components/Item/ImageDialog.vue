@@ -9,6 +9,7 @@
   import MdiClose from "~icons/mdi/close";
   import MdiDownload from "~icons/mdi/download";
   import MdiDelete from "~icons/mdi/delete";
+  import MdiPencil from "~icons/mdi/pencil";
 
   const { t } = useI18n();
   const confirm = useConfirm();
@@ -85,6 +86,14 @@
           class="max-w-[min(calc(100vw-1rem),32rem)] min-w-64 md:w-auto md:max-w-lg"
         />
       </picture>
+      <Button
+        size="icon"
+        class="absolute top-1 right-31"
+        :aria-label="$t('global.edit')"
+        @click="closeDialog(DialogID.ItemImage, { action: 'edit', id: image.attachmentId })"
+      >
+        <MdiPencil />
+      </Button>
       <Button variant="destructive" size="icon" class="absolute top-1 right-21" @click="deleteAttachment">
         <MdiDelete />
       </Button>

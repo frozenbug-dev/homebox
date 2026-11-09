@@ -6,8 +6,8 @@
   import InlineMarkdown from "~/components/Item/Inline/Markdown.vue";
   import FieldsEditor from "~/components/Item/FieldsEditor.vue";
   import ItemAttachmentsList from "~/components/Item/AttachmentsList.vue";
-  import ItemImageDialog from "~/components/Item/ImageDialog.vue";
   import AddAttachmentTiles from "~/components/Entity/AddAttachmentTiles.vue";
+  import { entityPhotos } from "~/lib/entity-photos";
 
   /**
    * The place pane's Details tab: notes, photos, custom fields and files, all
@@ -23,21 +23,8 @@
 
   const fieldsEditor = useTemplateRef<InstanceType<typeof FieldsEditor>>("fieldsEditor");
 
-  const photos = computed(() =>
-    props.place.attachments
-      .filter(a => a.type === "photo")
-      .map(a => {
-        const originalSrc = api.authURL(`/entities/${props.place.id}/attachments/${a.id}`);
-        return {
-          attachmentId: a.id,
-          originalSrc,
-          originalType: a.mimeType,
-          thumbnailSrc: a.thumbnail
-            ? api.authURL(`/entities/${props.place.id}/attachments/${a.thumbnail.id}`)
-            : originalSrc,
-        };
-      })
-  );
+  /** The first (primary) photo is the cover in the pane's header; the rest are here. */
+  const photos = computed(() => entityPhotos(props.place, path => api.authURL(path)).slice(1));
   const files = computed(() => props.place.attachments.filter(a => a.type !== "photo"));
 
   function openPhoto(photo: (typeof photos.value)[number]) {
@@ -52,8 +39,6 @@
 
 <template>
   <div class="flex max-w-190 flex-col gap-6 px-4 py-5 sm:px-6">
-    <ItemImageDialog />
-
     <section>
       <h2 class="mb-1 text-[13px] font-semibold text-foreground/80">{{ $t("items.notes") }}</h2>
       <InlineMarkdown

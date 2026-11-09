@@ -15,6 +15,8 @@ export type ResourceListContext = {
   /** DOM id of a row, for aria-activedescendant. */
   rowId: (key: string) => string;
   focus: (key: string) => void;
+  /** The pointer entered a row: it becomes the active row until the pointer leaves the list. */
+  hover: (key: string) => void;
   toggle: (key: string) => void;
   /** ⇧-click: select from the anchor to this row. */
   extendTo: (key: string) => void;

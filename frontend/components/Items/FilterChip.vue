@@ -3,7 +3,11 @@
   import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
   import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 
-  /** A removable "<label> is <values>" filter token whose values are picked from a searchable list. */
+  /**
+   * A removable "<label> is <values>" filter token whose values are picked from
+   * a searchable list. Picks are applied when the list closes, so the token (and
+   * the popover hanging off it) doesn't change size while you're choosing.
+   */
   const props = defineProps<{
     label: string;
     options: { id: string; name: string; treeString?: string }[];
@@ -13,6 +17,13 @@
   const selected = defineModel<string[]>({ required: true });
   const open = defineModel<boolean>("open", { default: false });
 
+  /** The picks while the list is open. */
+  const draft = ref<string[]>([...selected.value]);
+  watch(open, isOpen => {
+    if (isOpen) draft.value = [...selected.value];
+    else if (draft.value.join() !== selected.value.join()) selected.value = draft.value;
+  });
+
   const names = computed(() =>
     props.options
       .filter(o => selected.value.includes(o.id))
@@ -21,7 +32,7 @@
   );
 
   function toggle(id: string) {
-    selected.value = selected.value.includes(id) ? selected.value.filter(s => s !== id) : [...selected.value, id];
+    draft.value = draft.value.includes(id) ? draft.value.filter(s => s !== id) : [...draft.value, id];
   }
 </script>
 
@@ -51,10 +62,10 @@
               >
                 <span
                   class="flex size-4 shrink-0 items-center justify-center rounded border border-input"
-                  :class="{ 'border-primary bg-primary text-primary-foreground': selected.includes(o.id) }"
+                  :class="{ 'border-primary bg-primary text-primary-foreground': draft.includes(o.id) }"
                   aria-hidden="true"
                 >
-                  <Check v-if="selected.includes(o.id)" class="size-3" />
+                  <Check v-if="draft.includes(o.id)" class="size-3" />
                 </span>
                 <span class="truncate">{{ o.name }}</span>
                 <span

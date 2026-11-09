@@ -2,6 +2,7 @@ package repo
 
 import (
 	"context"
+	"github.com/sysadminsmedia/homebox/backend/internal/sys/validate"
 	"math"
 	"strings"
 	"testing"
@@ -1100,4 +1101,46 @@ func TestEntityRepository_CreateFromTemplate_WithPurchaseAndWarranty(t *testing.
 
 	assert.InDelta(t, 42.0, out.PurchasePrice, 0.001)
 	assert.Equal(t, "2027-01-31", out.WarrantyExpires.String())
+}
+
+func TestEntityRepository_RejectsParentCycles(t *testing.T) {
+	ctx := context.Background()
+	ents := useEntities(t, 3)
+	a, b, c := ents[0], ents[1], ents[2]
+
+	// a > b > c
+	require.NoError(t, tRepos.Entities.Patch(ctx, tGroup.ID, b.ID, EntityPatch{ID: b.ID, ParentID: a.ID}))
+	require.NoError(t, tRepos.Entities.Patch(ctx, tGroup.ID, c.ID, EntityPatch{ID: c.ID, ParentID: b.ID}))
+
+	t.Run("patch into itself", func(t *testing.T) {
+		err := tRepos.Entities.Patch(ctx, tGroup.ID, a.ID, EntityPatch{ID: a.ID, ParentID: a.ID})
+		require.Error(t, err)
+		assert.True(t, validate.IsFieldError(err), "want a field error, got %v", err)
+	})
+
+	t.Run("patch into a grandchild", func(t *testing.T) {
+		err := tRepos.Entities.Patch(ctx, tGroup.ID, a.ID, EntityPatch{ID: a.ID, ParentID: c.ID})
+		require.Error(t, err)
+		assert.True(t, validate.IsFieldError(err), "want a field error, got %v", err)
+	})
+
+	t.Run("update into a child", func(t *testing.T) {
+		_, err := tRepos.Entities.UpdateByGroup(ctx, tGroup.ID, EntityUpdate{
+			ID:           a.ID,
+			Name:         a.Name,
+			EntityTypeID: a.EntityType.ID,
+			ParentID:     b.ID,
+		})
+		require.Error(t, err)
+		assert.True(t, validate.IsFieldError(err), "want a field error, got %v", err)
+	})
+
+	t.Run("moving within the branch still works", func(t *testing.T) {
+		// c out from under b and straight under a: not a cycle.
+		require.NoError(t, tRepos.Entities.Patch(ctx, tGroup.ID, c.ID, EntityPatch{ID: c.ID, ParentID: a.ID}))
+		got, err := tRepos.Entities.GetOneByGroup(ctx, tGroup.ID, c.ID)
+		require.NoError(t, err)
+		require.NotNil(t, got.Parent)
+		assert.Equal(t, a.ID, got.Parent.ID)
+	})
 }

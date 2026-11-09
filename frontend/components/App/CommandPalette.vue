@@ -198,8 +198,8 @@
       { id: "labels", label: t("menu.label_templates"), icon: Printer, run: go("/label-templates") },
       { id: "maintenance", label: t("menu.maintenance"), icon: Wrench, run: go("/maintenance") },
       { id: "profile", label: t("profile.user_profile"), icon: User, run: go("/profile") },
-      { id: "collection", label: t("shell.collection_settings"), icon: Settings, run: go("/collection/members") },
-      { id: "tools", label: t("collection.tabs.tools"), icon: Hammer, run: go("/collection/tools") },
+      { id: "collection", label: t("shell.collection_settings"), icon: Settings, run: go("/collection/settings") },
+      { id: "backups", label: t("collection.settings.nav.backups"), icon: Hammer, run: go("/collection/backups") },
     ],
     act: [
       {
@@ -216,7 +216,7 @@
         run: () => openDialog(DialogID.CreateEntity, { params: { baseType: "location" } }),
         hotkey: SHORTCUTS.newPlace,
       },
-      { id: "new-tag", label: t("menu.create_tag"), icon: Tags, run: () => openDialog(DialogID.CreateTag) },
+      { id: "new-tag", label: t("shell.shortcuts.new_tag"), icon: Tags, run: () => openDialog(DialogID.CreateTag) },
       {
         id: "scan",
         label: t("shell.shortcuts.scan"),

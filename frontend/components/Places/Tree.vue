@@ -2,20 +2,26 @@
   import { useI18n } from "vue-i18n";
   import { TreeItem as TreeRow, TreeRoot } from "reka-ui";
   import type { FlattenedItem } from "reka-ui";
-  import { ChevronRight, FolderInput, ListFilter, MapPin, Pencil, Plus, Printer, Trash2 } from "@lucide/vue";
+  import {
+    ArrowUpToLine,
+    ChevronRight,
+    FolderInput,
+    ListFilter,
+    MapPin,
+    Move,
+    Pencil,
+    Plus,
+    Printer,
+    Trash2,
+  } from "@lucide/vue";
   import type { TreeItem } from "~/lib/api/types/data-contracts";
   import { vDragSource, vDropTarget, type DragData } from "~/lib/dnd";
   import { canNest, type PlaceIndex } from "~/lib/place-tree";
   import { SHORTCUTS } from "~/lib/shortcuts";
   import Currency from "~/components/global/Currency.vue";
-  import ShortcutHint from "~/components/App/ShortcutHint.vue";
-  import {
-    ContextMenu,
-    ContextMenuContent,
-    ContextMenuItem,
-    ContextMenuSeparator,
-    ContextMenuTrigger,
-  } from "@/components/ui/context-menu";
+  import { ContextMenu, ContextMenuContent, ContextMenuTrigger } from "@/components/ui/context-menu";
+  import ActionMenuBody from "~/components/App/ActionMenu/ActionMenuBody.vue";
+  import type { ActionMenuEntry } from "~/components/App/ActionMenu/types";
 
   export type PlaceAction = "add-inside" | "rename" | "print" | "move-items-here" | "open-in-items" | "delete";
 
@@ -45,6 +51,8 @@
     create: [name: string, parentId: string | null];
     cancelCreate: [];
     action: [action: PlaceAction, id: string];
+    /** Put a place inside another one, or at the top level (null). */
+    move: [id: string, parentId: string | null];
   }>();
 
   /** Row whose context menu is open, highlighted like a hovered row. */
@@ -118,6 +126,92 @@
     else emit("cancelCreate");
   }
 
+  // ----- Right-click menu -----
+
+  /** "Garage / Shelf 2" for a place, from its parents. */
+  function pathOf(id: string): string {
+    const names: string[] = [];
+    for (let p = props.index.parentOf.get(id); p; p = props.index.parentOf.get(p)) {
+      names.unshift(props.index.byId.get(p)?.name ?? "");
+    }
+    return names.join(" / ");
+  }
+
+  function menuEntries(id: string): ActionMenuEntry[] {
+    const nested = !!props.index.parentOf.get(id);
+    const targets = [...props.index.byId.values()].filter(p => canNest(props.index, id, p.id));
+    return [
+      { id: "open", label: t("shell.resource.open"), icon: MapPin, onSelect: () => emit("select", id) },
+      {
+        id: "open-in-items",
+        label: t("shell.places_page.open_in_items"),
+        icon: ListFilter,
+        onSelect: () => run("open-in-items", id),
+      },
+      { kind: "separator" },
+      {
+        id: "add-inside",
+        label: t("shell.places_page.add_inside"),
+        icon: Plus,
+        hotkey: SHORTCUTS.placeAddInside,
+        onSelect: () => run("add-inside", id),
+      },
+      {
+        kind: "sub",
+        id: "move",
+        label: t("shell.resource.move_to"),
+        icon: Move,
+        entries: [
+          ...(nested
+            ? [
+                {
+                  id: "top",
+                  label: t("shell.places_page.top_level"),
+                  icon: ArrowUpToLine,
+                  onSelect: () => emit("move", id, null),
+                },
+              ]
+            : []),
+          ...targets.map(p => ({
+            id: p.id,
+            label: p.name,
+            icon: MapPin,
+            hint: pathOf(p.id) || undefined,
+            onSelect: () => emit("move", id, p.id),
+          })),
+        ],
+      },
+      {
+        id: "move-items-here",
+        label: t("shell.places_page.move_items_here"),
+        icon: FolderInput,
+        onSelect: () => run("move-items-here", id),
+      },
+      {
+        id: "rename",
+        label: t("shell.places_page.rename"),
+        icon: Pencil,
+        hotkey: SHORTCUTS.placeRename,
+        onSelect: () => run("rename", id),
+      },
+      {
+        id: "print",
+        label: t("shell.places_page.print_label"),
+        icon: Printer,
+        hotkey: SHORTCUTS.placePrint,
+        onSelect: () => run("print", id),
+      },
+      { kind: "separator" },
+      {
+        id: "delete",
+        label: t("shell.places_page.delete_place"),
+        icon: Trash2,
+        destructive: true,
+        onSelect: () => run("delete", id),
+      },
+    ];
+  }
+
   const indent = (level: number) => ({ paddingLeft: `${(level - 1) * 18 + 10}px` });
 </script>
 
@@ -179,35 +273,7 @@
           </TreeRow>
         </ContextMenuTrigger>
         <ContextMenuContent class="w-56" @close-auto-focus="onMenuCloseFocus">
-          <ContextMenuItem @select="emit('select', item.value.id)">
-            <MapPin /> {{ t("shell.resource.open") }}
-          </ContextMenuItem>
-          <ContextMenuItem @select="run('open-in-items', item.value.id)">
-            <ListFilter /> {{ t("shell.places_page.open_in_items") }}
-          </ContextMenuItem>
-          <ContextMenuSeparator />
-          <ContextMenuItem @select="run('add-inside', item.value.id)">
-            <Plus /> {{ t("shell.places_page.add_inside") }}
-            <ShortcutHint :hotkey="SHORTCUTS.placeAddInside" class="ml-auto" />
-          </ContextMenuItem>
-          <ContextMenuItem @select="run('move-items-here', item.value.id)">
-            <FolderInput /> {{ t("shell.places_page.move_items_here") }}
-          </ContextMenuItem>
-          <ContextMenuItem @select="run('rename', item.value.id)">
-            <Pencil /> {{ t("shell.places_page.rename") }}
-            <ShortcutHint :hotkey="SHORTCUTS.placeRename" class="ml-auto" />
-          </ContextMenuItem>
-          <ContextMenuItem @select="run('print', item.value.id)">
-            <Printer /> {{ t("shell.places_page.print_label") }}
-            <ShortcutHint :hotkey="SHORTCUTS.placePrint" class="ml-auto" />
-          </ContextMenuItem>
-          <ContextMenuSeparator />
-          <ContextMenuItem
-            class="text-destructive focus:text-destructive [&_svg]:text-destructive"
-            @select="run('delete', item.value.id)"
-          >
-            <Trash2 /> {{ t("shell.places_page.delete_place") }}
-          </ContextMenuItem>
+          <ActionMenuBody :entries="menuEntries(item.value.id)" />
         </ContextMenuContent>
       </ContextMenu>
 

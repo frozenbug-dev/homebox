@@ -1525,6 +1525,10 @@ definitions:
         type: string
         x-nullable: true
         x-omitempty: true
+      purchasePrice:
+        type: number
+        x-nullable: true
+        x-omitempty: true
       quantity:
         type: number
         x-nullable: true
@@ -3111,6 +3115,14 @@ paths:
         items:
           type: string
         name: parentIds
+        type: array
+      - collectionFormat: multi
+        description: direct parent IDs; matches the actual parent, wherever the entity
+          is stored
+        in: query
+        items:
+          type: string
+        name: parentItemIds
         type: array
       - collectionFormat: multi
         description: entity type IDs; when provided this filter takes precedence over

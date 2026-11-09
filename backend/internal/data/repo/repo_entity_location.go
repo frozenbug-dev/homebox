@@ -129,3 +129,43 @@ func clearChildLocationOverrides(ctx context.Context, c *ent.EntityClient, gid, 
 func locationOrParentColumn(table string) string {
 	return "COALESCE(" + table + ".entity_location_entities, " + table + ".entity_children)"
 }
+
+const parentField = "parentId"
+
+// assertNoParentCycle rejects making proposedParentID the parent of movingID
+// when it is movingID itself or sits somewhere inside it. Without it, putting
+// an item inside one of its own contents detaches the whole branch from the
+// tree, and every walk up the parent chain then loops until its depth cap.
+func (r *EntityRepository) assertNoParentCycle(ctx context.Context, movingID, proposedParentID uuid.UUID) error {
+	if movingID == uuid.Nil || proposedParentID == uuid.Nil {
+		return nil
+	}
+	cycle := validate.NewFieldErrors(validate.NewFieldError(parentField, "an entity cannot be placed inside itself or its own contents"))
+	if movingID == proposedParentID {
+		return cycle
+	}
+
+	// Walk up from the proposed parent. The depth bound keeps an already
+	// corrupted tree from recursing forever.
+	query := `
+		WITH RECURSIVE ancestors(id, parent_id, depth) AS (
+			SELECT id, ` + entity.ParentColumn + `, 0 FROM ` + entity.Table + ` WHERE id = $1
+			UNION ALL
+			SELECT e.id, e.` + entity.ParentColumn + `, a.depth + 1
+			FROM ` + entity.Table + ` e
+			JOIN ancestors a ON e.id = a.parent_id
+			WHERE a.depth < $3
+		)
+		SELECT 1 FROM ancestors WHERE id = $2 LIMIT 1;
+	`
+	rows, err := r.db.Sql().QueryContext(ctx, query, proposedParentID, movingID, maxAncestorDepth)
+	if err != nil {
+		return err
+	}
+	defer func() { _ = rows.Close() }()
+
+	if rows.Next() {
+		return cycle
+	}
+	return rows.Err()
+}

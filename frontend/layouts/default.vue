@@ -13,6 +13,7 @@
     <LabelTemplatePrintDialog />
     <ItemBarcodeModal />
     <ItemChangeDetailsDialog />
+    <ItemEditNumberDialog />
     <AppCommandPalette @scan="openScanner" />
     <AppShortcutsDialog />
     <AppScannerModal />
@@ -38,7 +39,7 @@
               <ShortcutHint :hotkey="SHORTCUTS.commandPalette" class="ml-auto group-data-[collapsible=icon]:hidden" />
             </SidebarMenuButton>
             <SidebarMenuButton
-              class="size-9 shrink-0 justify-center bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground"
+              class="size-9 shrink-0 justify-center rounded-[9px] border border-[color-mix(in_oklab,hsl(var(--primary))_92%,black)] bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground"
               :tooltip="$t('shell.new_item')"
               :aria-label="$t('shell.new_item')"
               @click="openDialog(DialogID.CreateEntity, { params: { baseType: 'item' } })"
@@ -109,7 +110,7 @@
           <SidebarMenu class="gap-0.5">
             <SidebarMenuItem>
               <SidebarMenuLink
-                href="/collection/members"
+                href="/collection/settings"
                 :class="{
                   'bg-sidebar-accent font-medium text-sidebar-accent-foreground': route.path.startsWith('/collection'),
                 }"
@@ -309,6 +310,7 @@
   import LabelTemplatePrintDialog from "~/components/LabelTemplate/PrintDialog.vue";
   import ItemBarcodeModal from "~/components/Item/BarcodeModal.vue";
   import ItemChangeDetailsDialog from "~/components/Item/ChangeDetailsDialog.vue";
+  import ItemEditNumberDialog from "~/components/Item/EditNumberDialog.vue";
   import AppCommandPalette from "~/components/App/CommandPalette.vue";
   import AppShortcutsDialog from "~/components/App/ShortcutsDialog.vue";
   import ShortcutHint from "~/components/App/ShortcutHint.vue";
@@ -415,7 +417,7 @@
       hotkey: SHORTCUTS.goPlaces,
     }),
     navItem("tags", Tags, () => t("global.tags"), "/tags", {
-      isActive: () => route.path === "/tags" || route.path.startsWith("/tag/"),
+      isActive: () => route.path === "/tags",
       count: () => stats.value?.totalTags,
       hotkey: SHORTCUTS.goTags,
     }),

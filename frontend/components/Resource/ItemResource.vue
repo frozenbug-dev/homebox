@@ -1,21 +1,41 @@
 <script setup lang="ts">
   import { useI18n } from "vue-i18n";
-  import { Copy, ExternalLink, FolderInput, Link, Minus, Plus, Printer, Tags, Trash2 } from "@lucide/vue";
+  import {
+    Banknote,
+    ChevronLeft,
+    Copy,
+    ExternalLink,
+    FolderInput,
+    Hash,
+    Link,
+    MapPin,
+    Plus,
+    Printer,
+    Tags,
+    Trash2,
+    X,
+  } from "@lucide/vue";
   import type { EntitySummary } from "~/lib/api/types/data-contracts";
   import { SHORTCUTS } from "~/lib/shortcuts";
   import ResourceRow from "./Row.vue";
   import { resourceChangedKey, useResourceListContext } from "./context";
   import PlaceCell from "~/components/Items/PlaceCell.vue";
-  import ShortcutHint from "~/components/App/ShortcutHint.vue";
+  import NumberPill from "~/components/Items/NumberPill.vue";
+  import TagPicker from "~/components/Item/Inline/TagPicker.vue";
+  import { Pill } from "@/components/ui/pill";
+  import { getIconComponent } from "~/lib/icons";
   import Currency from "~/components/global/Currency.vue";
-  import { ContextMenuItem, ContextMenuSeparator } from "@/components/ui/context-menu";
+  import ActionMenuBody from "~/components/App/ActionMenu/ActionMenuBody.vue";
+  import type { ActionMenuEntry } from "~/components/App/ActionMenu/types";
+  import { useTagStore } from "~/stores/tags";
 
   export type ItemColumn = "asset" | "place" | "tags" | "quantity" | "price" | "added";
 
   /**
-   * An item as a list row: asset ID and name on the left; tags, place,
-   * quantity, price and date on the right (each a fixed width so they line
-   * up between rows). Place and quantity can be changed in the row.
+   * An item as a list row: asset ID and name (and, for an item inside another
+   * item, that parent) on the left; tags, place, quantity, price and date as
+   * right-aligned pills on the right (each a fixed width so they line up
+   * between rows). Tags, place, quantity and price can be changed in the row.
    */
   const props = defineProps<{
     item: EntitySummary;
@@ -34,7 +54,120 @@
     const targets = list.targetsFor(props.item.id) as EntitySummary[];
     return { kind: "items" as const, ids: targets.map(i => i.id) };
   };
-  const asItems = (targets: unknown[]) => targets as EntitySummary[];
+  const places = useFlatLocations();
+  const tagStore = useTagStore();
+
+  /** Inside another item rather than a place: show that item next to the name. */
+  const container = computed(() =>
+    props.item.parent && !props.placeIds.has(props.item.parent.id) ? props.item.parent : undefined
+  );
+
+  const VISIBLE_TAGS = 3;
+  const tagsOpen = ref(false);
+  const tagIds = computed({
+    get: () => props.item.tags.map(x => x.id),
+    set: ids => {
+      const known = new Map([...tagStore.tags, ...props.item.tags].map(x => [x.id, x]));
+      actions.setTags(
+        props.item,
+        ids.map(id => known.get(id)).filter(x => !!x)
+      );
+    },
+  });
+
+  /** The right-click menu. Read live (not from the menu's snapshot) so tag checks update as you toggle. */
+  const menu = computed<ActionMenuEntry[]>(() => {
+    const items = list.targetsFor(props.item.id) as EntitySummary[];
+    const one = items.length === 1 ? items[0]! : undefined;
+    const has = (tagId: string) => items.length > 0 && items.every(i => i.tags.some(x => x.id === tagId));
+    return [
+      ...(one
+        ? ([
+            {
+              id: "open",
+              label: t("shell.resource.open"),
+              icon: ExternalLink,
+              onSelect: () => navigateTo(`/item/${one.id}`),
+            },
+            { kind: "separator" },
+          ] satisfies ActionMenuEntry[])
+        : []),
+      {
+        kind: "sub",
+        id: "move",
+        label: t("shell.resource.move_to"),
+        icon: FolderInput,
+        entries: places.value.map(p => ({
+          id: p.id,
+          label: p.name,
+          icon: MapPin,
+          hint: p.treeString !== p.name ? p.treeString : undefined,
+          onSelect: () => actions.moveAllTo(items, p),
+        })),
+      },
+      {
+        kind: "sub",
+        id: "tags",
+        label: t("global.tags"),
+        icon: Tags,
+        entries: tagStore.tags.map(tag => ({
+          id: tag.id,
+          label: tag.name,
+          color: tag.color,
+          checked: has(tag.id),
+          keepOpen: true,
+          onSelect: () => actions.toggleTag(items, tag),
+        })),
+      },
+      ...(one
+        ? ([
+            {
+              id: "quantity",
+              label: t("shell.resource.change_quantity"),
+              icon: Hash,
+              onSelect: () => actions.editNumber(one, "quantity"),
+            },
+            {
+              id: "price",
+              label: t("shell.resource.change_price"),
+              icon: Banknote,
+              onSelect: () => actions.editNumber(one, "purchasePrice"),
+            },
+          ] satisfies ActionMenuEntry[])
+        : []),
+      {
+        id: "print",
+        label: t("shell.resource.print_labels", { n: items.length }),
+        icon: Printer,
+        hotkey: SHORTCUTS.selectionPrint,
+        onSelect: () => actions.print(items),
+      },
+      ...(one
+        ? ([
+            {
+              id: "duplicate",
+              label: t("shell.item_page.duplicate"),
+              icon: Copy,
+              onSelect: () => actions.duplicate(one),
+            },
+            {
+              id: "copy-link",
+              label: t("shell.resource.copy_link"),
+              icon: Link,
+              onSelect: () => actions.copyLink(one),
+            },
+          ] satisfies ActionMenuEntry[])
+        : []),
+      { kind: "separator" },
+      {
+        id: "delete",
+        label: t("shell.resource.delete", { n: items.length }),
+        icon: Trash2,
+        destructive: true,
+        onSelect: () => actions.remove(items),
+      },
+    ];
+  });
 
   /** "Nov 7", or "Nov 7, 2024" for another year. */
   const added = computed(() => {
@@ -55,88 +188,77 @@
       <span v-if="show('asset') && item.assetId" class="shrink-0 font-mono text-xs text-muted-foreground tabular-nums">
         {{ item.assetId }}
       </span>
-      <NuxtLink :to="`/item/${item.id}`" class="truncate font-medium" tabindex="-1">{{ item.name }}</NuxtLink>
+      <span class="min-w-0 truncate font-medium">{{ item.name }}</span>
+      <template v-if="container">
+        <ChevronLeft class="-mx-1.5 size-3.5 shrink-0 text-muted-foreground/60" aria-hidden="true" />
+        <NuxtLink
+          :to="`/item/${container.id}`"
+          class="min-w-0 shrink-3 truncate font-normal text-muted-foreground/80 hover:text-foreground hover:underline"
+          @click.stop
+        >
+          {{ container.name }}
+        </NuxtLink>
+      </template>
       <span v-if="item.archived" class="shrink-0 rounded bg-muted px-1.5 text-[11px] text-muted-foreground">
         {{ t("items.archived") }}
       </span>
     </template>
 
     <template #right>
-      <span v-if="show('tags') && item.tags.length" class="hidden max-w-56 gap-1 overflow-hidden lg:flex">
-        <span
-          v-for="tag in item.tags.slice(0, 3)"
-          :key="tag.id"
-          class="truncate rounded-full border border-border px-2 py-px text-xs text-foreground/80"
+      <span class="flex min-w-0 items-center justify-end gap-1">
+        <TagPicker v-if="show('tags')" v-model="tagIds" v-model:open="tagsOpen" align="end">
+          <button
+            type="button"
+            class="hidden max-w-72 min-w-0 cursor-pointer items-center justify-end gap-1 rounded-full focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+            :class="item.tags.length || tagsOpen ? 'lg:flex' : 'lg:group-hover/row:flex lg:focus-visible:flex'"
+            :aria-label="t('global.tags')"
+            @click.stop
+          >
+            <template v-if="item.tags.length">
+              <Pill
+                v-for="tag in item.tags.slice(0, VISIBLE_TAGS)"
+                :key="tag.id"
+                :color="tag.color || undefined"
+                :icon="getIconComponent(tag.icon)"
+                class="min-w-0 shrink hover:brightness-95 dark:hover:brightness-125"
+              >
+                {{ tag.name }}
+              </Pill>
+              <Pill v-if="item.tags.length > VISIBLE_TAGS">+{{ item.tags.length - VISIBLE_TAGS }}</Pill>
+            </template>
+            <Pill v-else dashed :icon="Plus">{{ t("global.tags") }}</Pill>
+          </button>
+        </TagPicker>
+        <PlaceCell v-if="show('place')" :item="item" :place-ids="placeIds" @move="p => actions.moveTo(item, p)" />
+        <NumberPill
+          v-if="show('quantity')"
+          :value="item.quantity"
+          :icon="X"
+          :label="t('global.quantity')"
+          @commit="n => actions.setQuantity(item, Math.round(n))"
         >
-          {{ tag.name }}
-        </span>
-        <span v-if="item.tags.length > 3" class="text-xs">+{{ item.tags.length - 3 }}</span>
-      </span>
-      <span v-if="show('place')" class="flex w-28 min-w-0 sm:w-40">
-        <PlaceCell :item="item" :place-ids="placeIds" @move="p => actions.moveTo(item, p)" />
-      </span>
-      <span v-if="show('quantity')" class="flex w-20 items-center justify-end gap-0.5 tabular-nums">
-        <button
-          type="button"
-          class="flex size-6 items-center justify-center rounded opacity-0 group-hover/row:opacity-100 hover:bg-accent focus-visible:opacity-100"
-          :aria-label="t('shell.items_page.decrease')"
-          @click="actions.setQuantity(item, item.quantity - 1)"
+          {{ item.quantity }}
+        </NumberPill>
+        <NumberPill
+          v-if="show('price') && item.purchasePrice"
+          :value="item.purchasePrice"
+          :label="t('items.purchase_price')"
+          @commit="n => actions.setPrice(item, n)"
         >
-          <Minus class="size-3" />
-        </button>
-        <span class="min-w-5 text-center text-foreground/80">{{ item.quantity }}</span>
-        <button
-          type="button"
-          class="flex size-6 items-center justify-center rounded opacity-0 group-hover/row:opacity-100 hover:bg-accent focus-visible:opacity-100"
-          :aria-label="t('shell.items_page.increase')"
-          @click="actions.setQuantity(item, item.quantity + 1)"
-        >
-          <Plus class="size-3" />
-        </button>
-      </span>
-      <span v-if="show('price')" class="w-20 truncate text-right tabular-nums">
-        <Currency v-if="item.purchasePrice" :amount="item.purchasePrice" />
+          <Currency :amount="item.purchasePrice" />
+        </NumberPill>
       </span>
       <span
         v-if="show('added')"
-        class="w-20 text-right text-xs whitespace-nowrap"
+        class="w-16 text-right text-xs whitespace-nowrap"
         :title="new Date(item.createdAt).toLocaleString(locale)"
       >
         {{ added }}
       </span>
     </template>
 
-    <template #menu="{ targets }">
-      <template v-if="asItems(targets).length === 1">
-        <ContextMenuItem class="gap-2" @select="navigateTo(`/item/${asItems(targets)[0]!.id}`)">
-          <ExternalLink class="size-4" /> {{ t("shell.resource.open") }}
-        </ContextMenuItem>
-        <ContextMenuSeparator />
-      </template>
-      <ContextMenuItem class="gap-2" @select="actions.move(asItems(targets))">
-        <FolderInput class="size-4" /> {{ t("shell.resource.move_to") }}
-        <ShortcutHint :hotkey="SHORTCUTS.selectionMove" class="ml-auto" />
-      </ContextMenuItem>
-      <ContextMenuItem class="gap-2" @select="actions.tag(asItems(targets))">
-        <Tags class="size-4" /> {{ t("shell.resource.add_tags") }}
-        <ShortcutHint :hotkey="SHORTCUTS.selectionTag" class="ml-auto" />
-      </ContextMenuItem>
-      <ContextMenuItem class="gap-2" @select="actions.print(asItems(targets))">
-        <Printer class="size-4" /> {{ t("shell.resource.print_labels", { n: targets.length }) }}
-        <ShortcutHint :hotkey="SHORTCUTS.selectionPrint" class="ml-auto" />
-      </ContextMenuItem>
-      <template v-if="asItems(targets).length === 1">
-        <ContextMenuItem class="gap-2" @select="actions.duplicate(asItems(targets)[0]!)">
-          <Copy class="size-4" /> {{ t("shell.item_page.duplicate") }}
-        </ContextMenuItem>
-        <ContextMenuItem class="gap-2" @select="actions.copyLink(asItems(targets)[0]!)">
-          <Link class="size-4" /> {{ t("shell.resource.copy_link") }}
-        </ContextMenuItem>
-      </template>
-      <ContextMenuSeparator />
-      <ContextMenuItem class="gap-2 text-destructive focus:text-destructive" @select="actions.remove(asItems(targets))">
-        <Trash2 class="size-4" /> {{ t("shell.resource.delete", { n: targets.length }) }}
-      </ContextMenuItem>
+    <template #menu>
+      <ActionMenuBody :entries="menu" />
     </template>
   </ResourceRow>
 </template>

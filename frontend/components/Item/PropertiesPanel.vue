@@ -1,29 +1,40 @@
 <script setup lang="ts">
+  import { NuxtLink } from "#components";
   import { useI18n } from "vue-i18n";
-  import { ChevronsUpDown, MapPin, Minus, Plus } from "@lucide/vue";
-  import type { EntityOut, EntityPatch, EntityUpdate } from "~/lib/api/types/data-contracts";
+  import { ChevronDown, ChevronsUpDown, MapPin, Minus, Package, Plus, X } from "@lucide/vue";
+  import type { EntityOut, EntityPatch, EntitySummary, EntityUpdate } from "~/lib/api/types/data-contracts";
   import { SHORTCUTS } from "~/lib/shortcuts";
   import { useTagStore } from "~/stores/tags";
   import { Button } from "@/components/ui/button";
   import { Switch } from "@/components/ui/switch";
-  import TagChip from "~/components/Tag/Chip.vue";
+  import { Pill } from "@/components/ui/pill";
+  import { getIconComponent } from "~/lib/icons";
   import DateTime from "~/components/global/DateTime.vue";
   import ShortcutHint from "~/components/App/ShortcutHint.vue";
   import InlineText from "~/components/Item/Inline/Text.vue";
   import InlineDate from "~/components/Item/Inline/Date.vue";
   import PlacePicker from "~/components/Item/Inline/PlacePicker.vue";
   import TagPicker from "~/components/Item/Inline/TagPicker.vue";
+  import ItemPicker from "~/components/Item/Inline/ItemPicker.vue";
+  import TypePicker from "~/components/Item/Inline/TypePicker.vue";
+  import FieldsEditor from "~/components/Item/FieldsEditor.vue";
 
   /**
    * The item page's properties column, grouped like the design (basics,
    * Product, Purchase). Every value is edited in place: place, quantity and
    * tags are emitted as PATCH changes, the rest as PUT changes.
    */
-  const props = defineProps<{ item: EntityOut }>();
+  const props = defineProps<{
+    item: EntityOut;
+    /** The items directly inside this one: they can't become its container. */
+    contents?: EntitySummary[];
+  }>();
   const emit = defineEmits<{
     patch: [changes: Omit<EntityPatch, "id">];
     update: [changes: Partial<EntityUpdate>];
     quantity: [quantity: number];
+    /** Put it inside another item, or take it out (null) and leave it where it is. */
+    container: [container: EntitySummary | null];
   }>();
 
   /** Open state of the place picker, so the page's M shortcut can open it. */
@@ -35,6 +46,28 @@
 
   /** An item sits in a place or inside another item (a container). */
   const inContainer = computed(() => !!props.item.parent && !places.value.some(p => p.id === props.item.parent!.id));
+
+  /** A part follows its container's place unless it has one of its own. */
+  const placeLabel = computed(() => {
+    return inContainer.value && props.item.locationId
+      ? t("shell.item_page.place_stored_apart")
+      : t("shell.item_page.place");
+  });
+
+  /**
+   * Moving a part sets its own location and keeps it in the container;
+   * re-parenting it to the place would silently take it out.
+   */
+  function pickPlace(place: FlatTreeItem) {
+    emit("patch", inContainer.value ? { locationId: place.id } : { parentId: place.id });
+  }
+
+  const containerOpen = ref(false);
+  const containerExclude = computed(() => [props.item.id, ...(props.contents ?? []).map(c => c.id)]);
+
+  const typeOpen = ref(false);
+
+  const fieldsEditor = useTemplateRef<InstanceType<typeof FieldsEditor>>("fieldsEditor");
 
   const itemTags = computed(() => tagStore.withAncestors(props.item.tags));
   const tagPickerOpen = ref(false);
@@ -97,41 +130,90 @@
   <section :aria-label="t('shell.item_page.properties')" class="flex flex-col gap-5 text-[13px]">
     <!-- Where it is, how many, and how it's tagged: the things people change most -->
     <div class="flex flex-col gap-2.5">
-      <PlacePicker
-        v-model:open="placeOpen"
-        :current-id="item.parent?.id"
-        align="end"
-        @pick="place => emit('patch', { parentId: place.id })"
-      >
-        <button
-          type="button"
-          class="group flex w-full items-center gap-3 rounded-lg border border-border bg-background px-3 py-2.5 text-left shadow-xs transition-colors hover:border-ring/50"
-          :aria-label="t('shell.item_page.move_to')"
+      <!-- One card: where it is, and for a part, the item it belongs to -->
+      <div class="overflow-hidden rounded-lg border border-border bg-background shadow-xs">
+        <PlacePicker
+          v-model:open="placeOpen"
+          :current-id="(inContainer ? item.locationId : item.parent?.id) ?? undefined"
+          :allow-top="inContainer && !!item.locationId"
+          :top-label="t('shell.item_page.follow_container')"
+          align="end"
+          @pick="pickPlace"
+          @top="emit('update', { locationId: null })"
         >
-          <span class="flex size-8 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary">
-            <MapPin class="size-4" aria-hidden="true" />
-          </span>
-          <span class="flex min-w-0 flex-1 flex-col">
-            <span class="text-[11px] text-muted-foreground">{{ t("shell.item_page.place") }}</span>
-            <span
-              class="truncate text-sm font-medium"
-              :class="{ 'text-muted-foreground': !item.location && !item.parent }"
-            >
-              {{ item.location?.name ?? item.parent?.name ?? t("shell.item_page.no_place") }}
+          <button
+            type="button"
+            class="group flex w-full items-center gap-3 px-3 py-2.5 text-left transition-colors hover:bg-muted/50"
+            :aria-label="t('shell.item_page.move_to')"
+          >
+            <span class="flex size-8 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary">
+              <MapPin class="size-4" aria-hidden="true" />
             </span>
-            <span v-if="placePath" class="truncate text-xs text-muted-foreground">{{ placePath }}</span>
-          </span>
-          <ShortcutHint :hotkey="SHORTCUTS.itemMove" />
-          <ChevronsUpDown class="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
-        </button>
-      </PlacePicker>
-      <NuxtLink
-        v-if="inContainer && item.parent"
-        :to="`/item/${item.parent.id}`"
-        class="-mt-1 truncate px-1 text-xs text-muted-foreground hover:underline"
-      >
-        {{ t("shell.item_page.in_container", { name: item.parent.name }) }}
-      </NuxtLink>
+            <span class="flex min-w-0 flex-1 flex-col">
+              <span class="truncate text-[11px] text-muted-foreground">{{ placeLabel }}</span>
+              <span
+                class="truncate text-sm font-medium"
+                :class="{ 'text-muted-foreground': !item.location && !item.parent }"
+              >
+                {{
+                  item.location?.name ?? (inContainer ? undefined : item.parent?.name) ?? t("shell.item_page.no_place")
+                }}
+              </span>
+              <span v-if="placePath" class="truncate text-xs text-muted-foreground">{{ placePath }}</span>
+            </span>
+            <ShortcutHint :hotkey="SHORTCUTS.itemMove" />
+            <ChevronsUpDown class="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+          </button>
+        </PlacePicker>
+        <!-- Inside a container: the row opens it, and × takes the item out -->
+        <div v-if="inContainer && item.parent" class="flex items-center border-t border-border">
+          <NuxtLink
+            :to="`/item/${item.parent.id}`"
+            class="flex min-w-0 flex-1 items-center gap-3 px-3 py-2.5 text-left transition-colors hover:bg-muted/50"
+            :aria-label="t('shell.item_page.open_container', { name: item.parent.name })"
+          >
+            <span class="flex size-8 shrink-0 items-center justify-center rounded-md bg-muted text-muted-foreground">
+              <Package class="size-4" aria-hidden="true" />
+            </span>
+            <span class="flex min-w-0 flex-1 flex-col">
+              <span class="text-[11px] text-muted-foreground">{{ t("shell.item_page.part_of") }}</span>
+              <span class="truncate text-sm font-medium">{{ item.parent.name }}</span>
+            </span>
+          </NuxtLink>
+          <button
+            type="button"
+            class="mr-1.5 flex size-8 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground"
+            :aria-label="t('shell.item_page.take_out')"
+            :title="t('shell.item_page.take_out')"
+            @click="emit('container', null)"
+          >
+            <X class="size-4" />
+          </button>
+        </div>
+        <div v-else class="flex items-center border-t border-border">
+          <ItemPicker
+            v-model:open="containerOpen"
+            :exclude-ids="containerExclude"
+            align="end"
+            @pick="c => emit('container', c)"
+          >
+            <button
+              type="button"
+              class="flex min-w-0 flex-1 items-center gap-3 px-3 py-2.5 text-left transition-colors hover:bg-muted/50"
+              :aria-label="t('shell.item_page.put_inside')"
+            >
+              <span class="flex size-8 shrink-0 items-center justify-center rounded-md bg-muted text-muted-foreground">
+                <Package class="size-4" aria-hidden="true" />
+              </span>
+              <span class="flex min-w-0 flex-1 flex-col">
+                <span class="text-[11px] text-muted-foreground">{{ t("shell.item_page.part_of") }}</span>
+                <span class="truncate text-sm text-muted-foreground">{{ t("shell.item_page.not_part_of") }}</span>
+              </span>
+              <ChevronsUpDown class="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+            </button>
+          </ItemPicker>
+        </div>
+      </div>
 
       <div class="grid grid-cols-2 gap-2.5">
         <div class="flex flex-col gap-1 rounded-lg border border-border bg-background px-3 py-2 shadow-xs">
@@ -179,25 +261,58 @@
           />
         </div>
       </div>
+    </div>
 
-      <div class="flex flex-wrap items-center gap-1 pt-0.5">
-        <TagChip v-for="tag in itemTags" :key="tag.id" :tag="tag" size="sm" :ancestors="tag.ancestors" />
+    <section>
+      <h3 :class="heading">{{ $t("global.tags") }}</h3>
+      <div class="flex flex-wrap items-center gap-1 pt-1">
+        <Pill
+          v-for="tag in itemTags"
+          :key="tag.id"
+          :as="NuxtLink"
+          :to="`/tags?tag=${tag.id}`"
+          :color="tag.ancestors ? undefined : tag.color || undefined"
+          :icon="getIconComponent(tag.icon)"
+          :dashed="tag.ancestors"
+          class="hover:brightness-95 dark:hover:brightness-125"
+        >
+          {{ tag.name }}
+        </Pill>
         <TagPicker v-model="tagIds" v-model:open="tagPickerOpen">
-          <button
-            type="button"
-            class="inline-flex h-6 items-center gap-1 rounded-full border border-dashed border-border px-2 text-xs text-muted-foreground hover:bg-muted hover:text-foreground"
-            :aria-label="t('shell.item_page.add_tags')"
-          >
-            <Plus class="size-3" />
-            <span v-if="itemTags.length === 0">{{ t("shell.item_page.add_tags") }}</span>
-          </button>
+          <Pill v-if="itemTags.length === 0" as="button" dashed :icon="Plus">
+            {{ t("shell.item_page.add_tags") }}
+          </Pill>
+          <Pill v-else as="button" dashed :icon="Plus" :aria-label="t('shell.item_page.add_tags')" />
         </TagPicker>
       </div>
-    </div>
+    </section>
 
     <section>
       <h3 :class="heading">{{ t("shell.item_page.group_product") }}</h3>
       <dl class="flex flex-col">
+        <div :class="row">
+          <dt>{{ $t("global.type") }}</dt>
+          <dd>
+            <TypePicker
+              v-model:open="typeOpen"
+              :current-id="item.entityType?.id"
+              @pick="type => emit('update', { entityTypeId: type.id })"
+            >
+              <button
+                type="button"
+                class="flex max-w-full items-center gap-1.5 rounded-md px-1.5 py-1 text-left hover:bg-muted"
+                :aria-label="$t('global.entity_type')"
+              >
+                <component
+                  :is="getIconComponent(item.entityType?.icon)"
+                  class="size-3.5 shrink-0 text-muted-foreground"
+                />
+                <span class="truncate">{{ item.entityType?.name ?? "—" }}</span>
+                <ChevronDown class="size-3 shrink-0 text-muted-foreground" aria-hidden="true" />
+              </button>
+            </TypePicker>
+          </dd>
+        </div>
         <div :class="row">
           <dt>{{ $t("items.manufacturer") }}</dt>
           <dd>
@@ -294,7 +409,44 @@
             </span>
           </dd>
         </div>
+        <div :class="row">
+          <dt>{{ t("shell.item_page.lifetime") }}</dt>
+          <dd class="flex justify-end">
+            <Switch
+              :model-value="item.lifetimeWarranty"
+              :aria-label="$t('items.lifetime_warranty')"
+              class="scale-90"
+              @update:model-value="v => emit('update', { lifetimeWarranty: v })"
+            />
+          </dd>
+        </div>
       </dl>
+    </section>
+
+    <section>
+      <div class="mb-1 flex items-center justify-between">
+        <h3 :class="heading.replace('mb-1', '')">
+          {{ t("shell.item_page.fields") }}
+        </h3>
+        <button
+          type="button"
+          class="-mr-1 flex size-6 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground"
+          :aria-label="t('shell.item_page.add_field')"
+          :title="t('shell.item_page.add_field')"
+          @click="fieldsEditor?.add()"
+        >
+          <Plus class="size-3.5" />
+        </button>
+      </div>
+      <FieldsEditor ref="fieldsEditor" compact :fields="item.fields" @save="fields => emit('update', { fields })" />
+      <button
+        v-if="item.fields.length === 0"
+        type="button"
+        class="-ml-1.5 rounded-md px-1.5 py-1 text-muted-foreground hover:bg-muted hover:text-foreground"
+        @click="fieldsEditor?.add()"
+      >
+        {{ t("shell.item_page.add_field") }}
+      </button>
     </section>
 
     <section>
@@ -314,6 +466,14 @@
             :model-value="item.archived"
             class="scale-90"
             @update:model-value="v => emit('update', { archived: v })"
+          />
+        </label>
+        <label v-if="contents?.length" class="flex min-h-8 items-center justify-between gap-2">
+          <span class="text-muted-foreground">{{ t("shell.item_page.contents_follow") }}</span>
+          <Switch
+            :model-value="item.syncChildEntityLocations"
+            class="scale-90"
+            @update:model-value="v => emit('update', { syncChildEntityLocations: v })"
           />
         </label>
       </div>
