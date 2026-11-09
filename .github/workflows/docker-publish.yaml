@@ -1,8 +1,7 @@
 name: Docker publish
 
 on:
-  schedule:
-    - cron: '00 0 * * *'
+  workflow_dispatch:
   push:
     branches: [ "main" ]
     paths:
@@ -11,19 +10,7 @@ on:
       - 'Dockerfile'
       - '.dockerignore'
       - '.github/workflows/docker-publish.yaml'
-    ignore:
-      - 'docs/**'
     tags: [ 'v*.*.*' ]
-  pull_request:
-    branches: [ "main" ]
-    paths:
-      - 'backend/**'
-      - 'frontend/**'
-      - 'Dockerfile'
-      - '.dockerignore'
-      - '.github/workflows/docker-publish.yaml'
-    ignore:
-      - 'docs/**'
 
 env:
   GHCR_REPO: ghcr.io/${{ github.repository }}
@@ -53,12 +40,6 @@ jobs:
             runner: ubuntu-24.04-arm
 
     steps:
-      - name: Enable Debug Logs
-        run: echo "##[debug]Enabling debug logging"
-        env:
-          ACTIONS_RUNNER_DEBUG: true
-          ACTIONS_STEP_DEBUG: true
-
       - name: Checkout repository
         uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8
 
@@ -81,7 +62,6 @@ jobs:
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
             type=semver,pattern={{major}}
-            type=schedule,pattern=nightly
 
       - name: Login to GHCR
         uses: docker/login-action@184bdaa0721073962dff0199f1fb9940f07167d1
@@ -178,7 +158,6 @@ jobs:
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
             type=semver,pattern={{major}}
-            type=schedule,pattern=nightly
 
       - name: Create manifest list and push GHCR
         id: push-ghcr
