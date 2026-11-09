@@ -62,7 +62,6 @@ backend/app/api/static/public/*
 !backend/app/api/static/public/.gitkeep
 backend/api
 
-docs/.vitepress/cache/
 .data/
 
 # Playwright

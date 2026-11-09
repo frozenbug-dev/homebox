@@ -1,28 +1,14 @@
 <div align="center">
-  <img src="/docs/src/assets/lilbox.svg" height="200"/>
+  <img src=".github/assets/lilbox.svg" height="200"/>
 </div>
 
 <h1 align="center" style="margin-top: -10px;"> HomeBox </h1>
 <p align="center" style="width: 100%;">
-   <a href="https://homebox.software/en/">Docs</a>
-   |
-   <a href="https://demo.homebox.software">Demo</a>
-   |
-   <a href="https://discord.gg/aY4DCkpNA9">Discord</a>
-</p>
-<p align="center" style="width: 100%;">
     <img src="https://img.shields.io/github/check-runs/frozenbug-dev/homebox/main" alt="Github Checks"/>
     <img src="https://img.shields.io/github/license/frozenbug-dev/homebox"/>
-    <img src="https://img.shields.io/github/v/release/frozenbug-dev/homebox?sort=semver&display_name=release"/>
 </p>
-<p align="center" style="width: 100%;">
-    <img src="https://img.shields.io/reddit/subreddit-subscribers/homebox"/>
-    <img src="https://img.shields.io/mastodon/follow/110749314839831923?domain=infosec.exchange"/>
-    <img src="https://img.shields.io/lemmy/homebox%40lemmy.world?label=lemmy"/>
-</p>
-<p align="center" style="width: 100%;">
-  <a href="https://www.pikapods.com/pods?run=homebox"><img src="https://www.pikapods.com/static/run-button.svg"/></a>
-</p>
+
+> This is a fork of [sysadminsmedia/homebox](https://github.com/sysadminsmedia/homebox) with a reworked UI and additional fixes.
 
 ## What is HomeBox
 
@@ -41,19 +27,15 @@ HomeBox is the inventory and organization system built for the Home User! With a
 - 📱 Responsive Design - Homebox is designed to work on any device, including desktops, tablets, and smartphones.
 
 ## Screenshots
-![Login Screen](.github/screenshots/1.png)
-![Dashboard](.github/screenshots/2.png)
-![Item View](.github/screenshots/3.png)
-![Create Item](.github/screenshots/9.png)
-![Search](.github/screenshots/8.png)
-
-You can also try the demo instances of Homebox:
-- [Demo](https://demo.homebox.software)
-- [Nightly](https://nightly.homebox.software)
+![Login Screen](.github/assets/1.png)
+![Dashboard](.github/assets/2.png)
+![Item View](.github/assets/3.png)
+![Create Item](.github/assets/9.png)
+![Search](.github/assets/8.png)
 
 ## Quick Start
 
-[Configuration & Docker Compose](https://homebox.software/en/quick-start/)
+Configuration options are documented in the [upstream docs](https://homebox.software/en/quick-start/).
 
 ```bash
 # Save pepper to local file
@@ -75,24 +57,6 @@ docker run -d \
 # ghcr.io/frozenbug-dev/homebox:latest-hardened
 ```
 
-<!-- CONTRIBUTING -->
-
-## Contributing
-
-Contributions are what make the open source community such an amazing place to learn, inspire, and create. Any contributions you make are **greatly appreciated**.
-
-To get started with code based contributions, please see our [contributing guide](https://homebox.software/en/contribute/).
-
-If you are not a coder and can't help translate, you can still contribute financially. Financial contributions help us maintain the project and keep demos running.
-
-## Help us Translate
-We want to make sure that Homebox is available in as many languages as possible. If you are interested in helping us translate Homebox, open a pull request against the files in [`frontend/locales`](frontend/locales).
-
 ## Credits
 - Original project by [@hay-kot](https://github.com/hay-kot)
 - Logo by [@lakotelman](https://github.com/lakotelman)
-
-### Contributors
-<a href="https://github.com/frozenbug-dev/homebox/graphs/contributors">
-  <img src="https://contrib.rocks/image?repo=frozenbug-dev/homebox" />
-</a>
