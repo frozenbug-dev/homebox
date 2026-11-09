@@ -2,7 +2,7 @@
   import AppSubheader from "~/components/App/Subheader.vue";
   import { useI18n } from "vue-i18n";
   import { useQuery, useQueryClient } from "@tanstack/vue-query";
-  import { useHotkey } from "@tanstack/vue-hotkeys";
+  import { useHotkey, type RegisterableHotkey } from "@tanstack/vue-hotkeys";
   import { useRouteQuery } from "@vueuse/router";
   import { monitorForElements } from "@atlaskit/pragmatic-drag-and-drop/element/adapter";
   import { ArrowLeft, Ellipsis, Link as LinkIcon, MapPin, Plus, Printer, Search, Trash2 } from "@lucide/vue";
@@ -388,18 +388,42 @@
   const placesMeta = (name: string) => ({ meta: { name: t(name), group: "places" as const } });
   const hasSelection = () => !!selected.value;
 
-  useHotkey(SHORTCUTS.placeAddInside, addInside, {
-    ...placesMeta("shell.shortcuts.place_add_inside"),
+  const placesTree = useTemplateRef<{ el: HTMLElement | null }>("placesTree");
+
+  /**
+   * A page-wide place shortcut, plus a copy bound to the tree. Once a row has
+   * focus, TanStack Hotkeys skips single-letter shortcuts there: `role="tree"`
+   * claims letters for typeahead. A hotkey targeted at the tree itself still
+   * fires, and in the capture phase it runs before reka's typeahead, so focus
+   * doesn't jump to a place starting with that letter. Only one copy fires:
+   * the page-wide one skips keys from inside the tree. The copy carries no
+   * meta, so the "?" cheatsheet lists the shortcut once.
+   */
+  function usePlaceHotkey(
+    hotkey: RegisterableHotkey,
+    callback: () => void,
+    options: { name: string; enabled: () => boolean }
+  ) {
+    useHotkey(hotkey, callback, { ...placesMeta(options.name), enabled: options.enabled });
+    useHotkey(hotkey, callback, {
+      enabled: options.enabled,
+      target: () => placesTree.value?.el ?? null,
+      capture: true,
+    });
+  }
+
+  usePlaceHotkey(SHORTCUTS.placeAddInside, addInside, {
+    name: "shell.shortcuts.place_add_inside",
     enabled: hasSelection,
   });
   // The list's own P prints the hovered or selected rows; otherwise P prints this place's label.
   const list = useTemplateRef<{ hasTarget: boolean }>("list");
-  useHotkey(SHORTCUTS.placePrint, printLabel, {
-    ...placesMeta("shell.shortcuts.place_print"),
+  usePlaceHotkey(SHORTCUTS.placePrint, printLabel, {
+    name: "shell.shortcuts.place_print",
     enabled: () => hasSelection() && !list.value?.hasTarget,
   });
-  useHotkey(SHORTCUTS.placeRename, startRename, {
-    ...placesMeta("shell.shortcuts.place_rename"),
+  usePlaceHotkey(SHORTCUTS.placeRename, startRename, {
+    name: "shell.shortcuts.place_rename",
     enabled: hasSelection,
   });
 </script>
@@ -449,6 +473,7 @@
       <div class="flex-1 overflow-y-auto">
         <PlacesTree
           v-if="tree"
+          ref="placesTree"
           v-model:expanded="expanded"
           :tree="visibleTree"
           :index="index"

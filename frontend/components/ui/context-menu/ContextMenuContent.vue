@@ -5,7 +5,13 @@
   import { ContextMenuContent, ContextMenuPortal, useForwardPropsEmits } from "reka-ui";
   import { cn } from "@/lib/utils";
 
-  const props = defineProps<ContextMenuContentProps & { class?: HTMLAttributes["class"] }>();
+  // Keep the menu on screen: slide it along both axes (not only flip sides) and
+  // hold it off the edges. A 14rem menu opened mid-screen on a phone fits neither side.
+  const props = withDefaults(defineProps<ContextMenuContentProps & { class?: HTMLAttributes["class"] }>(), {
+    prioritizePosition: true,
+    collisionPadding: 8,
+    class: undefined,
+  });
   const emits = defineEmits<ContextMenuContentEmits>();
 
   const delegatedProps = reactiveOmit(props, "class");

@@ -213,10 +213,15 @@
   }
 
   const indent = (level: number) => ({ paddingLeft: `${(level - 1) * 18 + 10}px` });
+
+  /** The tree's root element, for page shortcuts that must also work while a row has focus. */
+  const root = useTemplateRef<{ $el: HTMLElement }>("root");
+  defineExpose({ el: computed(() => root.value?.$el ?? null) });
 </script>
 
 <template>
   <TreeRoot
+    ref="root"
     v-slot="{ flattenItems }"
     v-model:expanded="expandedKeys"
     :items="tree"

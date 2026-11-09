@@ -27,6 +27,8 @@
 
   const root = useTemplateRef<HTMLElement>("root");
   const query = ref("");
+  /** Mod+A "selected" the search text: the next key replaces or deletes all of it. */
+  const allSelected = ref(false);
 
   const matches = (item: ActionMenuItem, q: string) =>
     `${item.label} ${item.hint ?? ""} ${item.keywords ?? ""}`.toLowerCase().includes(q);
@@ -60,13 +62,25 @@
   function onKeydown(e: KeyboardEvent) {
     // Keys pressed in a nested submenu belong to that submenu's search.
     if ((e.target as Element).closest("[role=menu]") !== menuEl) return;
-    if (e.metaKey || e.ctrlKey || e.altKey) return;
+    const mod = e.metaKey || e.ctrlKey;
 
     let handled = true;
-    if (e.key === "Backspace" && query.value) query.value = query.value.slice(0, -1);
+    // Mod+A selects the typed text, like in a text field, instead of reaching the list's "select all".
+    if (mod && !e.altKey && !e.shiftKey && e.key.toLowerCase() === "a") allSelected.value = !!query.value;
+    // Mod/Alt+Backspace delete everything / the last word.
+    else if (e.key === "Backspace" && query.value && (mod || allSelected.value)) query.value = "";
+    else if (e.key === "Backspace" && query.value && e.altKey) query.value = query.value.replace(/\S*\s*$/, "");
+    else if (mod || e.altKey) handled = false;
+    else if (e.key === "Backspace" && query.value) query.value = query.value.slice(0, -1);
     else if (e.key === "Escape" && query.value) query.value = "";
-    else if (e.key.length === 1 && (e.key !== " " || query.value)) query.value += e.key;
-    else handled = false;
+    else if (e.key.length === 1 && (e.key !== " " || query.value)) {
+      // Typing over a selection replaces it.
+      query.value = (allSelected.value ? "" : query.value) + e.key;
+    } else handled = false;
+
+    // Any other key drops the selection, as moving the caret would.
+    const modifierOnly = ["Shift", "Meta", "Control", "Alt"].includes(e.key);
+    if (!modifierOnly && !(mod && e.key.toLowerCase() === "a")) allSelected.value = false;
 
     if (handled) {
       e.preventDefault();
@@ -82,9 +96,14 @@
   });
   onBeforeUnmount(() => menuEl?.removeEventListener("keydown", onKeydown, { capture: true }));
 
-  // Keep the keyboard on the first result as the list changes.
+  // Keep the keyboard on the first result as the list changes. Re-rendering removes the focused
+  // item, so with no results fall back to the menu itself: focus left on <body> would send the
+  // next keystrokes past the search to the app's global shortcuts.
   watch(query, () =>
-    nextTick(() => root.value?.querySelector<HTMLElement>("[role=menuitem]:not([data-disabled])")?.focus())
+    nextTick(() => {
+      const first = root.value?.querySelector<HTMLElement>("[role=menuitem]:not([data-disabled])");
+      (first ?? menuEl)?.focus();
+    })
   );
 
   const itemClass = (item: ActionMenuItem) =>
@@ -96,7 +115,7 @@
     <template v-if="query">
       <div class="flex h-8 items-center gap-2 px-2 text-sm" aria-live="polite">
         <Search class="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
-        <span class="truncate">{{ query }}</span>
+        <span class="truncate" :class="{ 'rounded-xs bg-primary/20': allSelected }">{{ query }}</span>
         <span class="-ml-1.5 h-4 w-px shrink-0 animate-pulse bg-foreground" aria-hidden="true" />
       </div>
       <ContextMenuSeparator />

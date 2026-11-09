@@ -67,23 +67,12 @@
             <UserPlus class="mr-2 size-4" />
             {{ t("components.collection.selector.join_collection") }}
           </CommandItem>
-          <CommandItem as-child value="collection-settings">
-            <NuxtLink to="/collection/settings" class="flex w-full items-center" @click="open = false">
-              <Settings class="mr-2 size-4" />
-              {{ t("components.collection.selector.collection_options") }}
-            </NuxtLink>
-          </CommandItem>
         </CommandGroup>
-        <CommandInput
-          v-model="search"
-          :placeholder="t('components.collection.selector.search_collections')"
-          :display-value="_ => ''"
-        />
-        <CommandEmpty>{{ t("components.collection.selector.no_collection_found") }}</CommandEmpty>
+        <CommandSeparator />
         <CommandList>
           <CommandGroup :heading="t('components.collection.selector.your_collections')">
             <CommandItem
-              v-for="collection in filteredCollections"
+              v-for="collection in collections"
               :key="collection.id"
               :value="collection.id"
               @select="selectCollection(collection)"
@@ -104,13 +93,12 @@
 </template>
 
 <script setup lang="ts">
-  import { Check, ChevronsUpDown, House, Plus, Settings, UserPlus } from "@lucide/vue";
-  import fuzzysort from "fuzzysort";
+  import { Check, ChevronsUpDown, House, Plus, UserPlus } from "@lucide/vue";
   import { Button } from "~/components/ui/button";
-  import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "~/components/ui/command";
+  import { Command, CommandGroup, CommandItem, CommandList, CommandSeparator } from "~/components/ui/command";
   import { Popover, PopoverContent, PopoverTrigger } from "~/components/ui/popover";
   import { cn } from "~/lib/utils";
-  import { ref, computed, watch, onMounted } from "vue";
+  import { ref, onMounted } from "vue";
   import { useSidebar } from "@/components/ui/sidebar/utils";
   import { useI18n } from "vue-i18n";
   import { DialogID } from "@/components/ui/dialog-provider/utils";
@@ -121,10 +109,8 @@
   const { t } = useI18n();
 
   const open = ref(false);
-  const search = ref("");
 
   const { collections, selectedCollection, load, set } = useCollections();
-  const collectionsList = computed(() => collections.value);
 
   function selectCollection(collection: CollectionSummary) {
     if (selectedCollection.value?.id !== collection.id) {
@@ -135,27 +121,6 @@
   }
 
   const sidebar = useSidebar();
-
-  const filteredCollections = computed(() => {
-    const filtered = fuzzysort
-      .go(search.value, collectionsList.value, {
-        key: "name",
-        limit: 0,
-        threshold: 0,
-      })
-      .map(i => i.obj);
-    return filtered;
-  });
-
-  // Reset search when value is cleared
-  watch(
-    () => selectedCollection.value?.id,
-    () => {
-      if (!selectedCollection.value) {
-        search.value = "";
-      }
-    }
-  );
 
   onMounted(() => {
     load();
