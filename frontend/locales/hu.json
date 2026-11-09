@@ -569,7 +569,6 @@
         "delete_account_confirm": "Biztosan törlöd a fiókodat? Ha te vagy az utolsó tag a csoportodban, minden adatod törlődik. Ez a művelet nem visszafordítható.",
         "delete_account_sub": "Törlöd a fiókodat és az összes kapcsolódó adatot. Ezt a műveletet nem lehet visszavonni.",
         "delete_notifier_confirm": "Biztos, hogy törölni akarod ezt az értesítőt?",
-        "display_legacy_header": "{ currentValue, select, true {Legacy fejléc letiltása} false {Legacy fejléc engedélyezése} other {Nincs találat}}",
         "enabled": "Engedélyezve",
         "example": "Példa",
         "group_settings": "Csoport beállításai",
@@ -588,8 +587,6 @@
         "notifiers_sub": "Értesítések kérése a közelgő karbantartási emlékeztetőkről",
         "override_locale": "Dátum és pénznem nyelvének felülbírálása",
         "test": "Teszt",
-        "theme_settings": "Téma Beállítások",
-        "theme_settings_sub": "A témabeállítások a böngésző helyi tárhelyén tárolódnak. Bármikor megváltoztathatod a témát. Ha problémába\n ütközöl a téma beállításakor, próbáld meg frissíteni az oldalt a böngésződben.",
         "toast": {
             "account_deleted": "Fiókodat sikeresen töröltük.",
             "failed_change_password": "Jelszó megváltoztatása sikertelen.",

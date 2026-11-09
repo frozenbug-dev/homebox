@@ -15,7 +15,11 @@
    * deletions as `reload`.
    */
   const props = defineProps<{ place: EntityOut }>();
-  const emit = defineEmits<{ update: [changes: Partial<EntityUpdate>]; reload: [] }>();
+  const emit = defineEmits<{
+    update: [changes: Partial<EntityUpdate>];
+    reload: [];
+    editAttachment: [attachmentId: string];
+  }>();
 
   const { t } = useI18n();
   const api = useUserApi();
@@ -32,6 +36,7 @@
       params: { type: "preloaded", ...photo, itemId: props.place.id },
       onClose: result => {
         if (result?.action === "delete") emit("reload");
+        else if (result?.action === "edit") emit("editAttachment", result.id);
       },
     });
   }

@@ -38,20 +38,21 @@
   function closeDialog(dialogId?: DialogID, result?: any) {
     // No dialogId passed -> close current active dialog without result
     if (!dialogId) {
-      if (activeDialog.value) {
-        // call onClose (if any) with no result
-        activeOnCloseCallback?.(undefined);
-        activeOnCloseCallback = undefined;
-      }
+      const onClose = activeDialog.value ? activeOnCloseCallback : undefined;
+      activeOnCloseCallback = undefined;
       activeDialog.value = null;
+      // call onClose (if any) with no result, after resetting so it can open another dialog
+      onClose?.(undefined);
       return;
     }
 
     // dialogId passed -> if it's the active dialog, call onClose with result
     if (activeDialog.value && activeDialog.value === dialogId) {
-      activeOnCloseCallback?.(result);
+      const onClose = activeOnCloseCallback;
       activeOnCloseCallback = undefined;
       activeDialog.value = null;
+      // after resetting, so onClose can chain into another dialog (e.g. image -> edit attachment)
+      onClose?.(result);
     }
   }
 

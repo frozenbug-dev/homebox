@@ -812,7 +812,6 @@
         "delete_account_confirm": "Opravdu chcete svůj účet odstranit? Pokud jste posledním členem skupiny, budou všechna vaše data odstraněna. Tuto akci nelze vzít zpět.",
         "delete_account_sub": "Odstranit váš účet a všechna jeho přidružená data. Tuto akci nelze vrátit.",
         "delete_notifier_confirm": "Opravdu chcete tohoto oznamovače odstranit?",
-        "display_legacy_header": "{ currentValue, select, true {Zakázat staré záhlaví} false {Povolit staré záhlaví} other {Nevybráno}}",
         "enabled": "Povoleno",
         "example": "Příklad",
         "group_settings": "Nastavení skupiny",
@@ -837,8 +836,6 @@
         "notifiers_sub": "Dostávejte oznámení o nadcházejících údržbách",
         "override_locale": "Přepsat jazyk data a měny",
         "test": "Otestovat",
-        "theme_settings": "Nastavení motivu",
-        "theme_settings_sub": "Nastavení motivu jsou uložena v místním úložišti prohlížeče. Motiv můžete kdykoli změnit. Pokud máte s \n nastavením motivu potíže, zkuste obnovit prohlížeč.",
         "toast": {
             "account_deleted": "Váš účet byl odstraněn.",
             "api_key_created": "API klíč byl vytvořen.",

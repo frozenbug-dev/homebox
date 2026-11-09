@@ -812,7 +812,6 @@
         "delete_account_confirm": "Weet u zeker dat u uw account wilt verwijderen? Als u het laatste lid in uw groep bent, worden al uw gegevens verwijderd. Deze actie kan niet ongedaan worden gemaakt.",
         "delete_account_sub": "Verwijder je account en alle bijhorende data. Deze actie kan niet ongedaan worden.",
         "delete_notifier_confirm": "Weet je zeker dat je deze notificatie wilt verwijderen?",
-        "display_legacy_header": "{ currentValue, select, true {Legacy Header uitschakelen} false {Legacy Header inschakelen} other {Overig}}",
         "enabled": "Ingeschakeld",
         "example": "Voorbeeld",
         "group_settings": "Groepsinstellingen",
@@ -837,8 +836,6 @@
         "notifiers_sub": "Ontvang meldingen voor komende onderhoudsherinneringen",
         "override_locale": "Datum en valutataal overschrijven",
         "test": "Test",
-        "theme_settings": "Thema-instellingen",
-        "theme_settings_sub": "Thema-instellingen worden opgeslagen in de lokale opslag van uw browser. Je kan deze wijzigen op elk moment. \nAls je problemen hebt met de instellingen kun je de browser verversen.",
         "toast": {
             "account_deleted": "Uw account is verwijderd.",
             "api_key_created": "API key aangemaakt.",

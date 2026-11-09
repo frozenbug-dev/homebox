@@ -812,7 +812,6 @@
         "delete_account_confirm": "Czy na pewno chcesz usunąć swoje konto? Jeśli jesteś ostatnim członkiem grupy, wszystkie Twoje dane zostaną usunięte. Tej czynności nie można cofnąć.",
         "delete_account_sub": "Usuń swoje konto oraz wszystkie powiązane z nim dane. Tego nie można cofnąć.",
         "delete_notifier_confirm": "Czy na pewno chcesz usunąć tego powiadamiacza?",
-        "display_legacy_header": "{ currentValue, select, true {Wyłącz starszy nagłówek} false {Włącz starszy nagłówek} other {Brak wartości}}",
         "enabled": "Włączone",
         "example": "Przykład",
         "group_settings": "Ustawienia grupy",
@@ -837,8 +836,6 @@
         "notifiers_sub": "Otrzymuj powiadomienia o nadchodzących przypomnieniach o konserwacji",
         "override_locale": "Zastąp język daty i waluty",
         "test": "Test",
-        "theme_settings": "Ustawienia tematu",
-        "theme_settings_sub": "Ustawienia motywu są przechowywane w lokalnej pamięci przeglądarki. Możesz zmienić motyw w dowolnym momencie. \nJeśli masz problemy z ustawieniem motywu, spróbuj odświeżyć przeglądarkę.",
         "toast": {
             "account_deleted": "Twoje konto zostało usunięte.",
             "api_key_created": "Utworzono klucz API.",

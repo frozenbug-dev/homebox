@@ -689,7 +689,6 @@
         "delete_account_confirm": "Haluatko varmasti poistaa tilisi? Jos olet ryhmän viimeinen jäsen, kaikki data poistetaan. Tätä toimintoa ei voi perua.",
         "delete_account_sub": "Poista tilisi ja kaikki siihen liittyvät tiedot. Tätä toimintoa ei voi perua.",
         "delete_notifier_confirm": "Haluatko varmasti poistaa tämän ilmoitustyökalun?",
-        "display_legacy_header": "{ currentValue, select, true {Poista vanha banneri käytöstä} false {Ota vanha banneri käyttöön} other {Not Hit}}",
         "enabled": "Käytössä",
         "example": "Esimerkki",
         "group_settings": "Ryhmän asetukset",
@@ -711,8 +710,6 @@
         "notifiers_sub": "Vastaanota ilmoituksia tulevista huoltomuistutuksista",
         "override_locale": "Yliaja päivämäärä- ja valuutta-asetusten kieli",
         "test": "Testi",
-        "theme_settings": "Teeman asetukset",
-        "theme_settings_sub": "Teeman asetukset tallennetaan selaimesi paikalliseen tallennustilaan. Voit vaihtaa teemaa milloin tahansa. Jos sinulla on ongelmia teeman asettamisessa, yritä päivittää sivu.",
         "toast": {
             "account_deleted": "Tilisi on poistettu.",
             "failed_change_password": "Salasanan vaihtaminen epäonnistui.",

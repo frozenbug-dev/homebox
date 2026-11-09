@@ -236,7 +236,7 @@
             v-drop-target="dropRule(item.value.id)"
             v-bind="item.bind"
             as="div"
-            class="group grid h-9 cursor-pointer grid-cols-[minmax(0,1fr)_64px_84px] items-center rounded-md pr-2.5 outline-none hover:bg-muted/70 focus-visible:bg-muted/70 data-selected:bg-primary/10 data-selected:font-medium"
+            class="group grid h-10 cursor-pointer grid-cols-[minmax(0,1fr)_64px_84px] items-center rounded-md pr-2.5 outline-none hover:bg-muted/70 focus-visible:bg-muted/70 data-selected:bg-primary/10 data-selected:font-medium"
             :class="{
               'bg-primary/10 ring-2 ring-primary/60 ring-inset': dropActiveId === item.value.id,
               'bg-muted/70': menuFor === item.value.id,
@@ -279,7 +279,7 @@
 
       <div
         v-if="i === insertAfter(flattenItems)"
-        class="flex h-9 items-center gap-1.5 rounded-md bg-primary/5 pr-2.5"
+        class="flex h-10 items-center gap-1.5 rounded-md bg-primary/5 pr-2.5"
         :style="indent(newRowLevel(flattenItems))"
       >
         <span class="w-4 shrink-0" />
@@ -302,7 +302,7 @@
     </template>
     <div
       v-if="addingIn === null && flattenItems.length === 0"
-      class="flex h-8 items-center gap-1.5 pr-2"
+      class="flex h-10 items-center gap-1.5 pr-2"
       :style="indent(1)"
     >
       <MapPin class="size-3.5 shrink-0 text-primary" aria-hidden="true" />

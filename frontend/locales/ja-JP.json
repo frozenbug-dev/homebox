@@ -551,7 +551,6 @@
         "delete_account_confirm": "アカウントを削除しますか？あなたがこのグループのメンバーの最後の一人の場合、アイテム・ロケーション・ラベルなどすべてのデータが削除されます。'<br>'【最終確認】'<u>'この削除機能に再確認ポップアップはありません。続行した場合、すぐにデータが削除され復元もできません。'<u>'",
         "delete_account_sub": "アカウントと関連するデータをすべて削除します。元に戻すことはできません。",
         "delete_notifier_confirm": "この通知設定を削除してもよろしいですか？",
-        "display_legacy_header": "{currentValue, select, true {レガシーヘッダーを無効にする} false {レガシーヘッダーを有効にする} other {ヒットしない}}",
         "enabled": "有効",
         "example": "例",
         "group_settings": "グループ設定",
@@ -573,8 +572,6 @@
         "notifiers_sub": "メンテナンスなどのリマインダー通知を受け取れます",
         "override_locale": "日時・通貨の言語を設定 (上記の言語設定とは別の言語を設定可能)",
         "test": "テスト",
-        "theme_settings": "テーマ設定",
-        "theme_settings_sub": "テーマ設定はブラウザに保存されます。いつでも変更できます。\nテーマ設定によって問題が発生した場合は、再読み込みを行ってください。",
         "toast": {
             "account_deleted": "アカウントを削除しました",
             "api_key_created": "APIキーを生成しました",

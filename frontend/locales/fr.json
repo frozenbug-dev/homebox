@@ -812,7 +812,6 @@
         "delete_account_confirm": "Êtes-vous certain de vouloir supprimer votre compte ? Si vous êtes le dernier membre de votre groupe, toutes vos données seront supprimées. Cette action est irréversible.",
         "delete_account_sub": "Supprimer le compte et toutes ses données. Aucune récupération possible.",
         "delete_notifier_confirm": "Êtes-vous certain de vouloir supprimer ce notificateur ?",
-        "display_legacy_header": "{ currentValue, select, true {Disable Legacy Header} false {Enable Legacy Header} other {Not Hit}}",
         "enabled": "Activé",
         "example": "Exemple",
         "group_settings": "Paramètres du groupe",
@@ -837,8 +836,6 @@
         "notifiers_sub": "Recevez des notifications pour vous prévenir des prochaines maintenances",
         "override_locale": "Remplacer la date et la langue de la devise",
         "test": "Test",
-        "theme_settings": "Paramètres du thème",
-        "theme_settings_sub": "Les paramètres du thème sont stockés dans le navigateur. Vous pouvez les changer à tout moment. Si vous\nrencontrez des problèmes, il est conseillé de rafraichir la page.",
         "toast": {
             "account_deleted": "Votre compte a été supprimé.",
             "api_key_created": "Clé API créée.",

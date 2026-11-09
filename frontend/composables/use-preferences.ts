@@ -1,6 +1,5 @@
 import type { Ref } from "vue";
 import type { EntitySummary } from "~/lib/api/types/data-contracts";
-import type { DaisyTheme } from "~~/lib/data/themes";
 
 export type ViewType = "table" | "card";
 
@@ -15,13 +14,11 @@ export type LocationViewPreferences = {
   showDetails: boolean;
   editorAdvancedView: boolean;
   itemDisplayView: ViewType;
-  theme: DaisyTheme;
   itemsPerTablePage: number;
   tableHeaders?: {
     value: keyof EntitySummary;
     enabled: boolean;
   }[];
-  displayLegacyHeader: boolean;
   legacyImageFit: boolean;
   language?: string | null;
   overrideFormatLocale?: string | null;
@@ -53,9 +50,7 @@ const DEFAULT_PREFERENCES: LocationViewPreferences = {
   showDetails: true,
   editorAdvancedView: false,
   itemDisplayView: "card",
-  theme: "homebox",
   itemsPerTablePage: 12,
-  displayLegacyHeader: false,
   legacyImageFit: false,
   language: null,
   overrideFormatLocale: null,

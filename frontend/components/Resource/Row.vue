@@ -95,7 +95,7 @@
           v-if="list.selectable.value"
           role="gridcell"
           data-row-select
-          class="flex size-7 shrink-0 items-center justify-center"
+          class="-mr-1.5 flex h-7 w-6 shrink-0 items-center justify-center"
           :aria-label="t('components.item.view.selectable.select_card')"
         >
           <GripVertical

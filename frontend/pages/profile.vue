@@ -1,122 +1,136 @@
 <script setup lang="ts">
   import { useI18n } from "vue-i18n";
+  import * as Locales from "date-fns/locale";
+  import { Copy, KeyRound, LoaderCircle, LogOut, Plus, Trash2 } from "@lucide/vue";
   import { toast } from "@/components/ui/sonner";
-  import type { Detail } from "~~/components/global/DetailsSection/types";
-  import MdiLoading from "~icons/mdi/loading";
-  import MdiAccount from "~icons/mdi/account";
-  import MdiDelete from "~icons/mdi/delete";
-  import MdiFill from "~icons/mdi/fill";
-  import MdiKeyVariant from "~icons/mdi/key-variant";
-  import MdiContentCopy from "~icons/mdi/content-copy";
   import { Button } from "@/components/ui/button";
+  import { Input } from "@/components/ui/input";
+  import { Switch } from "@/components/ui/switch";
+  import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
+  import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
   import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
   import { useDialog } from "@/components/ui/dialog-provider";
-  import LanguageSelector from "~/components/App/LanguageSelector.vue";
   import { DialogID } from "~/components/ui/dialog-provider/utils";
-  import ThemePicker from "~/components/App/ThemePicker.vue";
-  import ItemDuplicateSettings from "~/components/Item/DuplicateSettings.vue";
   import FormPassword from "~/components/Form/Password.vue";
   import FormTextField from "~/components/Form/TextField.vue";
   import FormDatePicker from "~/components/Form/DatePicker.vue";
   import FormCheckbox from "~/components/Form/Checkbox.vue";
-  import BaseContainer from "@/components/Base/Container.vue";
-  import BaseCard from "@/components/Base/Card.vue";
-  import BaseSectionHeader from "@/components/Base/SectionHeader.vue";
-  import DetailsSection from "@/components/global/DetailsSection/DetailsSection.vue";
   import DateTime from "@/components/global/DateTime.vue";
   import PasswordScore from "~/components/global/PasswordScore.vue";
+  import SettingsSection from "~/components/Settings/Section.vue";
+  import SettingsGroup from "~/components/Settings/Group.vue";
+  import SettingsRow from "~/components/Settings/Row.vue";
+  import SettingsListRow from "~/components/Settings/ListRow.vue";
+  import { fmtDate } from "~~/composables/use-formatters";
+  import { localeMeasurementSystem, measurementLocale } from "~~/composables/use-measurement";
   import { PASSWORD_MIN_LENGTH, PASSWORD_RULES } from "~/lib/passwords";
   import type { APIKeyOut } from "~~/lib/api/types/data-contracts";
 
-  const { t } = useI18n();
+  /**
+   * Account settings: who you are, how you sign in, and the preferences that
+   * follow you across collections. Laid out with the same section, group and
+   * row pieces as collection settings.
+   */
+  definePageMeta({ middleware: ["auth"] });
 
-  definePageMeta({
-    middleware: ["auth"],
-  });
-  useHead({
-    title: "HomeBox | " + t("menu.profile"),
-  });
+  const { t, locale, availableLocales } = useI18n({ useScope: "global" });
+  usePageHeader(() => [{ label: t("profile.settings.title") }]);
+  useHead({ title: () => `HomeBox | ${t("profile.settings.title")}` });
 
   const api = useUserApi();
+  const auth = useAuthContext();
   const confirm = useConfirm();
-
+  const preferences = useViewPreferences();
   const { openDialog, closeDialog } = useDialog();
 
-  const preferences = useViewPreferences();
-  function setDisplayHeader() {
-    preferences.value.displayLegacyHeader = !preferences.value.displayLegacyHeader;
-  }
-  function setLegacyImageFit() {
-    preferences.value.legacyImageFit = !preferences.value.legacyImageFit;
+  const initial = computed(() => (auth.user?.name ?? "").trim().charAt(0).toUpperCase() || "?");
+
+  // ----- Language & region -----
+
+  function setLanguage(lang: unknown) {
+    if (typeof lang !== "string") return;
+    locale.value = lang;
+    preferences.value.language = lang;
   }
 
-  const auth = useAuthContext();
+  const formatLocales = Object.values(Locales).map(l => ({
+    code: l.code,
+    name: new Intl.DisplayNames([preferences.value.language ?? "en-US"], { type: "language" }).of(l.code) ?? l.code,
+    localName: new Intl.DisplayNames([l.code], { type: "language" }).of(l.code) ?? l.code,
+  }));
 
-  const details = computed(() => {
-    return [
-      {
-        name: "global.name",
-        text: auth.user?.name || t("global.unknown"),
-      },
-      {
-        name: "global.email",
-        text: auth.user?.email || t("global.unknown"),
-      },
-    ] as Detail[];
+  // "none" stands in for no override, which follows the language
+  const formatLocale = computed({
+    get: () => preferences.value.overrideFormatLocale ?? "none",
+    set: (v: string) => {
+      preferences.value.overrideFormatLocale = v === "none" ? undefined : v;
+    },
   });
 
-  async function deleteProfile() {
-    const result = await confirm.open(t("profile.delete_account_confirm"));
-
-    if (result.isCanceled) {
-      return;
-    }
-
-    const { response } = await api.user.delete();
-
-    if (response?.status === 204) {
-      toast.success(t("profile.toast.account_deleted"));
-      auth.logout(api);
-      navigateTo("/");
-    }
-
-    toast.error(t("profile.toast.failed_delete_account"));
-  }
-
-  const passwordChange = reactive({
-    loading: false,
-    current: "",
-    new: "",
-    isValid: false,
+  const dateExample = computed(() => {
+    // read the override so the example updates when it changes
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const override = preferences.value.overrideFormatLocale;
+    return fmtDate(new Date(Date.now() - 15 * 60000), "relative");
   });
+
+  // "auto" stands in for a null preference, which follows the locale
+  const measurementSystem = computed({
+    get: () => preferences.value.measurementSystem ?? "auto",
+    set: (v: string) => {
+      preferences.value.measurementSystem = v === "metric" || v === "imperial" ? v : null;
+    },
+  });
+  const localeSystem = computed(() => {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const override = preferences.value.overrideFormatLocale;
+    return localeMeasurementSystem(measurementLocale());
+  });
+
+  // ----- Duplicating items -----
+
+  const duplicate = computed(() => preferences.value.duplicateSettings);
+  const prefix = ref(duplicate.value.copyPrefixOverride ?? "");
+  const customPrefix = computed({
+    get: () => duplicate.value.copyPrefixOverride !== null,
+    set: (on: boolean) => {
+      duplicate.value.copyPrefixOverride = on ? prefix.value : null;
+    },
+  });
+  watch(prefix, v => {
+    if (customPrefix.value) duplicate.value.copyPrefixOverride = v;
+  });
+
+  // ----- Password -----
+
+  const passwordChange = reactive({ loading: false, current: "", new: "", isValid: false });
+
+  function openChangePassword() {
+    passwordChange.current = "";
+    passwordChange.new = "";
+    openDialog(DialogID.ChangePassword);
+  }
 
   async function changePassword() {
+    if (!passwordChange.isValid) return;
     passwordChange.loading = true;
-    if (!passwordChange.isValid) {
+    try {
+      const { error } = await api.user.changePassword(passwordChange.current, passwordChange.new);
+      if (error) {
+        toast.error(t("profile.toast.failed_change_password"));
+        return;
+      }
+      toast.success(t("profile.toast.password_changed"));
+      closeDialog(DialogID.ChangePassword);
+      passwordChange.new = "";
+      passwordChange.current = "";
+    } finally {
       passwordChange.loading = false;
-      return;
     }
-
-    const { error } = await api.user.changePassword(passwordChange.current, passwordChange.new);
-
-    if (error) {
-      toast.error(t("profile.toast.failed_change_password"));
-      passwordChange.loading = false;
-      return;
-    }
-
-    toast.success(t("profile.toast.password_changed"));
-    closeDialog(DialogID.ChangePassword);
-    passwordChange.new = "";
-    passwordChange.current = "";
-    passwordChange.loading = false;
   }
 
   async function logoutAllDevices() {
-    const result = await confirm.open(t("profile.logout_all_confirm"));
-    if (result.isCanceled) {
-      return;
-    }
+    if ((await confirm.open(t("profile.logout_all_confirm"))).isCanceled) return;
 
     const { error } = await api.user.logoutAll();
     if (error) {
@@ -131,11 +145,10 @@
     navigateTo("/");
   }
 
-  // ---------------------------------------------------------------------------
-  // API keys
+  // ----- API keys -----
 
   const apiKeys = ref<APIKeyOut[]>([]);
-  const apiKeysLoading = ref(false);
+  const apiKeysLoading = ref(true);
 
   async function loadApiKeys() {
     apiKeysLoading.value = true;
@@ -148,16 +161,9 @@
     apiKeys.value = data ?? [];
   }
 
-  onMounted(() => {
-    void loadApiKeys();
-  });
+  onMounted(() => void loadApiKeys());
 
-  const apiKeyForm = reactive({
-    name: "",
-    setExpiration: false,
-    expiresAt: "",
-    submitting: false,
-  });
+  const apiKeyForm = reactive({ name: "", setExpiration: false, expiresAt: "", submitting: false });
 
   function openCreateApiKey() {
     apiKeyForm.name = "";
@@ -180,11 +186,7 @@
       expiresAt = new Date(apiKeyForm.expiresAt + "T23:59:59Z").toISOString();
     }
 
-    const { data, error } = await api.user.createApiKey({
-      name: apiKeyForm.name.trim(),
-      expiresAt,
-    });
-
+    const { data, error } = await api.user.createApiKey({ name: apiKeyForm.name.trim(), expiresAt });
     apiKeyForm.submitting = false;
 
     if (error || !data) {
@@ -216,8 +218,7 @@
   }
 
   async function revokeApiKey(key: APIKeyOut) {
-    const result = await confirm.open(t("profile.api_key_delete_confirm"));
-    if (result.isCanceled) return;
+    if ((await confirm.open(t("profile.api_key_delete_confirm"))).isCanceled) return;
 
     const { error } = await api.user.deleteApiKey(key.id);
     if (error) {
@@ -227,98 +228,239 @@
     toast.success(t("profile.toast.api_key_deleted"));
     await loadApiKeys();
   }
+
+  // ----- Delete account -----
+
+  async function deleteProfile() {
+    if ((await confirm.open(t("profile.delete_account_confirm"))).isCanceled) return;
+
+    const { response } = await api.user.delete();
+    if (response?.status === 204) {
+      toast.success(t("profile.toast.account_deleted"));
+      auth.logout(api);
+      navigateTo("/");
+      return;
+    }
+    toast.error(t("profile.toast.failed_delete_account"));
+  }
 </script>
 
 <template>
-  <div>
-    <Dialog :dialog-id="DialogID.DuplicateSettings">
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>{{ $t("items.duplicate.title") }}</DialogTitle>
-        </DialogHeader>
-        <ItemDuplicateSettings v-model="preferences.duplicateSettings" />
-        <p class="text-sm text-muted-foreground">
-          {{ $t("items.duplicate.override_instructions") }}
-        </p>
-      </DialogContent>
-    </Dialog>
+  <div class="flex-1 px-4 pt-6 pb-24 sm:px-8 md:pt-10 lg:px-12">
+    <div class="mx-auto max-w-190">
+      <SettingsSection :title="t('profile.settings.title')" :description="t('profile.settings.sub')">
+        <!-- Profile -->
+        <SettingsGroup :title="t('profile.settings.groups.profile')">
+          <SettingsListRow :title="auth.user?.name || t('global.unknown')" :subtitle="auth.user?.email">
+            <template #leading>
+              <span
+                class="flex size-9 shrink-0 items-center justify-center rounded-full bg-primary text-sm font-semibold text-primary-foreground"
+                aria-hidden="true"
+              >
+                {{ initial }}
+              </span>
+            </template>
+          </SettingsListRow>
+        </SettingsGroup>
 
-    <Dialog :dialog-id="DialogID.CreateApiKey">
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>{{ $t("profile.api_key_create") }}</DialogTitle>
-        </DialogHeader>
-
-        <form @submit.prevent="submitCreateApiKey">
-          <FormTextField
-            v-model="apiKeyForm.name"
-            :label="$t('profile.api_key_name')"
-            :placeholder="$t('profile.api_key_name_placeholder')"
-            :required="true"
-            class="mb-2"
-          />
-          <div class="mb-2 max-w-65">
-            <FormCheckbox v-model="apiKeyForm.setExpiration" :label="$t('profile.api_key_set_expiration')" />
-          </div>
-          <p v-if="!apiKeyForm.setExpiration" class="mb-2 text-sm text-muted-foreground">
-            {{ $t("profile.api_key_default_expiration") }}
-          </p>
-          <div v-if="apiKeyForm.setExpiration" class="mb-2">
-            <FormDatePicker
-              :model-value="apiKeyForm.expiresAt"
-              :label="$t('profile.api_key_expires_at')"
-              :clearable="false"
-              @update:model-value="v => (apiKeyForm.expiresAt = typeof v === 'string' ? v : '')"
-            />
-          </div>
-
-          <DialogFooter>
-            <Button :disabled="apiKeyForm.submitting || !apiKeyForm.name.trim()" type="submit">
-              <MdiLoading v-if="apiKeyForm.submitting" class="animate-spin" />
-              {{ $t("global.create") }}
+        <!-- Security -->
+        <SettingsGroup :title="t('profile.settings.groups.security')">
+          <SettingsRow :title="t('profile.change_password')" :description="t('profile.settings.password_sub')">
+            <Button variant="outline" size="sm" @click="openChangePassword">
+              {{ t("profile.settings.change") }}
             </Button>
-          </DialogFooter>
-        </form>
-      </DialogContent>
-    </Dialog>
+          </SettingsRow>
+          <SettingsRow :title="t('profile.logout_all_devices')" :description="t('profile.settings.logout_all_sub')">
+            <Button variant="outline" size="sm" @click="logoutAllDevices">
+              <LogOut />
+              {{ t("profile.settings.sign_out_all") }}
+            </Button>
+          </SettingsRow>
+        </SettingsGroup>
 
-    <Dialog :dialog-id="DialogID.CreateApiKeyResult">
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>{{ $t("profile.api_key_token_label") }}</DialogTitle>
-        </DialogHeader>
+        <!-- API keys -->
+        <SettingsGroup :title="t('profile.api_keys')">
+          <template #actions>
+            <Button variant="outline" size="sm" @click="openCreateApiKey">
+              <Plus />
+              {{ t("profile.api_key_create") }}
+            </Button>
+          </template>
 
-        <p class="text-sm text-muted-foreground">{{ $t("profile.api_key_token_warning") }}</p>
+          <div v-if="apiKeysLoading && !apiKeys.length" class="p-4 text-sm text-muted-foreground">
+            {{ t("global.loading") }}
+          </div>
+          <SettingsListRow
+            v-else-if="!apiKeys.length"
+            :title="t('profile.no_api_keys')"
+            :subtitle="t('profile.settings.no_api_keys_sub')"
+          >
+            <template #icon><KeyRound /></template>
+          </SettingsListRow>
+          <SettingsListRow v-for="k in apiKeys" :key="k.id" :title="k.name">
+            <template #icon><KeyRound /></template>
+            <template #subtitle>
+              {{ t("profile.api_key_created") }}
+              <DateTime format="relative" datetime-type="time" :date="k.createdAt" />
+              ·
+              {{ t("profile.api_key_last_used") }}
+              <DateTime v-if="k.lastUsedAt" format="relative" datetime-type="time" :date="k.lastUsedAt" />
+              <template v-else>{{ t("profile.api_key_never_used").toLowerCase() }}</template>
+            </template>
+            <span
+              class="inline-flex h-[22px] items-center rounded-full bg-muted px-2 text-xs font-medium text-muted-foreground max-sm:hidden"
+            >
+              <template v-if="k.expiresAt">
+                {{ t("profile.api_key_expires_at") }}&nbsp;<DateTime
+                  format="human"
+                  datetime-type="date"
+                  :date="k.expiresAt"
+                />
+              </template>
+              <template v-else>{{ t("profile.settings.api_key_never_expires") }}</template>
+            </span>
+            <template #menu>
+              <DropdownMenuItem class="text-destructive focus:text-destructive" @select="revokeApiKey(k)">
+                <Trash2 /> {{ t("profile.settings.revoke") }}
+              </DropdownMenuItem>
+            </template>
+          </SettingsListRow>
+        </SettingsGroup>
 
-        <div class="flex items-center gap-2">
-          <input
-            :value="newApiKeyToken ?? ''"
-            readonly
-            class="w-full rounded-md border bg-muted px-3 py-2 font-mono text-sm"
-            @focus="($event.target as HTMLInputElement).select()"
-          />
-          <Button variant="secondary" size="icon" :aria-label="$t('profile.api_key_copy')" @click="copyApiKey">
-            <MdiContentCopy />
-          </Button>
-        </div>
+        <!-- Language & region -->
+        <SettingsGroup :title="t('profile.settings.groups.language')">
+          <SettingsRow for="language" :title="t('profile.language')" :description="t('profile.settings.language_sub')">
+            <Select :model-value="locale" @update:model-value="setLanguage">
+              <SelectTrigger id="language" class="h-9 w-full">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem v-for="lang in availableLocales" :key="lang" :value="lang">
+                  {{ t(`languages.${lang}`) }} ({{ t(`languages.${lang}`, 1, { locale: lang }) }})
+                </SelectItem>
+              </SelectContent>
+            </Select>
+          </SettingsRow>
+          <SettingsRow
+            for="format-locale"
+            :title="t('profile.override_locale')"
+            :description="t('profile.settings.format_locale_sub')"
+          >
+            <div class="flex w-full flex-col gap-1.5">
+              <Select v-model="formatLocale">
+                <SelectTrigger id="format-locale" class="h-9 w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">{{ t("profile.no_override") }}</SelectItem>
+                  <SelectItem v-for="l in formatLocales" :key="l.code" :value="l.code">
+                    {{ l.name }} · {{ l.localName }}
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+              <span class="text-[12.5px] text-muted-foreground">
+                {{ t("collection.settings.preview") }}
+                <span class="ml-1 text-foreground">{{ t("global.created") }} {{ dateExample }}</span>
+              </span>
+            </div>
+          </SettingsRow>
+          <SettingsRow
+            for="measurement-system"
+            :title="t('profile.measurement_system')"
+            :description="t('profile.settings.measurement_sub')"
+          >
+            <Select v-model="measurementSystem">
+              <SelectTrigger id="measurement-system" class="h-9 w-full">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="auto">
+                  {{ t("profile.measurement_auto", { system: t(`profile.measurement_${localeSystem}`) }) }}
+                </SelectItem>
+                <SelectItem value="metric">{{ t("profile.measurement_metric") }}</SelectItem>
+                <SelectItem value="imperial">{{ t("profile.measurement_imperial") }}</SelectItem>
+              </SelectContent>
+            </Select>
+          </SettingsRow>
+        </SettingsGroup>
 
-        <DialogFooter>
-          <Button @click="dismissApiKeyResult">{{ $t("global.close") }}</Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        <!-- Appearance -->
+        <SettingsGroup :title="t('profile.settings.groups.appearance')">
+          <SettingsRow
+            for="image-fill"
+            :title="t('profile.settings.image_fill')"
+            :description="t('profile.settings.image_fill_sub')"
+          >
+            <Switch id="image-fill" v-model="preferences.legacyImageFit" />
+          </SettingsRow>
+        </SettingsGroup>
 
+        <!-- Duplicating items -->
+        <SettingsGroup :title="t('profile.settings.groups.duplicate')" :hint="t('profile.settings.duplicate_hint')">
+          <SettingsRow
+            for="copy-maintenance"
+            :title="t('items.duplicate.copy_maintenance')"
+            :description="t('profile.settings.copy_maintenance_sub')"
+          >
+            <Switch id="copy-maintenance" v-model="duplicate.copyMaintenance" />
+          </SettingsRow>
+          <SettingsRow
+            for="copy-attachments"
+            :title="t('items.duplicate.copy_attachments')"
+            :description="t('profile.settings.copy_attachments_sub')"
+          >
+            <Switch id="copy-attachments" v-model="duplicate.copyAttachments" />
+          </SettingsRow>
+          <SettingsRow
+            for="copy-custom-fields"
+            :title="t('items.duplicate.copy_custom_fields')"
+            :description="t('profile.settings.copy_custom_fields_sub')"
+          >
+            <Switch id="copy-custom-fields" v-model="duplicate.copyCustomFields" />
+          </SettingsRow>
+          <SettingsRow
+            for="copy-prefix"
+            align="start"
+            :title="t('items.duplicate.custom_prefix')"
+            :description="t('profile.settings.custom_prefix_sub')"
+          >
+            <div class="flex w-full items-center gap-3">
+              <Input
+                id="copy-prefix"
+                v-model="prefix"
+                :disabled="!customPrefix"
+                :placeholder="t('items.duplicate.prefix')"
+                class="h-9"
+              />
+              <Switch v-model="customPrefix" :aria-label="t('items.duplicate.enable_custom_prefix')" />
+            </div>
+          </SettingsRow>
+        </SettingsGroup>
+
+        <!-- Danger zone -->
+        <SettingsGroup :title="t('profile.settings.groups.danger')">
+          <SettingsRow :title="t('profile.delete_account')" :description="t('profile.settings.delete_sub')">
+            <Button variant="destructive" size="sm" @click="deleteProfile">
+              <Trash2 />
+              {{ t("profile.delete_account") }}
+            </Button>
+          </SettingsRow>
+        </SettingsGroup>
+      </SettingsSection>
+    </div>
+
+    <!-- Dialogs -->
     <Dialog :dialog-id="DialogID.ChangePassword">
       <DialogContent>
         <DialogHeader>
-          <DialogTitle> {{ $t("profile.change_password") }} </DialogTitle>
+          <DialogTitle>{{ t("profile.change_password") }}</DialogTitle>
         </DialogHeader>
 
         <form id="change-password-form" name="change-password" method="post" @submit.prevent="changePassword">
           <FormPassword
             id="current-password"
             v-model="passwordChange.current"
-            :label="$t('profile.current_password')"
+            :label="t('profile.current_password')"
             name="current-password"
             autocomplete="current-password"
             placeholder=""
@@ -328,7 +470,7 @@
           <FormPassword
             id="new-password"
             v-model="passwordChange.new"
-            :label="$t('profile.new_password')"
+            :label="t('profile.new_password')"
             name="new-password"
             autocomplete="new-password"
             placeholder=""
@@ -340,162 +482,77 @@
 
           <DialogFooter>
             <Button :disabled="!passwordChange.isValid || passwordChange.loading" type="submit">
-              <MdiLoading v-if="passwordChange.loading" class="animate-spin" />
-              {{ $t("global.submit") }}
+              <LoaderCircle v-if="passwordChange.loading" class="animate-spin" />
+              {{ t("global.submit") }}
             </Button>
           </DialogFooter>
         </form>
       </DialogContent>
     </Dialog>
 
-    <BaseContainer class="flex flex-col gap-4">
-      <BaseCard>
-        <template #title>
-          <BaseSectionHeader>
-            <MdiAccount class="-mt-1 mr-2" />
-            <span> {{ $t("profile.user_profile") }} </span>
-            <template #description> {{ $t("profile.user_profile_sub") }} </template>
-          </BaseSectionHeader>
-        </template>
+    <Dialog :dialog-id="DialogID.CreateApiKey">
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>{{ t("profile.api_key_create") }}</DialogTitle>
+        </DialogHeader>
 
-        <DetailsSection :details="details" />
-
-        <div class="p-4">
-          <div class="flex gap-2">
-            <Button variant="secondary" size="sm" @click="openDialog(DialogID.ChangePassword)">
-              {{ $t("profile.change_password") }}
-            </Button>
-            <Button variant="secondary" size="sm" @click="logoutAllDevices">
-              {{ $t("profile.logout_all_devices") }}
-            </Button>
-            <Button variant="secondary" size="sm" @click="openDialog(DialogID.DuplicateSettings)">
-              {{ $t("items.duplicate.title") }}
-            </Button>
+        <form @submit.prevent="submitCreateApiKey">
+          <FormTextField
+            v-model="apiKeyForm.name"
+            :label="t('profile.api_key_name')"
+            :placeholder="t('profile.api_key_name_placeholder')"
+            :required="true"
+            class="mb-2"
+          />
+          <div class="mb-2 max-w-65">
+            <FormCheckbox v-model="apiKeyForm.setExpiration" :label="t('profile.api_key_set_expiration')" />
           </div>
-        </div>
-        <LanguageSelector />
-      </BaseCard>
-
-      <BaseCard>
-        <template #title>
-          <BaseSectionHeader>
-            <MdiKeyVariant class="-mt-1 mr-2" />
-            <span>{{ $t("profile.api_keys") }}</span>
-            <template #description>{{ $t("profile.api_keys_sub") }}</template>
-          </BaseSectionHeader>
-        </template>
-
-        <div class="px-4 pb-4">
-          <div class="mx-1 divide-y rounded-md border">
-            <p v-if="!apiKeysLoading && apiKeys.length === 0" class="p-2 text-center text-sm">
-              {{ $t("profile.no_api_keys") }}
-            </p>
-            <article v-for="k in apiKeys" :key="k.id" class="p-2">
-              <div class="flex flex-wrap items-center gap-2">
-                <p class="mr-auto text-lg">{{ k.name }}</p>
-                <Button variant="destructive" size="icon" :aria-label="$t('global.delete')" @click="revokeApiKey(k)">
-                  <MdiDelete />
-                </Button>
-              </div>
-              <div class="flex flex-wrap justify-between gap-x-4 gap-y-1 py-1 text-sm text-muted-foreground">
-                <p>
-                  {{ $t("profile.api_key_created") }}:
-                  <DateTime format="relative" datetime-type="time" :date="k.createdAt" />
-                </p>
-                <p>
-                  {{ $t("profile.api_key_last_used") }}:
-                  <template v-if="k.lastUsedAt">
-                    <DateTime format="relative" datetime-type="time" :date="k.lastUsedAt" />
-                  </template>
-                  <template v-else>{{ $t("profile.api_key_never_used") }}</template>
-                </p>
-                <p>
-                  {{ $t("profile.api_key_expires_at") }}:
-                  <template v-if="k.expiresAt">
-                    <DateTime format="human" datetime-type="date" :date="k.expiresAt" />
-                  </template>
-                  <template v-else>{{ $t("profile.api_key_no_expiration") }}</template>
-                </p>
-              </div>
-            </article>
-          </div>
-
-          <div class="mt-4">
-            <Button variant="secondary" size="sm" @click="openCreateApiKey">
-              {{ $t("profile.api_key_create") }}
-            </Button>
-          </div>
-        </div>
-      </BaseCard>
-
-      <!-- TODO: Remove this notice once users are familiar with the collection-based settings. -->
-      <BaseCard>
-        <template #title>
-          <BaseSectionHeader>
-            <span> {{ $t("profile.moved_notice_title") }} </span>
-            <template #description>
-              {{ $t("profile.moved_notice_description") }}
-            </template>
-          </BaseSectionHeader>
-        </template>
-
-        <div class="space-y-2 px-4 pb-4 text-sm text-muted-foreground">
-          <p>
-            {{ $t("profile.moved_notice_body") }}
+          <p v-if="!apiKeyForm.setExpiration" class="mb-2 text-sm text-muted-foreground">
+            {{ t("profile.api_key_default_expiration") }}
           </p>
-          <div class="flex flex-wrap gap-2">
-            <NuxtLink to="/collection/settings" class="text-primary underline">
-              {{ $t("profile.moved_notice_link_settings") }}
-            </NuxtLink>
-            <NuxtLink to="/collection/notifiers" class="text-primary underline">
-              {{ $t("profile.moved_notice_link_notifiers") }}
-            </NuxtLink>
-            <NuxtLink to="/collection/invites" class="text-primary underline">
-              {{ $t("profile.moved_notice_link_invites") }}
-            </NuxtLink>
+          <div v-if="apiKeyForm.setExpiration" class="mb-2">
+            <FormDatePicker
+              :model-value="apiKeyForm.expiresAt"
+              :label="t('profile.api_key_expires_at')"
+              :clearable="false"
+              @update:model-value="v => (apiKeyForm.expiresAt = typeof v === 'string' ? v : '')"
+            />
           </div>
-        </div>
-      </BaseCard>
-      <BaseCard>
-        <template #title>
-          <BaseSectionHeader>
-            <MdiFill class="mr-2" />
-            <span> {{ $t("profile.theme_settings") }} </span>
-            <template #description>
-              {{ $t("profile.theme_settings_sub") }}
-            </template>
-          </BaseSectionHeader>
-        </template>
 
-        <div class="px-4 pb-4">
-          <div class="mb-3 flex gap-2">
-            <Button variant="secondary" size="sm" @click="setDisplayHeader">
-              {{ $t("profile.display_legacy_header", { currentValue: preferences.displayLegacyHeader }) }}
+          <DialogFooter>
+            <Button :disabled="apiKeyForm.submitting || !apiKeyForm.name.trim()" type="submit">
+              <LoaderCircle v-if="apiKeyForm.submitting" class="animate-spin" />
+              {{ t("global.create") }}
             </Button>
-            <Button variant="secondary" size="sm" @click="setLegacyImageFit">
-              {{ $t("profile.legacy_image_fit", { currentValue: preferences.legacyImageFit }) }}
-            </Button>
-          </div>
-          <ThemePicker />
-        </div>
-      </BaseCard>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
 
-      <BaseCard>
-        <template #title>
-          <BaseSectionHeader>
-            <MdiDelete class="-mt-1 mr-2" />
-            <span> {{ $t("profile.delete_account") }} </span>
-            <template #description> {{ $t("profile.delete_account_sub") }} </template>
-          </BaseSectionHeader>
-        </template>
-        <div class="border-t-2 p-4 px-6">
-          <Button size="sm" variant="destructive" @click="deleteProfile">
-            {{ $t("profile.delete_account") }}
+    <Dialog :dialog-id="DialogID.CreateApiKeyResult">
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>{{ t("profile.api_key_token_label") }}</DialogTitle>
+        </DialogHeader>
+
+        <p class="text-sm text-muted-foreground">{{ t("profile.api_key_token_warning") }}</p>
+
+        <div class="flex items-center gap-2">
+          <Input
+            :model-value="newApiKeyToken ?? ''"
+            readonly
+            class="font-mono"
+            @focus="($event.target as HTMLInputElement).select()"
+          />
+          <Button variant="outline" size="icon" :aria-label="t('profile.api_key_copy')" @click="copyApiKey">
+            <Copy />
           </Button>
         </div>
-      </BaseCard>
-    </BaseContainer>
+
+        <DialogFooter>
+          <Button @click="dismissApiKeyResult">{{ t("global.close") }}</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   </div>
 </template>
-
-<style scoped></style>

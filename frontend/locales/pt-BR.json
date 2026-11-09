@@ -778,7 +778,6 @@
         "delete_account_confirm": "Tem certeza de que deseja deletar sua conta? Se você for o último membro do grupo, todos os seus dados serão deletados. Esta ação não pode ser desfeita.",
         "delete_account_sub": "Deletar sua conta e todos os dados associados. Essa ação não pode ser desfeita.",
         "delete_notifier_confirm": "Tem certeza que deseja apagar o notificador?",
-        "display_legacy_header": "{ currentValue, select, true {Desativar cabeçalho legado} false {Ativar cabeçalho legado} other {Não atingido}}",
         "enabled": "Ativado",
         "example": "Exemplo",
         "group_settings": "Definições do grupo",
@@ -800,8 +799,6 @@
         "notifiers_sub": "Receba notificações para lembretes de manutenção futuros",
         "override_locale": "Sobrepor Linguagem da Data e Moeda",
         "test": "Teste",
-        "theme_settings": "Configurações do Tema",
-        "theme_settings_sub": "As configurações de tema são salvas localmente em seu navegador. Você pode mudar o tema a qualquer momento. Se está\ntendo problemas com a mudança de tema, tente recarregar a pagina.",
         "toast": {
             "account_deleted": "Sua conta foi deletada.",
             "failed_change_password": "Falha ao alterar senha.",

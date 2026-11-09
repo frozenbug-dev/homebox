@@ -678,8 +678,6 @@
         "notifiers": "Notificadors",
         "notifiers_sub": "Rebeu notificacions per als pròxims recordatoris de manteniment",
         "test": "Prova",
-        "theme_settings": "Configuracions del tema",
-        "theme_settings_sub": "La configuració del tema s'emmagatzema a l'emmagatzematge local del navegador. Podeu canviar el tema en qualsevol moment. \nSi teniu problemes per definir el tema, proveu d'actualitzar el navegador.",
         "update_group": "Actualitza el grup",
         "update_language": "Actualitza l'idioma",
         "url": "URL",

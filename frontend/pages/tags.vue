@@ -258,7 +258,7 @@
 
     <!-- All tags -->
     <section
-      class="flex flex-col border-border/70 md:sticky md:top-(--header-height) md:h-[calc(100svh-var(--header-height)-1rem-2px-2rem)] md:border-r"
+      class="flex flex-col border-border/70 md:sticky md:top-(--header-height) md:h-[calc(100svh-var(--header-height)-0.5rem-2px)] md:border-r"
       :class="{ 'max-md:hidden': !!tagParam }"
       :aria-label="t('global.tags')"
     >
@@ -284,7 +284,6 @@
           :items="visible"
           :get-key="tag => tag.id"
           :label="t('global.tags')"
-          :row-height="36"
           :hotkeys="false"
           @open="tag => select(tag.id)"
         >
@@ -439,14 +438,23 @@
                 <span class="text-muted-foreground">{{ t("shell.tags_page.color") }}</span>
                 <span
                   class="size-3 rounded-full"
-                  :class="{ 'bg-muted-foreground/40': !selected.color }"
+                  :class="{ 'text-muted-foreground swatch-none': !selected.color }"
                   :style="selected.color ? { backgroundColor: selected.color } : undefined"
                   aria-hidden="true"
                 />
               </button>
             </PopoverTrigger>
             <PopoverContent class="w-auto p-2.5" align="start">
-              <div class="grid grid-cols-5 gap-1.5">
+              <div class="grid grid-cols-6 gap-1.5">
+                <button
+                  type="button"
+                  class="size-7 rounded-full text-muted-foreground ring-offset-2 ring-offset-popover swatch-none hover:ring-2 hover:ring-ring/40"
+                  :class="{ 'ring-2 ring-ring': !selected.color }"
+                  :aria-label="t('shell.tags_page.no_color')"
+                  :title="t('shell.tags_page.no_color')"
+                  :aria-pressed="!selected.color"
+                  @click="setColor('')"
+                />
                 <button
                   v-for="c in SWATCHES"
                   :key="c"
@@ -471,14 +479,6 @@
                   />
                 </label>
               </div>
-              <button
-                v-if="selected.color"
-                type="button"
-                class="mt-2 w-full rounded-md px-2 py-1 text-left text-xs text-muted-foreground hover:bg-muted hover:text-foreground"
-                @click="setColor('')"
-              >
-                {{ t("shell.tags_page.no_color") }}
-              </button>
             </PopoverContent>
           </Popover>
 

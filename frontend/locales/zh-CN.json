@@ -812,7 +812,6 @@
         "delete_account_confirm": "确定要删除您的账号吗？如果您是群组中的最后一位成员，您的所有数据都将被删除。此操作无法撤销。",
         "delete_account_sub": "删除您的帐户及其所有相关数据。此操作无法撤销。",
         "delete_notifier_confirm": "确定要删除此通知器吗？",
-        "display_legacy_header": "{currentValue, select, true {禁用旧版顶栏} false {启用旧版顶栏} other {未命中}}",
         "enabled": "已启用",
         "example": "例子",
         "group_settings": "组设置",
@@ -837,8 +836,6 @@
         "notifiers_sub": "获取即将到来的维护提醒通知",
         "override_locale": "覆盖日期和货币语言",
         "test": "测试",
-        "theme_settings": "主题设置",
-        "theme_settings_sub": "主题设置存储在浏览器的本地存储中。您可以随时更改主题。\n如果您在设置主题时遇到问题，请尝试刷新浏览器。",
         "toast": {
             "account_deleted": "您的账户已删除。",
             "api_key_created": "API 密钥已创建。",

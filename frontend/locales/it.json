@@ -752,7 +752,6 @@
         "delete_account_confirm": "Sei sicuro di voler eliminare il tuo account? Se sei l’ultimo membro del tuo gruppo, tutti i tuoi dati verranno cancellati. Questa azione non può essere annullata.",
         "delete_account_sub": "Elimina il tuo account e tutti i dati associati. Questa operazione non può essere annullata.",
         "delete_notifier_confirm": "Sei sicuro di voler eliminare questo promemoria?",
-        "display_legacy_header": "{ currentValue, select, true {Disable Legacy Header} false {Enable Legacy Header} other {Not Hit}}",
         "enabled": "Abilitato",
         "example": "Esempio",
         "group_settings": "Impostazioni Gruppo",
@@ -775,8 +774,6 @@
         "notifiers_sub": "Ricevi notifiche per i prossimi promemoria di manutenzione",
         "override_locale": "Sovrascrivi Data e Valuta della lingua",
         "test": "Test",
-        "theme_settings": "Impostazioni Tema",
-        "theme_settings_sub": "Le impostazioni del tema sono memorizzate nella memoria locale del tuo browser. Puoi cambiare il tema \nin qualsiasi momento. Se hai problemi a impostare il tuo tema, prova a ricaricare la pagina.",
         "toast": {
             "account_deleted": "Il tuo account e' stato cancellato.",
             "api_key_created": "Chiave API creata.",

@@ -21,7 +21,8 @@
     <CollectionJoinModal />
     <CollectionInviteCreateModal />
     <SidebarProvider :default-open="sidebarState">
-      <Sidebar collapsible="icon" class="border-r-0">
+      <!-- Desktop: see-through, so the page background shows behind it. The phone drawer keeps its fill. -->
+      <Sidebar collapsible="icon" class="border-r-0 *:data-[sidebar=sidebar]:bg-transparent">
         <SidebarHeader class="gap-2 p-2.5 pb-2">
           <div class="flex items-center gap-2">
             <div class="min-w-0 flex-1">
@@ -182,70 +183,66 @@
         <SidebarRail />
       </Sidebar>
 
-      <SidebarInset class="min-h-dvh max-w-full min-w-0 bg-sidebar md:p-2 md:pl-0">
-        <!-- The page lives in one bordered panel; its header stays at the top while the page scrolls. -->
-        <div
-          class="relative flex min-h-dvh flex-col overflow-clip bg-background pb-(--bottom-nav-space) md:min-h-[calc(100dvh-1rem)] md:rounded-xl md:border md:border-border md:shadow-xs"
+      <SidebarInset class="min-h-dvh max-w-full min-w-0 bg-transparent md:pr-2 md:pb-2">
+        <!-- IMPORTANT: if you change the height of this header, update --header-height(-mobile) in main.css;
+             the item and location edit pages offset their sticky bars by it -->
+        <header
+          class="sticky top-0 z-20 flex h-(--header-height-mobile) items-center gap-2 px-2 bg-page sm:h-(--header-height) sm:gap-3 md:px-1"
         >
-          <!-- IMPORTANT: if you change the height of this header, update --header-height(-mobile) in main.css;
-               the item and location edit pages offset their sticky bars by it -->
-          <header
-            class="sticky top-0 z-20 flex h-(--header-height-mobile) items-center gap-2 border-b border-border bg-background/95 px-2 backdrop-blur-sm sm:h-(--header-height) sm:gap-3 sm:px-4"
-          >
-            <SidebarTrigger variant="ghost" class="text-muted-foreground" />
-            <nav aria-label="Breadcrumb" class="flex min-w-0 shrink items-center gap-2 text-sm">
-              <template v-for="(crumb, i) in pageHeader.crumbs" :key="i">
-                <NuxtLink v-if="crumb.to" :to="crumb.to" class="shrink-0 text-muted-foreground hover:text-foreground">
-                  {{ crumb.label }}
-                </NuxtLink>
-                <span v-else class="truncate font-medium" aria-current="page">{{ crumb.label }}</span>
-                <span v-if="i < pageHeader.crumbs.length - 1" class="text-border" aria-hidden="true">/</span>
-              </template>
-            </nav>
-            <div class="flex-1" />
-            <Button
-              variant="ghost"
-              size="icon"
-              class="md:hidden"
-              :aria-label="$t('shell.search_or_add')"
-              @click="openDialog(DialogID.CommandPalette)"
-            >
-              <Search />
-            </Button>
-            <!-- Pages put their own actions here (see components/App/HeaderActions.vue) -->
-            <div id="page-header-actions" class="flex shrink-0 items-center gap-1.5 empty:hidden" />
-            <template v-if="!hasPageActions">
-              <!-- On phones the bottom nav's create menu has these -->
-              <Button
-                variant="outline"
-                size="sm"
-                class="hidden h-[30px] text-[13px] md:inline-flex"
-                :aria-label="$t('shell.scan')"
-                @click="openScanner"
-              >
-                <ScanQrCode />
-                <span class="hidden lg:inline">{{ $t("shell.scan") }}</span>
-                <ShortcutHint :hotkey="SHORTCUTS.scan" class="hidden lg:inline-flex" />
-              </Button>
-              <Button
-                size="sm"
-                class="hidden h-[30px] text-[13px] md:inline-flex"
-                @click="openDialog(DialogID.CreateEntity, { params: { baseType: 'item' } })"
-              >
-                <Plus />
-                <span class="hidden sm:inline">{{ $t("shell.new_item") }}</span>
-                <ShortcutHint
-                  :hotkey="SHORTCUTS.newItem"
-                  class="hidden lg:inline-flex [&_kbd]:border-primary-foreground/20 [&_kbd]:bg-primary-foreground/15 [&_kbd]:text-primary-foreground"
-                />
-              </Button>
+          <SidebarTrigger variant="ghost" class="text-muted-foreground" />
+          <nav aria-label="Breadcrumb" class="flex min-w-0 shrink items-center gap-2 text-sm">
+            <template v-for="(crumb, i) in pageHeader.crumbs" :key="i">
+              <NuxtLink v-if="crumb.to" :to="crumb.to" class="shrink-0 text-muted-foreground hover:text-foreground">
+                {{ crumb.label }}
+              </NuxtLink>
+              <span v-else class="truncate font-medium" aria-current="page">{{ crumb.label }}</span>
+              <span v-if="i < pageHeader.crumbs.length - 1" class="text-muted-foreground/40" aria-hidden="true">/</span>
             </template>
-          </header>
+          </nav>
+          <div class="flex-1" />
+          <Button
+            variant="ghost"
+            size="icon"
+            class="md:hidden"
+            :aria-label="$t('shell.search_or_add')"
+            @click="openDialog(DialogID.CommandPalette)"
+          >
+            <Search />
+          </Button>
+          <!-- Pages put their own actions here (see components/App/HeaderActions.vue) -->
+          <div id="page-header-actions" class="flex shrink-0 items-center gap-1.5 empty:hidden" />
+          <template v-if="!hasPageActions">
+            <!-- On phones the bottom nav's create menu has these -->
+            <Button
+              variant="outline"
+              size="sm"
+              class="hidden h-[30px] text-[13px] md:inline-flex"
+              :aria-label="$t('shell.scan')"
+              @click="openScanner"
+            >
+              <ScanQrCode />
+              <span class="hidden lg:inline">{{ $t("shell.scan") }}</span>
+              <ShortcutHint :hotkey="SHORTCUTS.scan" class="hidden lg:inline-flex" />
+            </Button>
+            <Button
+              size="sm"
+              class="hidden h-[30px] text-[13px] md:inline-flex"
+              @click="openDialog(DialogID.CreateEntity, { params: { baseType: 'item' } })"
+            >
+              <Plus />
+              <span class="hidden sm:inline">{{ $t("shell.new_item") }}</span>
+              <ShortcutHint
+                :hotkey="SHORTCUTS.newItem"
+                class="hidden lg:inline-flex [&_kbd]:border-primary-foreground/20 [&_kbd]:bg-primary-foreground/15 [&_kbd]:text-primary-foreground"
+              />
+            </Button>
+          </template>
+        </header>
 
-          <div v-if="preferences.displayLegacyHeader">
-            <AppHeaderDecor class="-mt-10 hidden lg:block" />
-          </div>
-
+        <!-- The page lives in one bordered panel that scrolls under the header. -->
+        <div
+          class="relative flex flex-1 flex-col overflow-clip bg-background pb-(--bottom-nav-space) max-md:rounded-t-xl max-md:border-t max-md:border-border md:rounded-xl md:border md:border-border md:shadow-xs"
+        >
           <!-- Pages fill the panel (flex-1 on their root) -->
           <div class="flex flex-1 flex-col">
             <slot />
@@ -315,7 +312,6 @@
   import AppShortcutsDialog from "~/components/App/ShortcutsDialog.vue";
   import ShortcutHint from "~/components/App/ShortcutHint.vue";
   import AppScannerModal from "~/components/App/ScannerModal.vue";
-  import AppHeaderDecor from "~/components/App/HeaderDecor.vue";
   import AppBottomNav, { type BottomNavTab } from "~/components/App/BottomNav.vue";
   import CollectionSelector from "~/components/Collection/Selector.vue";
   import CollectionCreateModal from "~/components/Collection/CreateModal.vue";

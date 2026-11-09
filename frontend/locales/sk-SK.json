@@ -810,7 +810,6 @@
         "delete_account_confirm": "Naozaj chcete odstrániť svoj účet? Ak ste posledným členom vo svojej skupine, všetky vaše údaje budú odstránené. Túto akciu nie je možné odvolať.",
         "delete_account_sub": "Odstráňte svoj účet a všetky súvisiace údaje. Toto nie je možné vrátiť späť.",
         "delete_notifier_confirm": "Naozaj chcete odstrániť tento oznamovač?",
-        "display_legacy_header": "{ currentValue, select, true {Zakázať staré záhlavie} false {Povoliť staré záhlavie} other {Nevybrané}}",
         "enabled": "Povolené",
         "example": "Príklad",
         "group_settings": "Nastavenie skupiny",
@@ -833,8 +832,6 @@
         "notifiers_sub": "Dostávajte upozornenia na nadchádzajúce pripomenutia údržby",
         "override_locale": "Prepísať dátum a jazyk meny",
         "test": "Test",
-        "theme_settings": "Nastavenie motívu",
-        "theme_settings_sub": "Nastavenia motívu sú uložené v lokálnom úložisku vášho prehliadača. Tému môžete kedykoľvek zmeniť. Ak mate\n problémy s nastavením motívu, skúste obnoviť prehliadač.",
         "toast": {
             "account_deleted": "Váš účet bol odstránený.",
             "api_key_created": "API kľúč bol vytvorený.",

@@ -32,6 +32,7 @@
   import PlaceDetails from "~/components/Places/PlaceDetails.vue";
   import CoverPhoto from "~/components/Entity/CoverPhoto.vue";
   import ItemImageDialog from "~/components/Item/ImageDialog.vue";
+  import AttachmentEditDialog from "~/components/Item/AttachmentEditDialog.vue";
   import { entityPhotos, type EntityPhoto } from "~/lib/entity-photos";
   import type { EntityOut, EntityUpdate } from "~/lib/api/types/data-contracts";
   import ShortcutHint from "~/components/App/ShortcutHint.vue";
@@ -172,7 +173,19 @@
     if (!place.value) return;
     openDialog(DialogID.ItemImage, {
       params: { type: "preloaded", ...photo, itemId: place.value.id },
-      onClose: result => result?.action === "delete" && reloadPlace(),
+      onClose: result => {
+        if (result?.action === "delete") reloadPlace();
+        else if (result?.action === "edit") editPlaceAttachment(result.id);
+      },
+    });
+  }
+
+  function editPlaceAttachment(attachmentId: string) {
+    const attachment = place.value?.attachments.find(a => a.id === attachmentId);
+    if (!place.value || !attachment) return;
+    openDialog(DialogID.AttachmentEdit, {
+      params: { itemId: place.value.id, attachment },
+      onClose: result => result && reloadPlace(),
     });
   }
 
@@ -407,6 +420,7 @@
 <template>
   <div class="grid flex-1 md:grid-cols-[21rem_minmax(0,1fr)] xl:grid-cols-[24rem_minmax(0,1fr)]">
     <ItemImageDialog />
+    <AttachmentEditDialog />
     <AppHeaderActions>
       <Button variant="outline" size="sm" class="h-[30px] text-[13px] max-sm:hidden" @click="printAllLabels">
         {{ t("shell.places_page.print_labels") }}
@@ -423,7 +437,7 @@
 
     <!-- All places -->
     <section
-      class="flex flex-col border-border/70 md:sticky md:top-(--header-height) md:h-[calc(100svh-var(--header-height)-1rem-2px-2rem)] md:border-r"
+      class="flex flex-col border-border/70 md:sticky md:top-(--header-height) md:h-[calc(100svh-var(--header-height)-0.5rem-2px)] md:border-r"
       :class="{ 'max-md:hidden': !!placeParam }"
       :aria-label="t('shell.places')"
     >
@@ -651,7 +665,13 @@
         </div>
       </AppSubheader>
 
-      <PlaceDetails v-if="tab === 'details' && place" :place="place" @update="updatePlace" @reload="reloadPlace" />
+      <PlaceDetails
+        v-if="tab === 'details' && place"
+        :place="place"
+        @update="updatePlace"
+        @reload="reloadPlace"
+        @edit-attachment="editPlaceAttachment"
+      />
       <template v-else-if="tab !== 'details'">
         <ItemList
           ref="list"

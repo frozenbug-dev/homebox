@@ -757,7 +757,6 @@
         "delete_account_confirm": "是否確認刪除帳戶？若你為群組最後一位成員則群組所有資料將被刪除！此作業無法復原。",
         "delete_account_sub": "刪除你的帳戶和所有相關資料。此作業無法復原。",
         "delete_notifier_confirm": "是否確認刪除此通知？",
-        "display_legacy_header": "{ currentValue, select, true {停用傳統標頭} false {啟用傳統標頭} other {Not Hit}}",
         "enabled": "啟用",
         "example": "範例",
         "group_settings": "群組設定",
@@ -779,8 +778,6 @@
         "notifiers_sub": "接收即將到來的維修提醒",
         "override_locale": "日期和幣值語言設定",
         "test": "測試",
-        "theme_settings": "主題設定",
-        "theme_settings_sub": "主題設定將儲存於本機瀏覽器中，且您可以隨時更換主題。\n若設定主題時發生問題，請嘗試重新整理頁面。",
         "toast": {
             "account_deleted": "已刪除你的帳號。",
             "failed_change_password": "無法變更密碼。",

@@ -8,9 +8,10 @@
   import ActionMenuBody from "~/components/App/ActionMenu/ActionMenuBody.vue";
   import type { ActionMenuEntry } from "~/components/App/ActionMenu/types";
   import { toast } from "@/components/ui/sonner";
+  import { getIconComponent } from "~/lib/icons";
 
   /**
-   * A tag as a row of the tags page's list: colour dot and name (indented by
+   * A tag as a row of the tags page's list: icon (in its colour) and name (indented by
    * depth) on the left, the total value of tagged items on the right.
    */
   const props = defineProps<{
@@ -67,10 +68,11 @@
   <ResourceRow :id="tag.id" :class="active ? 'bg-primary/10 font-medium hover:bg-primary/10' : undefined">
     <template #left>
       <span class="flex min-w-0 items-center gap-2.5" :style="{ paddingLeft: `${(depth ?? 0) * 18}px` }">
-        <span
-          class="size-2.5 shrink-0 rounded-full"
-          :class="{ 'bg-muted-foreground/40': !tag.color }"
-          :style="tag.color ? { backgroundColor: tag.color } : undefined"
+        <component
+          :is="getIconComponent(tag.icon)"
+          class="size-4 shrink-0"
+          :class="{ 'text-muted-foreground': !tag.color }"
+          :style="tag.color ? { color: tag.color } : undefined"
           aria-hidden="true"
         />
         <span v-if="path" class="shrink-0 text-muted-foreground">{{ path }} /</span>

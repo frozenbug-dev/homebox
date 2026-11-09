@@ -812,7 +812,6 @@
         "delete_account_confirm": "Er du sikker på, at du vil slette din konto? Hvis du er det sidste medlem i din gruppe, vil alle dine data blive slettet. Denne handling kan ikke fortrydes.",
         "delete_account_sub": "Slet din konto og alle dens tilknyttede data. Dette kan ikke laves om.",
         "delete_notifier_confirm": "Er du sikker på, at du vil slette denne underretter?",
-        "display_legacy_header": "{ currentValue, select, true {Deaktiver Legacy Header} false {Aktiver Legacy Header} other {Ikke ramt}}",
         "enabled": "Aktiveret",
         "example": "Eksempel",
         "group_settings": "Gruppeindstillinger",
@@ -837,8 +836,6 @@
         "notifiers_sub": "Få notifikationer om kommende vedligeholdelsespåmindelser",
         "override_locale": "Tilsidesæt dato og valutasprog",
         "test": "Test",
-        "theme_settings": "Temaindstillinger",
-        "theme_settings_sub": "Temaindstillinger gemmes i din browsers lokale lager. Du kan til enhver tid ændre temaet. Hvis du har\n problemer med at indstille dit tema, kan du prøve at opdatere din browser.",
         "toast": {
             "account_deleted": "Din konto er blevet slettet.",
             "api_key_created": "API-nøgle oprettet.",

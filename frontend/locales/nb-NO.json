@@ -417,7 +417,6 @@
         "delete_account_confirm": "Er du sikker på at du vil slette kontoen din? Hvis du er det siste medlemmet i gruppen, slettes alle dataene dine. Denne handlingen kan ikke angres.",
         "delete_account_sub": "Slett kontoen din og alle data knyttet til den. Denne handlingen kan ikke angres.",
         "delete_notifier_confirm": "Er du sikker på at du vil slette denne varsleren?",
-        "display_legacy_header": "{ currentValue, select, true {Deaktiver eldre topptekst} false {Aktiver eldre topptekst} other {Ikke aktuelt}}",
         "enabled": "Aktivert",
         "example": "Eksempel",
         "group_settings": "Gruppeinnstillinger",
@@ -432,8 +431,6 @@
         "notifiers_sub": "Få varslinger for kommende vedlikeholdspåminnelser",
         "override_locale": "Overstyr dato og valutaspråk",
         "test": "Test",
-        "theme_settings": "Temainnstillinger",
-        "theme_settings_sub": "Temainnstillinger lagres i nettleseren din sin midlertidige lagring. Du kan endre temaet når som helst. Hvis du\n har problemer, last inn siden på nytt.",
         "toast": {
             "account_deleted": "Profilen er slettet.",
             "failed_change_password": "Klarte ikke å endre passord.",

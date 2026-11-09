@@ -811,7 +811,6 @@
         "delete_account_confirm": "Möchten Sie Ihr Konto wirklich löschen? Wenn Sie das letzte Mitglied Ihrer Gruppe sind, werden alle Ihre Daten gelöscht. Diese Aktion kann nicht rückgängig gemacht werden.",
         "delete_account_sub": "Lösche dein Konto und alle zugehörigen Daten. Dies kann nicht rückgängig gemacht werden.",
         "delete_notifier_confirm": "Möchten Sie diesen Notifier wirklich löschen?",
-        "display_legacy_header": "{ currentValue, select, true {Legacy-Header deaktivieren} false {Legacy-Header aktivieren} other {Nicht getroffen}}",
         "enabled": "Aktiviert",
         "example": "Beispiel",
         "group_settings": "Gruppeneinstellungen",
@@ -836,8 +835,6 @@
         "notifiers_sub": "Erhalte Benachrichtigungen über bevorstehende Wartungserinnerungen",
         "override_locale": "Datum und Währungssprache überschreiben",
         "test": "Test",
-        "theme_settings": "Themes",
-        "theme_settings_sub": "Theme-Einstellungen werden im lokalen Speicher deines Browsers gespeichert. Du kannst das Theme jederzeit ändern.\nWenn du Probleme hast, dein Theme einzustellen, versuche, die Seite neu zu laden.",
         "toast": {
             "account_deleted": "Ihr Konto wurde gelöscht.",
             "api_key_created": "API-Key erstellt.",

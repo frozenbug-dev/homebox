@@ -719,7 +719,6 @@
         "delete_account_confirm": "정말로 계정을 삭제하시겠습니까? 귀하가 그룹의 마지막 멤버인 경우 모든 데이터가 삭제됩니다. 이 작업은 취소할 수 없습니다.",
         "delete_account_sub": "계정 및 모든 관련 데이터가 영구적으로 삭제되며, 삭제 후에는 절대로 복구할 수 없습니다.",
         "delete_notifier_confirm": "이 알림을 삭제하시겠습니까?",
-        "display_legacy_header": "{ currentValue, select, true {Disable Legacy Header} false {Enable Legacy Header} other {Not Hit}}",
         "enabled": "활성화됨",
         "example": "예시",
         "group_settings": "그룹 설정",
@@ -742,8 +741,6 @@
         "notifiers_sub": "예정된 유지보수 점검 알림 받기",
         "override_locale": "날짜 및 통화 언어 재설정",
         "test": "테스트",
-        "theme_settings": "테마 설정",
-        "theme_settings_sub": "테마 설정은 브라우저의 로컬 스토리지에 저장됩니다. 테마는 언제든지 변경할 수 있으며, \n설정이 정상적으로 적용되지 않을 경우 브라우저를 새로고침해 보세요.",
         "toast": {
             "account_deleted": "계정이 삭제되었습니다.",
             "api_key_created": "API 키가 생성되었습니다.",

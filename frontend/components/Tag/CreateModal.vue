@@ -1,6 +1,6 @@
 <script setup lang="ts">
   import { useI18n } from "vue-i18n";
-  import { ChevronRight, CornerDownRight, Pipette, X } from "@lucide/vue";
+  import { ChevronRight, CornerDownRight, Pipette } from "@lucide/vue";
   import { DialogID } from "@/components/ui/dialog-provider/utils";
   import { toast } from "@/components/ui/sonner";
   import { useDialog, useDialogHotkey } from "~/components/ui/dialog-provider";
@@ -151,14 +151,13 @@
           <div class="flex flex-wrap gap-1.5" role="group" :aria-label="t('shell.create.colour')">
             <button
               type="button"
-              class="flex size-[22px] items-center justify-center rounded-full border border-dashed border-muted-foreground/50 text-muted-foreground"
+              class="size-[22px] rounded-full text-muted-foreground swatch-none"
               :class="{ 'ring-2 ring-foreground/40 ring-offset-2 ring-offset-background': !form.color }"
               :aria-label="t('shell.create.no_colour')"
+              :title="t('shell.create.no_colour')"
               :aria-pressed="!form.color"
               @click="form.color = ''"
-            >
-              <X class="size-3" />
-            </button>
+            />
             <button
               v-for="s in SWATCHES"
               :key="s.value"
