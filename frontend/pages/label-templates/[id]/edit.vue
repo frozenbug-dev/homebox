@@ -1,19 +1,16 @@
 <script setup lang="ts">
   import { useI18n } from "vue-i18n";
   import { useEventListener } from "@vueuse/core";
+  import { useHotkey } from "@tanstack/vue-hotkeys";
+  import { SHORTCUTS } from "~/lib/shortcuts";
   import { toast } from "@/components/ui/sonner";
-  import MdiArrowLeft from "~icons/mdi/arrow-left";
-  import MdiContentSave from "~icons/mdi/content-save";
-  import MdiMinus from "~icons/mdi/minus";
-  import MdiPlus from "~icons/mdi/plus";
-  import MdiFitToScreen from "~icons/mdi/fit-to-screen";
-  import MdiPrinterPos from "~icons/mdi/printer-pos";
-  import MdiDelete from "~icons/mdi/delete";
-  import MdiLoading from "~icons/mdi/loading";
   import { Button } from "@/components/ui/button";
-  import { Input } from "@/components/ui/input";
-  import { Badge } from "@/components/ui/badge";
-  import BaseContainer from "@/components/Base/Container.vue";
+  import { LoaderCircle, Maximize, Minus, Plus, Printer, Trash2 } from "@lucide/vue";
+  import InlineText from "~/components/Item/Inline/Text.vue";
+  import ShortcutHint from "~/components/App/ShortcutHint.vue";
+  import AppSubheader from "~/components/App/Subheader.vue";
+  import AppHeaderActions from "~/components/App/HeaderActions.vue";
+  import LabelTemplateEditorDockPanel from "~/components/LabelTemplate/Editor/DockPanel.vue";
   import LabelTemplateEditorCanvas from "~/components/LabelTemplate/Editor/Canvas.vue";
   import LabelTemplateEditorToolRail, { type AlignTarget } from "~/components/LabelTemplate/Editor/ToolRail.vue";
   import LabelTemplateEditorTextToolbar from "~/components/LabelTemplate/Editor/TextToolbar.vue";
@@ -67,6 +64,14 @@
     dpi: 300,
     isShared: false,
   });
+
+  // The breadcrumb is the way back to the list
+  usePageHeader(() => [
+    { label: t("menu.label_templates"), to: "/label-templates" },
+    {
+      label: settings.name || template.value?.name || t("components.label_template.editor.title"),
+    },
+  ]);
 
   const display = reactive<DisplaySettings>({
     showRuler: true,
@@ -177,7 +182,13 @@
   const selectionRevision = ref(0);
   const isSaving = ref(false);
   const isTestPrinting = ref(false);
-  const activeTab = ref<"element" | "layers" | "label">("element");
+  // Which dock panels are unfolded; not remembered between visits
+  const panels = reactive({
+    element: true,
+    layers: true,
+    label: false,
+    preview: true,
+  });
   const previewItem = ref<EntitySummary | null>(null);
 
   interface LayerItem {
@@ -229,8 +240,6 @@
   function handleSelectionChanged(obj: any) {
     selectedObject.value = obj;
     selectionRevision.value++;
-    // Jump to the element tab on selection unless the user is working in the layer list
-    if (obj && activeTab.value !== "layers") activeTab.value = "element";
   }
 
   const quickFields = ["name", "asset_id", "location", "location_path", "serial_number", "tags", "current_date"];
@@ -332,6 +341,10 @@
     }
   }
 
+  useHotkey(SHORTCUTS.templateSave, () => !isSaving.value && handleSave(), {
+    meta: { name: t("global.save"), group: "general" },
+  });
+
   const canTestPrint = computed(() => !!previewItem.value && labelPrinting.value);
   const testPrintHint = computed(() => {
     if (!labelPrinting.value) return t("components.label_template.editor.toast.test_print_needs_server");
@@ -361,311 +374,269 @@
     }
   }
 
+  const viewToggles = computed(() => [
+    {
+      key: "showGrid" as const,
+      label: t("components.label_template.editor.display.grid"),
+    },
+    {
+      key: "snapToGrid" as const,
+      label: t("components.label_template.editor.display.snap"),
+    },
+    {
+      key: "showRuler" as const,
+      label: t("components.label_template.editor.display.rulers"),
+    },
+  ]);
+
   const canvasDataJson = computed(() =>
     localCanvasData.value && Object.keys(localCanvasData.value).length > 0 ? JSON.stringify(localCanvasData.value) : ""
   );
-
-  const tabs = computed(() => [
-    {
-      id: "element" as const,
-      label: t("components.label_template.editor.tabs.element"),
-      count: undefined,
-    },
-    {
-      id: "layers" as const,
-      label: t("components.label_template.editor.tabs.layers"),
-      count: layers.value.length,
-    },
-    {
-      id: "label" as const,
-      label: t("components.label_template.editor.tabs.label"),
-      count: undefined,
-    },
-  ]);
 </script>
 
 <template>
-  <BaseContainer class="max-w-none">
-    <div v-if="pending" class="flex items-center justify-center py-12">
-      <div class="text-muted-foreground">{{ $t("global.loading") }}</div>
+  <div class="flex flex-1 flex-col">
+    <div v-if="pending" class="px-4 py-12 text-center text-sm text-muted-foreground">
+      {{ $t("global.loading") }}
     </div>
 
     <template v-else-if="template">
-      <!-- Header -->
-      <div class="mb-3 flex flex-wrap items-center gap-3 rounded-lg border bg-card px-3 py-2">
-        <Button variant="ghost" size="icon" as-child>
-          <NuxtLink to="/label-templates" :aria-label="$t('components.label_template.editor.header.back')">
-            <MdiArrowLeft class="size-5" />
-          </NuxtLink>
+      <AppHeaderActions>
+        <Button
+          variant="outline"
+          size="sm"
+          class="h-[30px] text-[13px]"
+          :disabled="!canTestPrint || isTestPrinting"
+          :title="testPrintHint"
+          @click="handleTestPrint"
+        >
+          <LoaderCircle v-if="isTestPrinting" class="animate-spin" />
+          <Printer v-else />
+          <span class="max-sm:hidden">{{ $t("components.label_template.editor.header.test_print") }}</span>
         </Button>
-        <Input
-          v-model="settings.name"
-          :aria-label="$t('components.label_template.editor.header.name_label')"
-          class="h-9 w-56 border-transparent text-base font-semibold shadow-none hover:border-input focus-visible:border-input"
-        />
-        <Badge v-if="isDirty" variant="outline" class="border-amber-300 bg-amber-50 text-amber-800">
-          {{ $t("components.label_template.editor.header.unsaved") }}
-        </Badge>
-
-        <div class="ml-auto flex flex-wrap items-center gap-2">
-          <Button variant="outline" size="sm" class="h-9 gap-2" @click="activeTab = 'label'">
-            <span class="font-semibold">
-              {{ settings.preset ? presetTitle(settings.preset) : $t("components.label_template.form.preset_custom") }}
-            </span>
-            <span class="text-muted-foreground">{{ sizeLabel }} · {{ settings.dpi }} dpi</span>
-          </Button>
-          <div
-            role="group"
-            :aria-label="$t('components.label_template.editor.header.units')"
-            class="inline-flex h-9 overflow-hidden rounded-md border text-sm"
-          >
-            <button
-              type="button"
-              class="px-3"
-              :class="unit === 'mm' ? 'bg-accent font-semibold' : 'text-muted-foreground'"
-              :aria-pressed="unit === 'mm'"
-              @click="unit = 'mm'"
-            >
-              mm
-            </button>
-            <button
-              type="button"
-              class="border-l px-3"
-              :class="unit === 'in' ? 'bg-accent font-semibold' : 'text-muted-foreground'"
-              :aria-pressed="unit === 'in'"
-              @click="unit = 'in'"
-            >
-              in
-            </button>
-          </div>
+        <div role="group" class="flex">
           <Button
             variant="outline"
-            size="sm"
-            class="h-9"
-            :disabled="!canTestPrint || isTestPrinting"
-            :title="testPrintHint"
-            @click="handleTestPrint"
+            size="icon"
+            class="size-[30px] rounded-r-none border-r-0"
+            :disabled="!selectedObject"
+            :aria-label="$t('components.label_template.editor.tools.delete')"
+            :title="`${$t('components.label_template.editor.tools.delete')} (⌫)`"
+            @click="handleDeleteSelected"
           >
-            <MdiLoading v-if="isTestPrinting" class="mr-2 size-4 animate-spin" />
-            <MdiPrinterPos v-else class="mr-2 size-4" />
-            {{ $t("components.label_template.editor.header.test_print") }}
+            <Trash2 />
           </Button>
-          <Button :disabled="isSaving" class="h-9" @click="handleSave">
-            <MdiContentSave class="mr-2 size-4" />
+          <Button size="sm" class="h-[30px] rounded-l-none text-[13px]" :disabled="isSaving" @click="handleSave">
             {{ $t("global.save") }}
+            <ShortcutHint
+              :hotkey="SHORTCUTS.templateSave"
+              class="hidden lg:inline-flex [&_kbd]:border-primary-foreground/20 [&_kbd]:bg-primary-foreground/15 [&_kbd]:text-primary-foreground"
+            />
           </Button>
         </div>
-      </div>
+      </AppHeaderActions>
 
-      <div class="flex flex-col gap-3 lg:flex-row lg:items-start">
-        <!-- Tool rail -->
-        <LabelTemplateEditorToolRail
-          :has-selection="!!selectedObject"
-          :selection-count="selectionCount"
-          :can-undo="canUndo"
-          :can-redo="canRedo"
-          @add-text="canvasRef?.addText()"
-          @add-barcode="(format, source) => canvasRef?.addBarcode(format, source)"
-          @add-shape="type => canvasRef?.addShape(type)"
-          @add-image="handleAddImage"
-          @align="handleAlign"
-          @align-selection="target => canvasRef?.alignWithinSelection(target)"
-          @undo="canvasRef?.undo()"
-          @redo="canvasRef?.redo()"
-          @delete-selected="handleDeleteSelected"
+      <AppSubheader class="gap-2.5">
+        <InlineText
+          :value="settings.name"
+          :label="$t('components.label_template.editor.header.name_label')"
+          class="-ml-1.5 max-w-80 text-sm font-semibold"
+          @save="name => name && (settings.name = name)"
         />
-
-        <!-- Workspace -->
-        <div class="flex min-w-0 flex-1 flex-col gap-3">
-          <!--
-            The slot keeps its height when nothing is selected; otherwise the canvas
-            jumps down when the toolbar appears mid-drag and the text lands off the label.
-          -->
-          <div class="min-h-[50px]">
-            <LabelTemplateEditorTextToolbar
-              v-if="isTextSelected"
-              :selected-object="selectedObject"
-              :revision="selectionRevision"
-              :unit="unit"
-              @update-object="handleUpdateObject"
-              @insert-field="handleInsertField"
-            />
-            <div
-              v-else
-              class="flex h-[50px] items-center rounded-lg border border-dashed px-3 text-sm text-muted-foreground"
-            >
-              {{ $t("components.label_template.editor.text_toolbar_hint") }}
-            </div>
-          </div>
-
-          <div class="flex flex-col gap-6 rounded-lg border bg-muted/40 p-4 2xl:flex-row 2xl:items-start">
-            <!-- Design -->
-            <section
-              class="flex min-w-0 shrink-0 flex-col gap-2"
-              :aria-label="$t('components.label_template.editor.design')"
-            >
-              <span class="text-[11px] font-semibold tracking-wide text-muted-foreground uppercase">
-                {{ $t("components.label_template.editor.design") }}
-              </span>
-              <!-- One canvas instance: toggling the rulers must not recreate it and lose the undo history -->
-              <LabelTemplateEditorCanvas
-                ref="canvasRef"
-                :width="settings.width"
-                :height="settings.height"
-                :dpi="settings.dpi"
-                :canvas-data="localCanvasData"
-                :snap-to-grid="display.snapToGrid"
-                :show-grid="display.showGrid"
-                :grid-size="display.gridSize"
-                :label-border="border"
-                :show-ruler="display.showRuler"
-                :ruler-unit="unit === 'mm' ? 'metric' : 'imperial'"
-                @update:canvas-data="handleCanvasUpdate"
-                @selection-changed="handleSelectionChanged"
-                @loaded="refreshLayers"
-              />
-
-              <!-- Zoom + canvas toggles -->
-              <div class="flex flex-wrap items-center gap-2 text-sm">
-                <Button
-                  variant="outline"
-                  size="icon"
-                  class="size-7"
-                  :disabled="zoomLevel <= 0.25"
-                  :aria-label="$t('components.label_template.editor.zoom.out')"
-                  @click="canvasRef?.zoomOut()"
-                >
-                  <MdiMinus class="size-4" />
-                </Button>
-                <span class="w-12 text-center font-medium">{{ Math.round(zoomLevel * 100) }}%</span>
-                <Button
-                  variant="outline"
-                  size="icon"
-                  class="size-7"
-                  :disabled="zoomLevel >= 4"
-                  :aria-label="$t('components.label_template.editor.zoom.in')"
-                  @click="canvasRef?.zoomIn()"
-                >
-                  <MdiPlus class="size-4" />
-                </Button>
-                <Button variant="outline" size="sm" class="h-7 px-2 text-xs" @click="canvasRef?.zoomToFit()">
-                  <MdiFitToScreen class="mr-1 size-3" />
-                  {{ $t("components.label_template.editor.zoom.fit") }}
-                </Button>
-                <Button variant="outline" size="sm" class="h-7 px-2 text-xs" @click="canvasRef?.zoomTo100()">
-                  100%
-                </Button>
-                <span class="mx-1 h-4 w-px bg-border" />
-                <label class="flex items-center gap-1.5 text-xs text-muted-foreground">
-                  <input v-model="display.showGrid" type="checkbox" class="size-3.5" />
-                  {{ $t("components.label_template.editor.display.grid") }}
-                </label>
-                <label class="flex items-center gap-1.5 text-xs text-muted-foreground">
-                  <input v-model="display.snapToGrid" type="checkbox" class="size-3.5" />
-                  {{ $t("components.label_template.editor.display.snap") }}
-                </label>
-                <label class="flex items-center gap-1.5 text-xs text-muted-foreground">
-                  <input v-model="display.showRuler" type="checkbox" class="size-3.5" />
-                  {{ $t("components.label_template.editor.display.rulers") }}
-                </label>
-              </div>
-            </section>
-
-            <!-- Live print preview -->
-            <LabelTemplateEditorPreviewPanel
-              :template-id="templateId"
-              :canvas-data="localCanvasData"
-              :canvas-data-json="canvasDataJson"
-              :width="settings.width"
-              :height="settings.height"
-              :dpi="settings.dpi"
-              @update:item="previewItem = $event"
-            />
-          </div>
-        </div>
-
-        <!-- Inspector -->
-        <aside
-          class="flex w-full shrink-0 flex-col rounded-lg border bg-card lg:w-80"
-          :aria-label="$t('components.label_template.editor.inspector')"
+        <span
+          v-if="isDirty"
+          class="inline-flex h-[22px] shrink-0 items-center gap-1.5 rounded-full bg-amber-50 px-2 text-[11.5px] font-medium text-amber-800"
         >
-          <div role="tablist" class="flex border-b text-sm">
-            <button
-              v-for="tab in tabs"
-              :key="tab.id"
-              type="button"
-              role="tab"
-              :aria-selected="activeTab === tab.id"
-              class="flex h-10 flex-1 items-center justify-center gap-1.5 border-b-2 px-2"
-              :class="
-                activeTab === tab.id ? 'border-primary font-semibold' : 'border-transparent text-muted-foreground'
-              "
-              @click="activeTab = tab.id"
+          <span class="size-1.5 rounded-full bg-amber-500" aria-hidden="true" />
+          {{ $t("components.label_template.editor.header.unsaved") }}
+        </span>
+        <span class="flex-1" />
+        <Button variant="outline" size="sm" class="h-7 gap-2 px-2.5 text-xs" @click="panels.label = true">
+          <span class="font-medium">
+            {{ settings.preset ? presetTitle(settings.preset) : $t("components.label_template.form.preset_custom") }}
+          </span>
+          <span class="text-muted-foreground">{{ sizeLabel }} · {{ settings.dpi }} dpi</span>
+        </Button>
+        <div
+          role="group"
+          :aria-label="$t('components.label_template.editor.header.units')"
+          class="inline-flex h-7 rounded-md bg-muted p-0.5 text-xs"
+        >
+          <button
+            v-for="u in ['mm', 'in'] as const"
+            :key="u"
+            type="button"
+            class="rounded-[5px] px-2.5"
+            :class="
+              unit === u ? 'bg-background font-semibold shadow-xs' : 'text-muted-foreground hover:text-foreground'
+            "
+            :aria-pressed="unit === u"
+            @click="unit = u"
+          >
+            {{ u }}
+          </button>
+        </div>
+      </AppSubheader>
+
+      <!-- On large screens the editor fills the window: header, subheader (2.75rem) and the panel's bottom gap -->
+      <div
+        class="flex flex-1 flex-col lg:h-[calc(100dvh-var(--header-height)-2.75rem-0.5rem-2px)] lg:flex-none lg:flex-row"
+      >
+        <!-- Design area: tools, text bar and zoom float over it, so the label never moves -->
+        <section
+          class="relative flex min-h-120 min-w-0 flex-1 bg-muted/40 bg-[radial-gradient(hsl(var(--border))_1px,transparent_1px)] bg-size-[16px_16px]"
+          :aria-label="$t('components.label_template.editor.design')"
+        >
+          <!-- One canvas instance: toggling the rulers must not recreate it and lose the undo history -->
+          <LabelTemplateEditorCanvas
+            ref="canvasRef"
+            class="absolute inset-0"
+            :width="settings.width"
+            :height="settings.height"
+            :dpi="settings.dpi"
+            :canvas-data="localCanvasData"
+            :snap-to-grid="display.snapToGrid"
+            :show-grid="display.showGrid"
+            :grid-size="display.gridSize"
+            :label-border="border"
+            :show-ruler="display.showRuler"
+            :ruler-unit="unit === 'mm' ? 'metric' : 'imperial'"
+            @update:canvas-data="handleCanvasUpdate"
+            @selection-changed="handleSelectionChanged"
+            @loaded="refreshLayers"
+          />
+
+          <!-- The rail's root is a TooltipProvider (no element), so position a wrapper -->
+          <div class="absolute top-1/2 left-3 z-10 -translate-y-1/2">
+            <LabelTemplateEditorToolRail
+              :has-selection="!!selectedObject"
+              :selection-count="selectionCount"
+              :can-undo="canUndo"
+              :can-redo="canRedo"
+              @add-text="canvasRef?.addText()"
+              @add-barcode="(format, source) => canvasRef?.addBarcode(format, source)"
+              @add-shape="type => canvasRef?.addShape(type)"
+              @add-image="handleAddImage"
+              @align="handleAlign"
+              @align-selection="target => canvasRef?.alignWithinSelection(target)"
+              @undo="canvasRef?.undo()"
+              @redo="canvasRef?.redo()"
+            />
+          </div>
+
+          <LabelTemplateEditorTextToolbar
+            v-if="isTextSelected"
+            class="absolute top-3 left-1/2 z-10 w-max max-w-[calc(100%-1.5rem)] -translate-x-1/2"
+            :selected-object="selectedObject"
+            :revision="selectionRevision"
+            :unit="unit"
+            @update-object="handleUpdateObject"
+            @insert-field="handleInsertField"
+          />
+
+          <!-- Zoom + canvas toggles -->
+          <div
+            class="absolute bottom-3 left-1/2 z-10 flex -translate-x-1/2 items-center gap-0.5 rounded-xl border bg-card p-1 text-xs whitespace-nowrap shadow-md shadow-black/5"
+          >
+            <Button
+              variant="ghost"
+              size="icon"
+              class="size-7"
+              :disabled="zoomLevel <= 0.25"
+              :aria-label="$t('components.label_template.editor.zoom.out')"
+              @click="canvasRef?.zoomOut()"
             >
-              {{ tab.label }}
-              <span v-if="tab.count !== undefined" class="text-xs text-muted-foreground">{{ tab.count }}</span>
+              <Minus class="size-4" />
+            </Button>
+            <span class="w-11 text-center font-medium tabular-nums">{{ Math.round(zoomLevel * 100) }}%</span>
+            <Button
+              variant="ghost"
+              size="icon"
+              class="size-7"
+              :disabled="zoomLevel >= 4"
+              :aria-label="$t('components.label_template.editor.zoom.in')"
+              @click="canvasRef?.zoomIn()"
+            >
+              <Plus class="size-4" />
+            </Button>
+            <Button variant="ghost" size="sm" class="h-7 px-2 text-xs" @click="canvasRef?.zoomToFit()">
+              <Maximize class="size-3.5" />
+              {{ $t("components.label_template.editor.zoom.fit") }}
+            </Button>
+            <Button variant="ghost" size="sm" class="h-7 px-2 text-xs" @click="canvasRef?.zoomTo100()">100%</Button>
+            <span class="mx-1 h-4 w-px bg-border" />
+            <button
+              v-for="toggle in viewToggles"
+              :key="toggle.key"
+              type="button"
+              class="h-7 rounded-md px-2"
+              :class="
+                display[toggle.key]
+                  ? 'bg-accent font-medium text-accent-foreground'
+                  : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+              "
+              :aria-pressed="display[toggle.key]"
+              @click="display[toggle.key] = !display[toggle.key]"
+            >
+              {{ toggle.label }}
             </button>
           </div>
+        </section>
 
-          <div class="p-4">
-            <!-- Element -->
-            <div v-if="activeTab === 'element'">
-              <div
-                v-if="!selectedObject"
-                class="rounded-md border border-dashed p-4 text-center text-sm text-muted-foreground"
-              >
-                {{ $t("components.label_template.editor.element.no_selection") }}
-              </div>
-              <div v-else class="space-y-4">
-                <div class="flex items-center justify-between">
-                  <span class="text-sm font-semibold">{{ selectedTypeLabel }}</span>
+        <!-- Dock -->
+        <aside
+          class="w-full shrink-0 overflow-y-auto border-t bg-background text-[13px] lg:w-80 lg:border-t-0 lg:border-l"
+          :aria-label="$t('components.label_template.editor.inspector')"
+        >
+          <LabelTemplateEditorDockPanel
+            v-model:open="panels.element"
+            :title="$t('components.label_template.editor.tabs.element')"
+            :meta="selectedTypeLabel || '—'"
+          >
+            <p v-if="!selectedObject" class="text-xs text-muted-foreground">
+              {{ $t("components.label_template.editor.element.no_selection") }}
+            </p>
+            <div v-else class="space-y-4">
+              <LabelTemplateEditorTransformPanel
+                :selected-object="selectedObject"
+                :revision="selectionRevision"
+                :unit="unit"
+                @update-object="handleUpdateObject"
+              />
+              <LabelTemplateEditorBarcodePanel
+                v-if="selectedObject?.data?.type === 'barcode'"
+                :selected-object="selectedObject"
+                :revision="selectionRevision"
+                :dpi="settings.dpi"
+                @update-object="handleUpdateObject"
+              />
+              <div v-if="isTextSelected" class="space-y-2">
+                <span class="text-xs font-medium text-muted-foreground">
+                  {{ $t("components.label_template.editor.element.insert_field") }}
+                </span>
+                <div class="flex flex-wrap gap-1.5">
                   <Button
-                    variant="outline"
-                    size="icon"
-                    class="size-7 text-destructive hover:text-destructive"
-                    :aria-label="$t('components.label_template.editor.tools.delete')"
-                    @click="handleDeleteSelected"
+                    v-for="field in quickFields"
+                    :key="field"
+                    variant="secondary"
+                    size="sm"
+                    class="h-6 rounded-full px-2.5 text-xs font-normal"
+                    @click="handleInsertField(field)"
                   >
-                    <MdiDelete class="size-4" />
+                    +
+                    {{ $t(`components.label_template.editor.data_fields.${field}`) }}
                   </Button>
-                </div>
-                <LabelTemplateEditorTransformPanel
-                  :selected-object="selectedObject"
-                  :revision="selectionRevision"
-                  :unit="unit"
-                  @update-object="handleUpdateObject"
-                />
-                <LabelTemplateEditorBarcodePanel
-                  v-if="selectedObject?.data?.type === 'barcode'"
-                  :selected-object="selectedObject"
-                  :revision="selectionRevision"
-                  :dpi="settings.dpi"
-                  @update-object="handleUpdateObject"
-                />
-                <div v-if="isTextSelected" class="space-y-2">
-                  <span class="text-sm font-semibold">
-                    {{ $t("components.label_template.editor.element.insert_field") }}
-                  </span>
-                  <div class="flex flex-wrap gap-1.5">
-                    <Button
-                      v-for="field in quickFields"
-                      :key="field"
-                      variant="secondary"
-                      size="sm"
-                      class="h-7 rounded-full px-2.5 text-xs"
-                      @click="handleInsertField(field)"
-                    >
-                      +
-                      {{ $t(`components.label_template.editor.data_fields.${field}`) }}
-                    </Button>
-                  </div>
                 </div>
               </div>
             </div>
+          </LabelTemplateEditorDockPanel>
 
-            <!-- Layers -->
+          <LabelTemplateEditorDockPanel
+            v-model:open="panels.layers"
+            :title="$t('components.label_template.editor.tabs.layers')"
+            :meta="layers.length"
+          >
             <LabelTemplateEditorLayerPanel
-              v-else-if="activeTab === 'layers'"
               :layers="layers"
               :selected-object="selectedObject"
               @select-layer="canvasRef?.selectLayerByIndex($event)"
@@ -675,9 +646,14 @@
               @send-to-back="sendToBack"
               @toggle-visibility="toggleVisibility"
             />
+          </LabelTemplateEditorDockPanel>
 
-            <!-- Label -->
-            <div v-else class="space-y-5">
+          <LabelTemplateEditorDockPanel
+            v-model:open="panels.label"
+            :title="$t('components.label_template.editor.tabs.label')"
+            :meta="sizeLabel"
+          >
+            <div class="space-y-5">
               <LabelTemplateEditorLabelSettings
                 v-model="settings"
                 v-model:display="display"
@@ -695,7 +671,23 @@
                 />
               </div>
             </div>
-          </div>
+          </LabelTemplateEditorDockPanel>
+
+          <LabelTemplateEditorDockPanel
+            v-model:open="panels.preview"
+            :title="$t('components.label_template.editor.preview.print_preview')"
+            :meta="previewItem?.name"
+          >
+            <LabelTemplateEditorPreviewPanel
+              :template-id="templateId"
+              :canvas-data="localCanvasData"
+              :canvas-data-json="canvasDataJson"
+              :width="settings.width"
+              :height="settings.height"
+              :dpi="settings.dpi"
+              @update:item="previewItem = $event"
+            />
+          </LabelTemplateEditorDockPanel>
         </aside>
       </div>
     </template>
@@ -708,5 +700,5 @@
         <NuxtLink to="/label-templates">{{ $t("components.label_template.editor.header.back") }}</NuxtLink>
       </Button>
     </div>
-  </BaseContainer>
+  </div>
 </template>

@@ -25,18 +25,17 @@
 </script>
 
 <template>
-  <div class="flex items-center gap-1">
-    <NumberField
-      :id="props.id"
-      :model-value="shown"
-      :step="measurement.step.value"
-      :min="props.min !== undefined ? measurement.toDisplay(props.min) : undefined"
-      :max="props.max !== undefined ? measurement.toDisplay(props.max) : undefined"
-      :format-options="{ maximumFractionDigits: 3 }"
-      :disabled="props.disabled"
-      :class="['h-9 flex-1', props.inputClass]"
-      @update:model-value="onInput"
-    />
-    <span class="shrink-0 text-xs text-muted-foreground">{{ measurement.unit.value }}</span>
-  </div>
+  <NumberField
+    :id="props.id"
+    :model-value="shown"
+    :step="measurement.step.value"
+    :min="props.min !== undefined ? measurement.toDisplay(props.min) : undefined"
+    :max="props.max !== undefined ? measurement.toDisplay(props.max) : undefined"
+    :format-options="{ maximumFractionDigits: 3 }"
+    :disabled="props.disabled"
+    :class="['h-9 w-full', props.inputClass]"
+    @update:model-value="onInput"
+  >
+    <template #suffix>{{ measurement.unit.value }}</template>
+  </NumberField>
 </template>

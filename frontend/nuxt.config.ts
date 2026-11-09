@@ -13,7 +13,7 @@ export default defineNuxtConfig({
     transpile: ["vue-i18n"],
   },
 
-  modules: ["@pinia/nuxt", "@vueuse/nuxt", "@vite-pwa/nuxt", "unplugin-icons/nuxt", "shadcn-nuxt", "@nuxt/eslint"],
+  modules: ["@pinia/nuxt", "@vueuse/nuxt", "@vite-pwa/nuxt", "shadcn-nuxt", "@nuxt/eslint"],
 
   eslint: {
     config: {},
@@ -46,7 +46,18 @@ export default defineNuxtConfig({
     head: {
       script: [{ src: "/set-theme.js" }],
       // viewport-fit=cover lets the bottom nav read the home-indicator inset
-      meta: [{ name: "viewport", content: "width=device-width, initial-scale=1, viewport-fit=cover" }],
+      // (plugins/ios-viewport.client.ts adds maximum-scale=1 on iOS so focusing a field doesn't zoom)
+      meta: [
+        { name: "viewport", content: "width=device-width, initial-scale=1, viewport-fit=cover" },
+        // Browser chrome and the iOS status bar blend into the page backdrop (--page-background)
+        { name: "theme-color", content: "#eef0ed" },
+        { name: "mobile-web-app-capable", content: "yes" },
+        { name: "apple-mobile-web-app-capable", content: "yes" },
+        { name: "apple-mobile-web-app-status-bar-style", content: "default" },
+        { name: "apple-mobile-web-app-title", content: "Homebox" },
+        // Don't turn serial numbers, asset IDs and prices into tappable phone links
+        { name: "format-detection", content: "telephone=no" },
+      ],
     },
   },
 

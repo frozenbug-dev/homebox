@@ -1,10 +1,9 @@
 <script setup lang="ts">
+  import { Dices, X } from "@lucide/vue";
   import { computed, onMounted } from "vue";
   import { useI18n } from "vue-i18n";
   import { Label } from "~/components/ui/label";
   import { Button } from "~/components/ui/button";
-  import MdiClose from "~icons/mdi/close";
-  import MdiDiceMultiple from "~icons/mdi/dice-multiple";
 
   const { t } = useI18n();
 
@@ -95,7 +94,7 @@
           :aria-label="t('components.color_selector.randomize')"
           @click="randomizeColor"
         >
-          <MdiDiceMultiple class="size-3" />
+          <Dices class="size-3" />
         </Button>
         <Button
           type="button"
@@ -105,7 +104,7 @@
           :aria-label="t('components.color_selector.clear')"
           @click="clearColor"
         >
-          <MdiClose class="size-3" />
+          <X class="size-3" />
         </Button>
       </div>
       <input :id="id" ref="colorInput" v-model="value" type="color" class="sr-only" tabindex="-1" />
@@ -136,7 +135,7 @@
           :aria-label="t('components.color_selector.randomize')"
           @click="randomizeColor"
         >
-          <MdiDiceMultiple class="size-3" />
+          <Dices class="size-3" />
         </Button>
         <Button
           type="button"
@@ -146,7 +145,7 @@
           :aria-label="t('components.color_selector.clear')"
           @click="clearColor"
         >
-          <MdiClose class="size-3" />
+          <X class="size-3" />
         </Button>
       </div>
       <input :id="id" ref="colorInput" v-model="value" type="color" class="sr-only" tabindex="-1" />

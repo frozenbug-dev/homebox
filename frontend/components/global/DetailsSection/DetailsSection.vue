@@ -24,7 +24,7 @@
                       :class="badgeVariants()"
                       class="gap-1"
                     >
-                      <MdiOpenInNew />
+                      <ExternalLink />
                       {{ detail.text }}
                     </a>
                   </TooltipTrigger>
@@ -70,8 +70,8 @@
 </template>
 
 <script setup lang="ts">
+  import { ExternalLink } from "@lucide/vue";
   import type { AnyDetail, Detail } from "./types";
-  import MdiOpenInNew from "~icons/mdi/open-in-new";
   import { badgeVariants } from "~/components/ui/badge";
   import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
   import DateTime from "@/components/global/DateTime.vue";

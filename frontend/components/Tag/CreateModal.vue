@@ -8,7 +8,8 @@
   import CreateDialog from "~/components/Create/Dialog.vue";
   import CreateChip from "~/components/Create/Chip.vue";
   import OptionPicker, { type PickerOption } from "~/components/Create/OptionPicker.vue";
-  import { availableIcons, getIconComponent } from "~/lib/icons";
+  import { getIconComponent } from "~/lib/icons";
+  import IconSelector from "~/components/Form/IconSelector.vue";
   import { useTagStore } from "~/stores/tags";
 
   const { t } = useI18n();
@@ -50,7 +51,11 @@
   });
 
   const parentOptions = computed<PickerOption[]>(() =>
-    tagStore.tags.map(tag => ({ id: tag.id, name: tag.name, color: tag.color ?? "" }))
+    tagStore.tags.map(tag => ({
+      id: tag.id,
+      name: tag.name,
+      color: tag.color ?? "",
+    }))
   );
   const parentTag = computed(() => tagStore.tags.find(tag => tag.id === form.parentId));
 
@@ -59,7 +64,10 @@
   /** A light wash of the tag colour behind its icon, like the tag rows. */
   const tileStyle = computed(() =>
     form.color
-      ? { backgroundColor: `color-mix(in srgb, ${form.color} 16%, transparent)`, color: form.color }
+      ? {
+          backgroundColor: `color-mix(in srgb, ${form.color} 16%, transparent)`,
+          color: form.color,
+        }
       : undefined
   );
 
@@ -152,7 +160,9 @@
             <button
               type="button"
               class="size-[22px] rounded-full text-muted-foreground swatch-none"
-              :class="{ 'ring-2 ring-foreground/40 ring-offset-2 ring-offset-background': !form.color }"
+              :class="{
+                'ring-2 ring-foreground/40 ring-offset-2 ring-offset-background': !form.color,
+              }"
               :aria-label="t('shell.create.no_colour')"
               :title="t('shell.create.no_colour')"
               :aria-pressed="!form.color"
@@ -163,7 +173,9 @@
               :key="s.value"
               type="button"
               class="size-[22px] rounded-full"
-              :class="{ 'ring-2 ring-offset-2 ring-offset-background': form.color === s.value }"
+              :class="{
+                'ring-2 ring-offset-2 ring-offset-background': form.color === s.value,
+              }"
               :style="{ backgroundColor: s.value, '--tw-ring-color': s.value }"
               :aria-label="t(`shell.create.swatch.${s.name}`)"
               :aria-pressed="form.color === s.value"
@@ -171,7 +183,9 @@
             />
             <label
               class="relative flex size-[22px] cursor-pointer items-center justify-center rounded-full text-white"
-              :class="{ 'ring-2 ring-offset-2 ring-offset-background': isCustomColor }"
+              :class="{
+                'ring-2 ring-offset-2 ring-offset-background': isCustomColor,
+              }"
               :style="{
                 background: isCustomColor
                   ? form.color
@@ -194,21 +208,7 @@
           <span class="text-[11px] font-medium tracking-wide text-muted-foreground uppercase">
             {{ t("shell.create.icon") }}
           </span>
-          <div class="grid grid-cols-8 gap-0.5" role="group" :aria-label="t('shell.create.icon')">
-            <button
-              v-for="ic in availableIcons"
-              :key="ic.name"
-              type="button"
-              class="flex size-7 items-center justify-center rounded-md hover:bg-muted"
-              :class="{ 'bg-muted': form.icon === ic.name }"
-              :style="form.icon === ic.name ? tileStyle : undefined"
-              :aria-label="ic.name.replace(/-outline$/, '').replace(/-/g, ' ')"
-              :aria-pressed="form.icon === ic.name"
-              @click="form.icon = form.icon === ic.name ? '' : ic.name"
-            >
-              <component :is="ic.component" class="size-4" />
-            </button>
-          </div>
+          <IconSelector v-model="form.icon" :autofocus="false" />
         </PopoverContent>
       </Popover>
 
@@ -243,7 +243,9 @@
           <template #value>
             <span
               class="size-2 rounded-full"
-              :style="{ backgroundColor: parentTag?.color || 'hsl(var(--muted-foreground) / 0.5)' }"
+              :style="{
+                backgroundColor: parentTag?.color || 'hsl(var(--muted-foreground) / 0.5)',
+              }"
               aria-hidden="true"
             />
             <span class="truncate">{{ parentTag?.name }}</span>

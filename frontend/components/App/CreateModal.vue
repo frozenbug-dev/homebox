@@ -58,7 +58,7 @@
   import { Dialog, DialogFooter, DialogHeader, DialogScrollContent, DialogTitle } from "@/components/ui/dialog";
   import { Shortcut } from "@/components/ui/shortcut";
 
-  const isDesktop = useMediaQuery("(min-width: 768px)");
+  const isDesktop = useMediaQuery("(width >= 48rem)");
 
   defineProps<{
     dialogId: DialogID;

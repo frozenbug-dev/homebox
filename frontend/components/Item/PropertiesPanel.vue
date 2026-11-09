@@ -440,7 +440,7 @@
       </div>
       <FieldsEditor ref="fieldsEditor" compact :fields="item.fields" @save="fields => emit('update', { fields })" />
       <button
-        v-if="item.fields.length === 0"
+        v-if="item.fields.length === 0 && !fieldsEditor?.adding"
         type="button"
         class="-ml-1.5 rounded-md px-1.5 py-1 text-muted-foreground hover:bg-muted hover:text-foreground"
         @click="fieldsEditor?.add()"

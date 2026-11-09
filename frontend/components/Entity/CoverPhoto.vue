@@ -6,8 +6,9 @@
   import type { EntityPhoto } from "~/lib/entity-photos";
 
   /**
-   * The cover photo beside an item's or place's title. Click it to upload a new
-   * cover (it becomes the primary photo); the corner button opens it large.
+   * The cover photo beside an item's or place's title (above it, full width, on
+   * phones). Click it to upload a new cover (it becomes the primary photo); the
+   * corner button opens it large.
    */
   const props = defineProps<{ entityId: string; photo?: EntityPhoto }>();
   const emit = defineEmits<{ uploaded: []; view: [photo: EntityPhoto] }>();
@@ -16,6 +17,9 @@
   const api = useUserApi();
   const input = useTemplateRef<HTMLInputElement>("input");
   const uploading = ref(false);
+
+  // Thumbnails are too small for the full-width phone cover; use the original when browsers can show it
+  const webImage = computed(() => /^image\/(jpeg|png|webp|gif|avif)$/.test(props.photo?.originalType ?? ""));
 
   async function upload(e: Event) {
     const el = e.target as HTMLInputElement;
@@ -40,7 +44,10 @@
 </script>
 
 <template>
-  <div class="group/cover relative size-16 shrink-0 sm:size-[84px]">
+  <div
+    class="group/cover relative shrink-0 sm:size-[84px]"
+    :class="photo ? 'h-36 w-full' : 'size-16'"
+  >
     <button
       type="button"
       class="size-full overflow-hidden rounded-xl"
@@ -53,7 +60,10 @@
       :aria-label="photo ? t('shell.item_page.change_cover') : t('shell.item_page.add_photo')"
       @click="input?.click()"
     >
-      <img v-if="photo" class="size-full object-cover" :src="photo.thumbnailSrc" :alt="$t('items.photo')" />
+      <picture v-if="photo">
+        <source v-if="webImage" media="(max-width: 639px)" :srcset="photo.originalSrc" />
+        <img class="size-full object-cover" :src="photo.thumbnailSrc" :alt="$t('items.photo')" />
+      </picture>
       <span v-else class="flex size-full items-center justify-center">
         <ImagePlus class="size-5" aria-hidden="true" />
       </span>

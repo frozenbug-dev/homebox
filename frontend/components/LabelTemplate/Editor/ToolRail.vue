@@ -1,20 +1,21 @@
 <script setup lang="ts">
+  import {
+    AlignCenterHorizontal,
+    AlignCenterVertical,
+    AlignEndHorizontal,
+    AlignEndVertical,
+    AlignStartHorizontal,
+    AlignStartVertical,
+    ImagePlus,
+    Minus,
+    MousePointer2,
+    QrCode,
+    Redo2,
+    SquarePlus,
+    Type,
+    Undo2,
+  } from "@lucide/vue";
   import { useI18n } from "vue-i18n";
-  import MdiCursorDefault from "~icons/mdi/cursor-default";
-  import MdiFormatText from "~icons/mdi/format-text";
-  import MdiQrcode from "~icons/mdi/qrcode";
-  import MdiShapeRectanglePlus from "~icons/mdi/shape-rectangle-plus";
-  import MdiMinus from "~icons/mdi/minus";
-  import MdiImagePlus from "~icons/mdi/image-plus";
-  import MdiAlignHorizontalLeft from "~icons/mdi/align-horizontal-left";
-  import MdiAlignHorizontalCenter from "~icons/mdi/align-horizontal-center";
-  import MdiAlignHorizontalRight from "~icons/mdi/align-horizontal-right";
-  import MdiAlignVerticalTop from "~icons/mdi/align-vertical-top";
-  import MdiAlignVerticalCenter from "~icons/mdi/align-vertical-center";
-  import MdiAlignVerticalBottom from "~icons/mdi/align-vertical-bottom";
-  import MdiUndo from "~icons/mdi/undo";
-  import MdiRedo from "~icons/mdi/redo";
-  import MdiDelete from "~icons/mdi/delete";
   import { toast } from "@/components/ui/sonner";
   import { Button } from "@/components/ui/button";
   import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -50,7 +51,6 @@
     alignSelection: [target: AlignTarget];
     undo: [];
     redo: [];
-    deleteSelected: [];
   }>();
 
   const { t } = useI18n();
@@ -81,12 +81,12 @@
   }
 
   const alignTargets: { target: AlignTarget; icon: Component; key: string }[] = [
-    { target: "left", icon: MdiAlignHorizontalLeft, key: "left" },
-    { target: "center", icon: MdiAlignHorizontalCenter, key: "center" },
-    { target: "right", icon: MdiAlignHorizontalRight, key: "right" },
-    { target: "top", icon: MdiAlignVerticalTop, key: "top" },
-    { target: "middle", icon: MdiAlignVerticalCenter, key: "middle" },
-    { target: "bottom", icon: MdiAlignVerticalBottom, key: "bottom" },
+    { target: "left", icon: AlignStartVertical, key: "left" },
+    { target: "center", icon: AlignCenterVertical, key: "center" },
+    { target: "right", icon: AlignEndVertical, key: "right" },
+    { target: "top", icon: AlignStartHorizontal, key: "top" },
+    { target: "middle", icon: AlignCenterHorizontal, key: "middle" },
+    { target: "bottom", icon: AlignEndHorizontal, key: "bottom" },
   ];
 </script>
 
@@ -95,17 +95,17 @@
     <div
       role="toolbar"
       :aria-label="$t('components.label_template.editor.tools.title')"
-      class="flex flex-row flex-wrap items-center gap-1 rounded-lg border bg-card p-1.5 lg:w-14 lg:flex-col lg:flex-nowrap lg:self-start"
+      class="flex flex-col items-center gap-0.5 rounded-xl border bg-card p-1 shadow-md shadow-black/5"
     >
       <Tooltip>
         <TooltipTrigger as-child>
           <Button
             variant="ghost"
             size="icon"
-            class="size-10 bg-accent"
+            class="size-8 bg-accent text-accent-foreground"
             :aria-label="$t('components.label_template.editor.tools.select')"
           >
-            <MdiCursorDefault class="size-5" />
+            <MousePointer2 class="size-[18px]" />
           </Button>
         </TooltipTrigger>
         <TooltipContent side="right">{{ $t("components.label_template.editor.tools.select") }}</TooltipContent>
@@ -116,11 +116,11 @@
           <Button
             variant="ghost"
             size="icon"
-            class="size-10"
+            class="size-8"
             :aria-label="$t('components.label_template.editor.toolbar.add_text')"
             @click="emit('addText')"
           >
-            <MdiFormatText class="size-5" />
+            <Type class="size-[18px]" />
           </Button>
         </TooltipTrigger>
         <TooltipContent side="right">{{ $t("components.label_template.editor.toolbar.add_text") }}</TooltipContent>
@@ -139,10 +139,10 @@
                 <Button
                   variant="ghost"
                   size="icon"
-                  class="size-10"
+                  class="size-8"
                   :aria-label="$t('components.label_template.editor.toolbar.add_barcode')"
                 >
-                  <MdiQrcode class="size-5" />
+                  <QrCode class="size-[18px]" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent side="right" align="start" class="w-56">
@@ -203,19 +203,19 @@
                 <Button
                   variant="ghost"
                   size="icon"
-                  class="size-10"
+                  class="size-8"
                   :aria-label="$t('components.label_template.editor.toolbar.add_shape')"
                 >
-                  <MdiShapeRectanglePlus class="size-5" />
+                  <SquarePlus class="size-[18px]" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent side="right" align="start">
                 <DropdownMenuItem @click="emit('addShape', 'rect')">
-                  <MdiShapeRectanglePlus class="mr-2 size-4" />
+                  <SquarePlus class="mr-2 size-4" />
                   {{ $t("components.label_template.editor.tools.rectangle") }}
                 </DropdownMenuItem>
                 <DropdownMenuItem @click="emit('addShape', 'line')">
-                  <MdiMinus class="mr-2 size-4" />
+                  <Minus class="mr-2 size-4" />
                   {{ $t("components.label_template.editor.tools.line") }}
                 </DropdownMenuItem>
               </DropdownMenuContent>
@@ -230,11 +230,11 @@
           <Button
             variant="ghost"
             size="icon"
-            class="size-10"
+            class="size-8"
             :aria-label="$t('components.label_template.editor.tools.image')"
             @click="pickImage"
           >
-            <MdiImagePlus class="size-5" />
+            <ImagePlus class="size-[18px]" />
           </Button>
         </TooltipTrigger>
         <TooltipContent side="right">{{ $t("components.label_template.editor.tools.image") }}</TooltipContent>
@@ -247,7 +247,7 @@
         @change="onImagePicked"
       />
 
-      <div class="mx-1 h-6 w-px bg-border lg:mx-0 lg:my-1 lg:h-px lg:w-8" />
+      <div class="my-0.5 h-px w-6 bg-border" />
 
       <Tooltip>
         <TooltipTrigger as-child>
@@ -257,11 +257,11 @@
                 <Button
                   variant="ghost"
                   size="icon"
-                  class="size-10"
+                  class="size-8"
                   :disabled="!props.hasSelection"
                   :aria-label="$t('components.label_template.editor.tools.align')"
                 >
-                  <MdiAlignHorizontalCenter class="size-5" />
+                  <AlignCenterVertical class="size-[18px]" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent side="right" align="start">
@@ -293,17 +293,19 @@
         <TooltipContent side="right">{{ $t("components.label_template.editor.tools.align") }}</TooltipContent>
       </Tooltip>
 
+      <div class="my-0.5 h-px w-6 bg-border" />
+
       <Tooltip>
         <TooltipTrigger as-child>
           <Button
             variant="ghost"
             size="icon"
-            class="size-10"
+            class="size-8"
             :disabled="!props.canUndo"
             :aria-label="$t('components.label_template.editor.tools.undo')"
             @click="emit('undo')"
           >
-            <MdiUndo class="size-5" />
+            <Undo2 class="size-[18px]" />
           </Button>
         </TooltipTrigger>
         <TooltipContent side="right">{{ $t("components.label_template.editor.tools.undo") }} (⌘Z)</TooltipContent>
@@ -313,33 +315,15 @@
           <Button
             variant="ghost"
             size="icon"
-            class="size-10"
+            class="size-8"
             :disabled="!props.canRedo"
             :aria-label="$t('components.label_template.editor.tools.redo')"
             @click="emit('redo')"
           >
-            <MdiRedo class="size-5" />
+            <Redo2 class="size-[18px]" />
           </Button>
         </TooltipTrigger>
         <TooltipContent side="right">{{ $t("components.label_template.editor.tools.redo") }} (⇧⌘Z)</TooltipContent>
-      </Tooltip>
-
-      <div class="mx-1 h-6 w-px bg-border lg:mx-0 lg:my-1 lg:h-px lg:w-8" />
-
-      <Tooltip>
-        <TooltipTrigger as-child>
-          <Button
-            variant="ghost"
-            size="icon"
-            class="size-10 text-destructive hover:text-destructive"
-            :disabled="!props.hasSelection"
-            :aria-label="$t('components.label_template.editor.tools.delete')"
-            @click="emit('deleteSelected')"
-          >
-            <MdiDelete class="size-5" />
-          </Button>
-        </TooltipTrigger>
-        <TooltipContent side="right">{{ $t("components.label_template.editor.tools.delete") }} (⌫)</TooltipContent>
       </Tooltip>
     </div>
   </TooltipProvider>

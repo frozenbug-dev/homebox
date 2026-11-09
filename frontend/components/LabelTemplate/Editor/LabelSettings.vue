@@ -227,7 +227,7 @@
         </div>
         <Switch id="ls-border" v-model="border.enabled" />
       </div>
-      <div v-if="border.enabled" class="grid grid-cols-3 gap-3">
+      <div v-if="border.enabled" class="grid grid-cols-2 gap-3">
         <div class="space-y-1">
           <Label for="ls-border-width" class="text-xs text-muted-foreground">
             {{ $t("components.label_template.form.border_width") }}

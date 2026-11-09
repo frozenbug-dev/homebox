@@ -143,7 +143,9 @@
   const path = computed(() => (selected.value ? ancestors(selected.value) : []));
   const icon = computed(() => (selected.value?.icon ? getIconComponent(selected.value.icon) : undefined));
 
-  useHead({ title: () => `HomeBox | ${selected.value?.name ?? t("global.tags")}` });
+  useHead({
+    title: () => `HomeBox | ${selected.value?.name ?? t("global.tags")}`,
+  });
   usePageHeader(() => [
     { label: t("global.tags"), to: selected.value ? "/tags" : undefined },
     ...(selected.value ? [{ label: selected.value.name }] : []),
@@ -219,7 +221,7 @@
     isLoading,
     fetchNextPage,
   } = useEntityList(contentsQuery, () => !!selectedId.value && itemTypeIds.value.length > 0);
-  const wide = useMediaQuery("(min-width: 768px)");
+  const wide = useMediaQuery("(width >= 48rem)");
   const columns = computed<Record<ItemColumn, boolean>>(() => ({
     asset: true,
     place: true,
@@ -438,7 +440,9 @@
                 <span class="text-muted-foreground">{{ t("shell.tags_page.color") }}</span>
                 <span
                   class="size-3 rounded-full"
-                  :class="{ 'text-muted-foreground swatch-none': !selected.color }"
+                  :class="{
+                    'text-muted-foreground swatch-none': !selected.color,
+                  }"
                   :style="selected.color ? { backgroundColor: selected.color } : undefined"
                   aria-hidden="true"
                 />
@@ -493,7 +497,7 @@
                 <span v-else class="font-medium">{{ t("shell.tags_page.no_icon") }}</span>
               </button>
             </PopoverTrigger>
-            <PopoverContent class="w-80" align="start">
+            <PopoverContent class="w-75 p-2.5" align="start">
               <IconSelector v-model="iconValue" />
             </PopoverContent>
           </Popover>

@@ -190,16 +190,30 @@
           class="sticky top-0 z-20 flex h-(--header-height-mobile) items-center gap-2 px-2 bg-page sm:h-(--header-height) sm:gap-3 md:px-1"
         >
           <SidebarTrigger variant="ghost" class="text-muted-foreground" />
-          <nav aria-label="Breadcrumb" class="flex min-w-0 shrink items-center gap-2 text-sm">
+          <!-- On phones only the parent and current crumb are shown; every crumb can truncate so the
+               trail never pushes into the header actions -->
+          <nav aria-label="Breadcrumb" class="flex min-w-0 flex-1 items-center gap-2 overflow-hidden text-sm">
             <template v-for="(crumb, i) in pageHeader.crumbs" :key="i">
-              <NuxtLink v-if="crumb.to" :to="crumb.to" class="shrink-0 text-muted-foreground hover:text-foreground">
+              <NuxtLink
+                v-if="crumb.to"
+                :to="crumb.to"
+                class="max-w-40 min-w-0 truncate text-muted-foreground hover:text-foreground"
+                :class="{ 'hidden sm:block': i < pageHeader.crumbs.length - 2 }"
+              >
                 {{ crumb.label }}
               </NuxtLink>
-              <span v-else class="truncate font-medium" aria-current="page">{{ crumb.label }}</span>
-              <span v-if="i < pageHeader.crumbs.length - 1" class="text-muted-foreground/40" aria-hidden="true">/</span>
+              <span v-else class="min-w-0 shrink-[0.5] truncate font-medium" aria-current="page">{{
+                crumb.label
+              }}</span>
+              <span
+                v-if="i < pageHeader.crumbs.length - 1"
+                class="shrink-0 text-muted-foreground/40"
+                :class="{ 'hidden sm:inline': i < pageHeader.crumbs.length - 2 }"
+                aria-hidden="true"
+                >/</span
+              >
             </template>
           </nav>
-          <div class="flex-1" />
           <Button
             variant="ghost"
             size="icon"

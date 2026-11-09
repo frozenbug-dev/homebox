@@ -1,18 +1,20 @@
 <script setup lang="ts">
+  import {
+    ArrowDown,
+    ArrowDownToLine,
+    ArrowUp,
+    ArrowUpToLine,
+    Barcode,
+    Database,
+    Eye,
+    EyeOff,
+    ImageIcon,
+    Minus,
+    Square,
+    Type,
+  } from "@lucide/vue";
   import { useI18n } from "vue-i18n";
   import { Button } from "@/components/ui/button";
-  import MdiFormatText from "~icons/mdi/format-text";
-  import MdiDatabase from "~icons/mdi/database";
-  import MdiBarcode from "~icons/mdi/barcode";
-  import MdiRectangleOutline from "~icons/mdi/rectangle-outline";
-  import MdiMinus from "~icons/mdi/minus";
-  import MdiImage from "~icons/mdi/image";
-  import MdiArrowUp from "~icons/mdi/arrow-up";
-  import MdiArrowDown from "~icons/mdi/arrow-down";
-  import MdiArrowCollapseUp from "~icons/mdi/arrow-collapse-up";
-  import MdiArrowCollapseDown from "~icons/mdi/arrow-collapse-down";
-  import MdiEye from "~icons/mdi/eye";
-  import MdiEyeOff from "~icons/mdi/eye-off";
 
   interface LayerItem {
     index: number;
@@ -40,14 +42,14 @@
 
   function getLayerIcon(type: string, data?: Record<string, unknown>) {
     const lowerType = type?.toLowerCase() || "";
-    if (data?.type === "data_field") return MdiDatabase;
-    if (data?.type === "barcode") return MdiBarcode;
-    if (lowerType.includes("text") || lowerType === "i-text" || lowerType === "itext") return MdiFormatText;
-    if (lowerType === "rect") return MdiRectangleOutline;
-    if (lowerType === "line") return MdiMinus;
-    if (lowerType === "image") return MdiImage;
-    if (lowerType === "group") return MdiBarcode;
-    return MdiRectangleOutline;
+    if (data?.type === "data_field") return Database;
+    if (data?.type === "barcode") return Barcode;
+    if (lowerType.includes("text") || lowerType === "i-text" || lowerType === "itext") return Type;
+    if (lowerType === "rect") return Square;
+    if (lowerType === "line") return Minus;
+    if (lowerType === "image") return ImageIcon;
+    if (lowerType === "group") return Barcode;
+    return Square;
   }
 
   const { t } = useI18n();
@@ -106,7 +108,7 @@
           :title="$t('components.label_template.editor.layers.bring_to_front')"
           @click="emit('bringToFront', selectedCanvasIndex)"
         >
-          <MdiArrowCollapseUp class="size-4" />
+          <ArrowUpToLine class="size-4" />
         </Button>
         <Button
           variant="ghost"
@@ -116,7 +118,7 @@
           :title="$t('components.label_template.editor.layers.bring_forward')"
           @click="emit('bringForward', selectedCanvasIndex)"
         >
-          <MdiArrowUp class="size-4" />
+          <ArrowUp class="size-4" />
         </Button>
         <Button
           variant="ghost"
@@ -126,7 +128,7 @@
           :title="$t('components.label_template.editor.layers.send_backward')"
           @click="emit('sendBackward', selectedCanvasIndex)"
         >
-          <MdiArrowDown class="size-4" />
+          <ArrowDown class="size-4" />
         </Button>
         <Button
           variant="ghost"
@@ -136,7 +138,7 @@
           :title="$t('components.label_template.editor.layers.send_to_back')"
           @click="emit('sendToBack', selectedCanvasIndex)"
         >
-          <MdiArrowCollapseDown class="size-4" />
+          <ArrowDownToLine class="size-4" />
         </Button>
       </div>
     </div>
@@ -167,7 +169,7 @@
           @click.stop="emit('toggleVisibility', layer.index)"
         >
           <component
-            :is="layer.visible ? MdiEye : MdiEyeOff"
+            :is="layer.visible ? Eye : EyeOff"
             class="size-3.5"
             :class="{ 'text-muted-foreground': !layer.visible }"
           />

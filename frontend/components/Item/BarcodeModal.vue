@@ -10,7 +10,7 @@
         class="flex items-center gap-2 rounded-md border border-destructive bg-destructive/10 p-4 text-destructive"
         role="alert"
       >
-        <MdiAlertCircleOutline class="text-destructive" />
+        <CircleAlert class="text-destructive" />
         <span class="text-sm font-medium">{{ errorMessage }}</span>
       </div>
 
@@ -27,10 +27,10 @@
           class="mt-auto h-10"
           @click="retrieveProductInfo(barcode)"
         >
-          <MdiLoading v-if="searching" class="animate-spin" />
+          <LoaderCircle v-if="searching" class="animate-spin" />
           <div v-if="!searching" class="relative mx-2">
             <div class="absolute inset-0 flex items-center justify-center">
-              <MdiBarcode class="size-5 group-hover:hidden" />
+              <Barcode class="size-5 group-hover:hidden" />
             </div>
           </div>
           {{ searching ? $t("global.cancel") : $t("components.item.product_import.search_item") }}
@@ -113,14 +113,12 @@
 </template>
 
 <script setup lang="ts">
+  import { Barcode, CircleAlert, LoaderCircle } from "@lucide/vue";
   import { useI18n } from "vue-i18n";
   import { DialogID } from "@/components/ui/dialog-provider/utils";
   import { Button } from "~/components/ui/button";
   import type { BarcodeProduct } from "~~/lib/api/types/data-contracts";
   import { useDialog } from "~/components/ui/dialog-provider";
-  import MdiAlertCircleOutline from "~icons/mdi/alert-circle-outline";
-  import MdiBarcode from "~icons/mdi/barcode";
-  import MdiLoading from "~icons/mdi/loading";
   import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
   import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
   import { Separator } from "@/components/ui/separator";
@@ -152,7 +150,12 @@
     },
     { text: "items.manufacturer", value: "manufacturer", align: "center" },
     { text: "items.model_number", value: "modelNumber", align: "center" },
-    { text: "components.item.product_import.db_source", value: "search_engine_name", align: "center", type: "url" },
+    {
+      text: "components.item.product_import.db_source",
+      value: "search_engine_name",
+      align: "center",
+      type: "url",
+    },
   ] satisfies BarcodeTableHeader[];
 
   // Need for later filtering

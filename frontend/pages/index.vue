@@ -1,15 +1,8 @@
 <script setup lang="ts">
+  import { ArrowRight, Folder, Lock, LogIn, User, UserPlus } from "@lucide/vue";
+  import { DiscordIcon, GithubIcon, MastodonIcon } from "~/lib/brand-icons";
   import { useI18n } from "vue-i18n";
   import { toast } from "@/components/ui/sonner";
-  import MdiGithub from "~icons/mdi/github";
-  import MdiDiscord from "~icons/mdi/discord";
-  import MdiFolder from "~icons/mdi/folder";
-  import MdiAccount from "~icons/mdi/account";
-  import MdiAccountPlus from "~icons/mdi/account-plus";
-  import MdiLogin from "~icons/mdi/login";
-  import MdiArrowRight from "~icons/mdi/arrow-right";
-  import MdiLock from "~icons/mdi/lock";
-  import MdiMastodon from "~icons/mdi/mastodon";
   import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
   import { Button } from "@/components/ui/button";
   import LanguageSelector from "~/components/App/LanguageSelector.vue";
@@ -239,7 +232,7 @@
             <Tooltip>
               <TooltipTrigger as-child>
                 <a href="https://github.com/sysadminsmedia/homebox" target="_blank" rel="noopener noreferrer">
-                  <MdiGithub class="size-8" />
+                  <GithubIcon class="size-8" />
                 </a>
               </TooltipTrigger>
               <TooltipContent>{{ $t("global.github") }}</TooltipContent>
@@ -248,7 +241,7 @@
             <Tooltip>
               <TooltipTrigger as-child>
                 <a href="https://noc.social/@sysadminszone" target="_blank" rel="noopener noreferrer">
-                  <MdiMastodon class="size-8" />
+                  <MastodonIcon class="size-8" />
                 </a>
               </TooltipTrigger>
               <TooltipContent>{{ $t("global.follow_dev") }}</TooltipContent>
@@ -257,7 +250,7 @@
             <Tooltip>
               <TooltipTrigger as-child>
                 <a href="https://discord.gg/aY4DCkpNA9" target="_blank" rel="noopener noreferrer">
-                  <MdiDiscord class="size-8" />
+                  <DiscordIcon class="size-8" />
                 </a>
               </TooltipTrigger>
               <TooltipContent>{{ $t("global.join_discord") }}</TooltipContent>
@@ -266,7 +259,7 @@
             <Tooltip>
               <TooltipTrigger as-child>
                 <a href="https://homebox.software/en/" target="_blank" rel="noopener noreferrer">
-                  <MdiFolder class="size-8" />
+                  <Folder class="size-8" />
                 </a>
               </TooltipTrigger>
               <TooltipContent>{{ $t("global.read_docs") }}</TooltipContent>
@@ -283,7 +276,7 @@
               <Card class="md:w-125">
                 <CardHeader>
                   <CardTitle class="flex items-center gap-2">
-                    <MdiAccount class="mr-1 size-7" />
+                    <User class="mr-1 size-7" />
                     {{ $t("index.register") }}
                   </CardTitle>
                 </CardHeader>
@@ -343,7 +336,7 @@
               <Card class="md:w-125">
                 <CardHeader>
                   <CardTitle class="flex items-center gap-2">
-                    <MdiAccount class="mr-1 size-7" />
+                    <User class="mr-1 size-7" />
                     {{ $t("index.login") }}
                   </CardTitle>
                 </CardHeader>
@@ -429,15 +422,15 @@
                 <div
                   class="absolute inset-0 flex items-center justify-center transition-transform duration-300 group-hover:rotate-360"
                 >
-                  <MdiAccountPlus v-if="!registerForm" class="size-5 group-hover:hidden" />
-                  <MdiLogin v-else class="size-5 group-hover:hidden" />
-                  <MdiArrowRight class="hidden size-5 group-hover:block" />
+                  <UserPlus v-if="!registerForm" class="size-5 group-hover:hidden" />
+                  <LogIn v-else class="size-5 group-hover:hidden" />
+                  <ArrowRight class="hidden size-5 group-hover:block" />
                 </div>
               </div>
               {{ registerForm ? $t("index.login") : $t("index.register") }}
             </Button>
             <p v-else class="inline-flex items-center gap-2 text-sm italic">
-              <MdiLock class="inline-block size-4" />
+              <Lock class="inline-block size-4" />
               {{ $t("index.disabled_registration") }}
             </p>
           </div>

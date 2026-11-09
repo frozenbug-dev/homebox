@@ -433,6 +433,21 @@
               },
             ]);
           }
+        } else if (params.templateId) {
+          // Opened from a template's page: start from that template.
+          const { data, error } = await api.templates.get(params.templateId);
+          if (error || !data) {
+            toast.error(t("components.template.toast.load_failed"));
+          } else {
+            selectedTemplate.value = {
+              id: data.id,
+              name: data.name,
+              description: data.description,
+            } as EntityTemplateSummary;
+            templateUserSelected.value = true;
+            applyTemplate(data, true);
+            localStorage.setItem(LAST_TEMPLATE_KEY, data.id);
+          }
         } else {
           // Restore last used template if available. Skipped for barcode
           // product imports: a template's defaults (name, quantity, …) would

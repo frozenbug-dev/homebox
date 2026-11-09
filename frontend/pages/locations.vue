@@ -31,9 +31,8 @@
   import TagChip from "~/components/Tag/Chip.vue";
   import PlaceDetails from "~/components/Places/PlaceDetails.vue";
   import CoverPhoto from "~/components/Entity/CoverPhoto.vue";
-  import ItemImageDialog from "~/components/Item/ImageDialog.vue";
-  import AttachmentEditDialog from "~/components/Item/AttachmentEditDialog.vue";
-  import { entityPhotos, type EntityPhoto } from "~/lib/entity-photos";
+  import AttachmentDialog from "~/components/Item/AttachmentDialog.vue";
+  import { entityPhotos } from "~/lib/entity-photos";
   import type { EntityOut, EntityUpdate } from "~/lib/api/types/data-contracts";
   import ShortcutHint from "~/components/App/ShortcutHint.vue";
   import AppHeaderActions from "~/components/App/HeaderActions.vue";
@@ -169,23 +168,11 @@
 
   /** The cover beside the name (the primary photo); the Details tab shows the rest. */
   const cover = computed(() => (place.value ? entityPhotos(place.value, path => api.authURL(path))[0] : undefined));
-  function openPhoto(photo: EntityPhoto) {
-    if (!place.value) return;
-    openDialog(DialogID.ItemImage, {
-      params: { type: "preloaded", ...photo, itemId: place.value.id },
-      onClose: result => {
-        if (result?.action === "delete") reloadPlace();
-        else if (result?.action === "edit") editPlaceAttachment(result.id);
-      },
-    });
-  }
-
-  function editPlaceAttachment(attachmentId: string) {
+  function openAttachment(attachmentId: string) {
     const attachment = place.value?.attachments.find(a => a.id === attachmentId);
     if (!place.value || !attachment) return;
-    openDialog(DialogID.AttachmentEdit, {
-      params: { itemId: place.value.id, attachment },
-      onClose: result => result && reloadPlace(),
+    openDialog(DialogID.Attachment, {
+      params: { itemId: place.value.id, attachment, onChange: reloadPlace },
     });
   }
 
@@ -240,7 +227,7 @@
     () => placeAndBelow.value.length > 0 && itemTypeIds.value.length > 0
   );
 
-  const wide = useMediaQuery("(min-width: 768px)");
+  const wide = useMediaQuery("(width >= 48rem)");
   const columns = computed<Record<ItemColumn, boolean>>(() => ({
     asset: true,
     place: subPlaceCount.value > 0,
@@ -419,8 +406,7 @@
 
 <template>
   <div class="grid flex-1 md:grid-cols-[21rem_minmax(0,1fr)] xl:grid-cols-[24rem_minmax(0,1fr)]">
-    <ItemImageDialog />
-    <AttachmentEditDialog />
+    <AttachmentDialog />
     <AppHeaderActions>
       <Button variant="outline" size="sm" class="h-[30px] text-[13px] max-sm:hidden" @click="printAllLabels">
         {{ t("shell.places_page.print_labels") }}
@@ -514,9 +500,15 @@
           </template>
         </nav>
 
-        <div class="flex items-start gap-4">
-          <CoverPhoto v-if="place" :entity-id="place.id" :photo="cover" @uploaded="reloadPlace" @view="openPhoto" />
-          <div class="flex min-w-0 flex-1 flex-col gap-1">
+        <div class="flex flex-col items-start gap-4 sm:flex-row">
+          <CoverPhoto
+            v-if="place"
+            :entity-id="place.id"
+            :photo="cover"
+            @uploaded="reloadPlace"
+            @view="p => openAttachment(p.attachmentId)"
+          />
+          <div class="flex w-full min-w-0 flex-1 flex-col gap-1">
             <div class="flex flex-wrap items-center gap-3">
               <div class="min-w-0 flex-1">
                 <InlineText
@@ -670,7 +662,7 @@
         :place="place"
         @update="updatePlace"
         @reload="reloadPlace"
-        @edit-attachment="editPlaceAttachment"
+        @open-attachment="openAttachment"
       />
       <template v-else-if="tab !== 'details'">
         <ItemList

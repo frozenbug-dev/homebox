@@ -6,7 +6,7 @@
           <slot name="title" />
           <template v-if="collapsable">
             <span class="ml-2 transition-transform" :class="{ 'rotate-180': collapsed }">
-              <MdiChevronDown class="size-5 text-muted-foreground" />
+              <ChevronDown class="size-5 text-muted-foreground" />
             </span>
           </template>
         </h3>
@@ -33,7 +33,7 @@
 </template>
 
 <script setup lang="ts">
-  import MdiChevronDown from "~icons/mdi/chevron-down";
+  import { ChevronDown } from "@lucide/vue";
   import { Card, CardContent, CardHeader } from "@/components/ui/card";
 
   defineProps<{

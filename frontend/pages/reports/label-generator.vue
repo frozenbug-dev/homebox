@@ -1,9 +1,7 @@
 <script setup lang="ts">
+  import { Download, LoaderCircle, Printer } from "@lucide/vue";
   import { useI18n } from "vue-i18n";
   import { toast } from "@/components/ui/sonner";
-  import MdiDownload from "~icons/mdi/download";
-  import MdiLoading from "~icons/mdi/loading";
-  import MdiPrinter from "~icons/mdi/printer";
   import { Button } from "@/components/ui/button";
   import { Label } from "@/components/ui/label";
   import { NumberField } from "@/components/ui/number-field";
@@ -132,8 +130,12 @@
 <template>
   <BaseContainer>
     <div class="mb-6">
-      <h1 class="text-2xl font-semibold">{{ $t("reports.label_generator.title") }}</h1>
-      <p class="text-muted-foreground">{{ $t("reports.label_generator.description") }}</p>
+      <h1 class="text-2xl font-semibold">
+        {{ $t("reports.label_generator.title") }}
+      </h1>
+      <p class="text-muted-foreground">
+        {{ $t("reports.label_generator.description") }}
+      </p>
     </div>
 
     <Card class="mb-6">
@@ -142,7 +144,9 @@
         <CardDescription>{{ $t("reports.label_generator.template_hint") }}</CardDescription>
       </CardHeader>
       <CardContent>
-        <div v-if="templatesPending" class="text-muted-foreground">{{ $t("global.loading") }}</div>
+        <div v-if="templatesPending" class="text-muted-foreground">
+          {{ $t("global.loading") }}
+        </div>
         <div v-else-if="!templates || templates.length === 0" class="text-muted-foreground">
           {{ $t("pages.label_templates.batch.no_templates") }}
           <NuxtLink to="/label-templates" class="text-primary underline">
@@ -162,7 +166,11 @@
             </SelectContent>
           </Select>
           <p v-if="sheetCapacity" class="text-sm text-muted-foreground">
-            {{ $t("reports.label_generator.sheet_capacity", { count: sheetCapacity }) }}
+            {{
+              $t("reports.label_generator.sheet_capacity", {
+                count: sheetCapacity,
+              })
+            }}
           </p>
         </div>
       </CardContent>
@@ -209,7 +217,9 @@
             />
           </div>
         </div>
-        <p v-if="rangeError" class="text-sm text-destructive">{{ rangeError }}</p>
+        <p v-if="rangeError" class="text-sm text-destructive">
+          {{ rangeError }}
+        </p>
         <p v-else class="text-sm text-muted-foreground">
           {{ $t("reports.label_generator.label_count", { count: labelCount }) }}
         </p>
@@ -240,16 +250,18 @@
 
         <div class="flex flex-wrap gap-2">
           <Button :disabled="!canGenerate" @click="handleDownload">
-            <MdiLoading v-if="isRendering" class="mr-2 size-4 animate-spin" />
-            <MdiDownload v-else class="mr-2 size-4" />
+            <LoaderCircle v-if="isRendering" class="mr-2 size-4 animate-spin" />
+            <Download v-else class="mr-2 size-4" />
             {{ $t("reports.label_generator.download_pdf") }}
           </Button>
           <Button variant="outline" :disabled="!canGenerate" @click="handlePrint">
-            <MdiPrinter class="mr-2 size-4" />
+            <Printer class="mr-2 size-4" />
             {{ $t("reports.label_generator.print_pdf") }}
           </Button>
         </div>
-        <p class="text-xs text-muted-foreground">{{ $t("reports.label_generator.print_tip") }}</p>
+        <p class="text-xs text-muted-foreground">
+          {{ $t("reports.label_generator.print_tip") }}
+        </p>
       </CardContent>
     </Card>
   </BaseContainer>

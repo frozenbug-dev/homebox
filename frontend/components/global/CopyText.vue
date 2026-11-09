@@ -7,14 +7,14 @@
             :data-copied="copied"
             class="group absolute inset-0 flex items-center justify-center transition-transform duration-300 data-[copied=true]:rotate-360"
           >
-            <MdiContentCopy
+            <Copy
               class="group-data-[copied=true]:hidden"
               :style="{
                 height: `${iconSize}px`,
                 width: `${iconSize}px`,
               }"
             />
-            <MdiClipboard
+            <ClipboardCheck
               class="hidden group-data-[copied=true]:block"
               :style="{
                 height: `${iconSize}px`,
@@ -57,8 +57,7 @@
 </template>
 
 <script setup lang="ts">
-  import MdiContentCopy from "~icons/mdi/content-copy";
-  import MdiClipboard from "~icons/mdi/clipboard";
+  import { ClipboardCheck, Copy } from "@lucide/vue";
   import {
     AlertDialog,
     AlertDialogAction,
@@ -86,7 +85,10 @@
     },
   });
 
-  const { copy, copied } = useClipboard({ source: props.text, copiedDuring: 1000 });
+  const { copy, copied } = useClipboard({
+    source: props.text,
+    copiedDuring: 1000,
+  });
   const copyError = ref(false);
   const isNotHttps = window.location.protocol !== "https:";
 

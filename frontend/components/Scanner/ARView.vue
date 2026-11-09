@@ -6,7 +6,7 @@
     <!-- Error state -->
     <div v-if="error" class="absolute inset-0 flex items-center justify-center bg-background/90 p-6">
       <div class="flex max-w-sm flex-col items-center gap-4 text-center">
-        <MdiAlertCircleOutline class="size-12 text-destructive" />
+        <CircleAlert class="size-12 text-destructive" />
         <p class="text-sm text-foreground">{{ t(error) }}</p>
         <Button variant="outline" @click="startCamera">
           {{ t("scanner_ar.retry") }}
@@ -33,13 +33,13 @@
 </template>
 
 <script setup lang="ts">
+  import { CircleAlert } from "@lucide/vue";
   import { ref, onMounted, onBeforeUnmount, watch } from "vue";
   import { useI18n } from "vue-i18n";
   import { useBarcodeDetector } from "@/composables/use-barcode-detector";
   import { Button } from "@/components/ui/button";
   import ScannerAROverlayCard from "@/components/Scanner/AROverlayCard.vue";
   import ScannerARControls from "@/components/Scanner/ARControls.vue";
-  import MdiAlertCircleOutline from "~icons/mdi/alert-circle-outline";
 
   const { t } = useI18n();
   const videoEl = ref<HTMLVideoElement>();

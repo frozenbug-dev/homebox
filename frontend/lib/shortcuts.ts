@@ -35,6 +35,10 @@ export const SHORTCUTS = {
   placeAddInside: "A",
   placeRename: "R",
   placePrint: "P",
+  // Label template editor
+  templateSave: "Mod+S",
+  // Print labels page
+  batchPrint: "Mod+Enter",
 } as const;
 
 export type ShortcutGroup = "general" | "navigation" | "list" | "item" | "places";

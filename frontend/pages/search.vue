@@ -1,13 +1,11 @@
 <script setup lang="ts">
+  import { LoaderCircle, SearchIcon, Trash2 } from "@lucide/vue";
   import { useI18n } from "vue-i18n";
   import { toast } from "@/components/ui/sonner";
   import { Input } from "~/components/ui/input";
   import type { EntitySummary, EntityTypeSummary, TagSummary } from "~~/lib/api/types/data-contracts";
   import { useTagStore } from "~/stores/tags";
   import { useLocationStore } from "~~/stores/locations";
-  import MdiLoading from "~icons/mdi/loading";
-  import MdiMagnify from "~icons/mdi/magnify";
-  import MdiDelete from "~icons/mdi/delete";
   import { Button } from "@/components/ui/button";
   import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
   import { Label } from "@/components/ui/label";
@@ -472,8 +470,8 @@
           </div>
         </div>
         <Button class="mb-auto h-10 w-full md:w-auto" @click.prevent="submit">
-          <MdiLoading v-if="loading" class="animate-spin" />
-          <MdiMagnify v-else />
+          <LoaderCircle v-if="loading" class="animate-spin" />
+          <SearchIcon v-else />
           {{ $t("global.search") }}
         </Button>
       </div>
@@ -490,7 +488,9 @@
             <Label class="flex cursor-pointer items-center">
               <Switch v-model="includeArchived" class="ml-auto" />
               <div class="grow" />
-              <span class="text-right"> {{ $t("items.include_archive") }} </span>
+              <span class="text-right">
+                {{ $t("items.include_archive") }}
+              </span>
             </Label>
             <Label class="flex cursor-pointer items-center">
               <Switch v-model="fieldSelector" class="ml-auto" />
@@ -510,12 +510,16 @@
             <Label class="flex cursor-pointer items-center">
               <Switch v-model="onlyWithoutPhoto" class="ml-auto" />
               <div class="grow" />
-              <span class="text-right"> {{ $t("items.only_without_photo") }} </span>
+              <span class="text-right">
+                {{ $t("items.only_without_photo") }}
+              </span>
             </Label>
             <Label class="flex cursor-pointer items-center">
               <Switch v-model="onlyWithPhoto" class="ml-auto" />
               <div class="grow" />
-              <span class="text-right"> {{ $t("items.only_with_photo") }} </span>
+              <span class="text-right">
+                {{ $t("items.only_with_photo") }}
+              </span>
             </Label>
             <Label class="flex cursor-pointer flex-col gap-2">
               <span class="text-right">
@@ -528,14 +532,30 @@
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="name"> {{ $t("items.name") }} </SelectItem>
-                  <SelectItem value="createdAt"> {{ $t("items.created_at") }} </SelectItem>
-                  <SelectItem value="updatedAt"> {{ $t("items.updated_at") }} </SelectItem>
-                  <SelectItem value="assetId"> {{ $t("items.asset_id") }} </SelectItem>
-                  <SelectItem value="purchasePrice"> {{ $t("items.purchase_price") }} </SelectItem>
-                  <SelectItem value="location"> {{ $t("items.location") }} </SelectItem>
-                  <SelectItem value="quantity"> {{ $t("items.quantity") }} </SelectItem>
-                  <SelectItem value="insured"> {{ $t("items.insured") }} </SelectItem>
-                  <SelectItem value="archived"> {{ $t("items.archived") }} </SelectItem>
+                  <SelectItem value="createdAt">
+                    {{ $t("items.created_at") }}
+                  </SelectItem>
+                  <SelectItem value="updatedAt">
+                    {{ $t("items.updated_at") }}
+                  </SelectItem>
+                  <SelectItem value="assetId">
+                    {{ $t("items.asset_id") }}
+                  </SelectItem>
+                  <SelectItem value="purchasePrice">
+                    {{ $t("items.purchase_price") }}
+                  </SelectItem>
+                  <SelectItem value="location">
+                    {{ $t("items.location") }}
+                  </SelectItem>
+                  <SelectItem value="quantity">
+                    {{ $t("items.quantity") }}
+                  </SelectItem>
+                  <SelectItem value="insured">
+                    {{ $t("items.insured") }}
+                  </SelectItem>
+                  <SelectItem value="archived">
+                    {{ $t("items.archived") }}
+                  </SelectItem>
                 </SelectContent>
               </Select>
             </Label>
@@ -571,7 +591,7 @@
                   {{ saved.name }}
                 </Button>
                 <Button variant="destructive" size="icon" @click="deleteSavedSearch(saved.id)">
-                  <MdiDelete />
+                  <Trash2 />
                 </Button>
               </div>
               <p v-if="preferences.savedSearches.length === 0" class="text-sm text-muted-foreground">
@@ -585,7 +605,9 @@
                 :placeholder="$t('items.saved_search_name')"
                 @keydown.enter="saveCurrentSearch"
               />
-              <Button class="h-10" @click="saveCurrentSearch"> {{ $t("global.save") }} </Button>
+              <Button class="h-10" @click="saveCurrentSearch">
+                {{ $t("global.save") }}
+              </Button>
             </div>
           </PopoverContent>
         </Popover>
@@ -622,7 +644,9 @@
                 <SelectValue :placeholder="$t('items.select_field')" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem v-for="field in allFields" :key="field" :value="field"> {{ field }} </SelectItem>
+                <SelectItem v-for="field in allFields" :key="field" :value="field">
+                  {{ field }}
+                </SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -640,7 +664,7 @@
             </Select>
           </div>
           <Button variant="destructive" type="button" size="icon" class="my-auto" @click="fieldTuples.splice(idx, 1)">
-            <MdiDelete />
+            <Trash2 />
           </Button>
         </div>
         <Button type="button" size="sm" class="mt-2" @click="() => fieldTuples.push(['', ''])">
@@ -658,7 +682,14 @@
         class="-mx-1.5"
         :rows="items"
         :total="total"
-        :columns="{ asset: true, place: true, tags: true, quantity: true, price: true, added: true }"
+        :columns="{
+          asset: true,
+          place: true,
+          tags: true,
+          quantity: true,
+          price: true,
+          added: true,
+        }"
         bare
         @changed="search()"
       />

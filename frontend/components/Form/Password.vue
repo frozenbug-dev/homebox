@@ -15,7 +15,7 @@
             class="absolute top-6 right-3 mt-auto mb-3 ml-1 inline-flex justify-center p-1"
             @click="toggle()"
           >
-            <MdiEye name="mdi-eye" class="size-5" />
+            <Eye name="mdi-eye" class="size-5" />
           </button>
         </TooltipTrigger>
         <TooltipContent>{{ $t("components.form.password.toggle_show") }}</TooltipContent>
@@ -25,8 +25,8 @@
 </template>
 
 <script setup lang="ts">
+  import { Eye } from "@lucide/vue";
   import { useI18n } from "vue-i18n";
-  import MdiEye from "~icons/mdi/eye";
   import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
   import FormTextField from "@/components/Form/TextField.vue";
 

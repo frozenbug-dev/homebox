@@ -15,7 +15,7 @@
         :title="t('components.collection.selector.select_collection')"
       >
         <template v-if="sidebar.state.value === 'collapsed'">
-          <MdiHomeGroup class="size-5" />
+          <House class="size-5" />
         </template>
         <template v-else>
           <span class="flex items-center gap-2 truncate">
@@ -52,7 +52,8 @@
               }
             "
           >
-            <Plus class="mr-2 size-4" /> {{ t("components.collection.selector.create_collection") }}
+            <Plus class="mr-2 size-4" />
+            {{ t("components.collection.selector.create_collection") }}
           </CommandItem>
           <CommandItem
             value="join-collection"
@@ -63,7 +64,8 @@
               }
             "
           >
-            <UserPlus class="mr-2 size-4" /> {{ t("components.collection.selector.join_collection") }}
+            <UserPlus class="mr-2 size-4" />
+            {{ t("components.collection.selector.join_collection") }}
           </CommandItem>
           <CommandItem as-child value="collection-settings">
             <NuxtLink to="/collection/settings" class="flex w-full items-center" @click="open = false">
@@ -102,8 +104,7 @@
 </template>
 
 <script setup lang="ts">
-  import { Check, ChevronsUpDown, Plus, UserPlus, Settings } from "@lucide/vue";
-  import MdiHomeGroup from "~icons/mdi/home-group";
+  import { Check, ChevronsUpDown, House, Plus, Settings, UserPlus } from "@lucide/vue";
   import fuzzysort from "fuzzysort";
   import { Button } from "~/components/ui/button";
   import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "~/components/ui/command";
@@ -137,7 +138,11 @@
 
   const filteredCollections = computed(() => {
     const filtered = fuzzysort
-      .go(search.value, collectionsList.value, { key: "name", limit: 0, threshold: 0 })
+      .go(search.value, collectionsList.value, {
+        key: "name",
+        limit: 0,
+        threshold: 0,
+      })
       .map(i => i.obj);
     return filtered;
   });

@@ -6,7 +6,7 @@
   definePageMeta({ middleware: ["auth"] });
 
   onMounted(() => {
-    if (window.matchMedia("(min-width: 768px)").matches) void navigateTo("/collection/settings", { replace: true });
+    if (window.matchMedia("(width >= 48rem)").matches) void navigateTo("/collection/settings", { replace: true });
   });
 </script>
 

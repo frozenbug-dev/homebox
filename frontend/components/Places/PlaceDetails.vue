@@ -1,8 +1,6 @@
 <script setup lang="ts">
   import { useI18n } from "vue-i18n";
   import type { EntityOut, EntityUpdate } from "~/lib/api/types/data-contracts";
-  import { useDialog } from "@/components/ui/dialog-provider";
-  import { DialogID } from "@/components/ui/dialog-provider/utils";
   import InlineMarkdown from "~/components/Item/Inline/Markdown.vue";
   import FieldsEditor from "~/components/Item/FieldsEditor.vue";
   import ItemAttachmentsList from "~/components/Item/AttachmentsList.vue";
@@ -18,28 +16,17 @@
   const emit = defineEmits<{
     update: [changes: Partial<EntityUpdate>];
     reload: [];
-    editAttachment: [attachmentId: string];
+    openAttachment: [attachmentId: string];
   }>();
 
   const { t } = useI18n();
   const api = useUserApi();
-  const { openDialog } = useDialog();
 
   const fieldsEditor = useTemplateRef<InstanceType<typeof FieldsEditor>>("fieldsEditor");
 
   /** The first (primary) photo is the cover in the pane's header; the rest are here. */
   const photos = computed(() => entityPhotos(props.place, path => api.authURL(path)).slice(1));
   const files = computed(() => props.place.attachments.filter(a => a.type !== "photo"));
-
-  function openPhoto(photo: (typeof photos.value)[number]) {
-    openDialog(DialogID.ItemImage, {
-      params: { type: "preloaded", ...photo, itemId: props.place.id },
-      onClose: result => {
-        if (result?.action === "delete") emit("reload");
-        else if (result?.action === "edit") emit("editAttachment", result.id);
-      },
-    });
-  }
 </script>
 
 <template>
@@ -60,7 +47,7 @@
         :key="photo.attachmentId"
         type="button"
         class="h-[90px] w-30 overflow-hidden rounded-[10px] border border-border bg-muted transition-opacity hover:opacity-90"
-        @click="openPhoto(photo)"
+        @click="emit('openAttachment', photo.attachmentId)"
       >
         <img class="size-full object-cover" :src="photo.thumbnailSrc" :alt="$t('items.photo')" loading="lazy" />
       </button>
@@ -70,6 +57,7 @@
     <div>
       <FieldsEditor ref="fieldsEditor" :fields="place.fields" @save="fields => emit('update', { fields })" />
       <button
+        v-if="!fieldsEditor?.adding"
         type="button"
         class="mt-1.5 rounded-md px-1.5 py-1 text-[13px] font-medium text-primary hover:bg-muted"
         @click="fieldsEditor?.add()"
@@ -80,7 +68,7 @@
 
     <section v-if="files.length > 0">
       <h2 class="mb-2 text-[13px] font-semibold text-foreground/80">{{ t("shell.places_page.files") }}</h2>
-      <ItemAttachmentsList :attachments="files" :item-id="place.id" />
+      <ItemAttachmentsList :attachments="files" :item-id="place.id" preview @open="a => emit('openAttachment', a.id)" />
     </section>
   </div>
 </template>

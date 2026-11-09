@@ -1,11 +1,11 @@
 <script setup lang="ts">
+  import { LoaderCircle } from "@lucide/vue";
   import { Dialog, DialogContent, DialogFooter, DialogTitle, DialogHeader } from "@/components/ui/dialog";
   import { Button } from "@/components/ui/button";
   import { useDialog } from "@/components/ui/dialog-provider";
   import { DialogID } from "~/components/ui/dialog-provider/utils";
   import type { EntityPatch, EntitySummary, TagOut } from "~/lib/api/types/data-contracts";
   import LocationSelector from "~/components/Location/Selector.vue";
-  import MdiLoading from "~icons/mdi/loading";
   import { toast } from "~/components/ui/sonner";
   import { useI18n } from "vue-i18n";
   import TagSelector from "~/components/Tag/Selector.vue";
@@ -164,7 +164,7 @@
       <DialogFooter>
         <Button type="submit" :disabled="saving || (enabled.changeLocation && !newLocation)" @click="save">
           <span v-if="!saving">{{ $t("global.save") }}</span>
-          <MdiLoading v-else class="animate-spin" />
+          <LoaderCircle v-else class="animate-spin" />
         </Button>
       </DialogFooter>
     </DialogContent>

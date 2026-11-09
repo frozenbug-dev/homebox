@@ -10,7 +10,7 @@
         :aria-expanded="open"
         :class="value ? 'border-primary text-primary' : ''"
       >
-        <MdiFileDocumentOutline class="size-5" />
+        <FileText class="size-5" />
       </Button>
     </PopoverTrigger>
     <PopoverContent class="w-72 p-0" align="end">
@@ -102,7 +102,7 @@
 </template>
 
 <script setup lang="ts">
-  import { Check, ChevronsUpDown, X } from "@lucide/vue";
+  import { Check, ChevronsUpDown, FileText, X } from "@lucide/vue";
   import fuzzysort from "fuzzysort";
   import { Button } from "~/components/ui/button";
   import {
@@ -118,7 +118,6 @@
   import { Popover, PopoverContent, PopoverTrigger } from "~/components/ui/popover";
   import { cn } from "~/lib/utils";
   import type { EntityTemplateSummary } from "~~/lib/api/types/data-contracts";
-  import MdiFileDocumentOutline from "~icons/mdi/file-document-outline";
 
   type Props = {
     modelValue?: EntityTemplateSummary | null;

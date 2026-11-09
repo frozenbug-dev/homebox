@@ -9,7 +9,8 @@
    * A number input with stacked up/down steppers in place of the browser's
    * spinner. Arrow keys, PageUp/PageDown and the mouse wheel (while focused)
    * step too. Empty is `null`. Values between steps are kept unless
-   * `stepSnapping` is on.
+   * `stepSnapping` is on. The `prefix` and `suffix` slots put a short label
+   * or unit inside the box, e.g. "W … mm".
    */
   const props = withDefaults(
     defineProps<{
@@ -66,17 +67,33 @@
       )
     "
   >
+    <span
+      v-if="$slots.prefix"
+      class="flex shrink-0 items-center pl-2.5 text-xs text-muted-foreground select-none"
+      aria-hidden="true"
+    >
+      <slot name="prefix" />
+    </span>
     <NumberFieldInput
       :placeholder="placeholder"
       :aria-label="ariaLabel"
       :class="
         cn(
           'min-w-0 flex-1 bg-transparent px-2.5 text-foreground tabular-nums outline-none placeholder:text-muted-foreground',
+          $slots.prefix && 'pl-2',
+          $slots.suffix && 'pr-1',
           inputClass
         )
       "
       @keydown.enter="emit('enter')"
     />
+    <span
+      v-if="$slots.suffix"
+      class="flex shrink-0 items-center pr-2 text-xs text-muted-foreground select-none"
+      aria-hidden="true"
+    >
+      <slot name="suffix" />
+    </span>
     <div class="flex w-6 shrink-0 flex-col border-l border-input">
       <NumberFieldIncrement :class="stepper" :aria-label="t('global.increase')">
         <ChevronUp class="size-3" :stroke-width="2.25" />

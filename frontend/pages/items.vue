@@ -143,7 +143,7 @@
     price: true,
     added: true,
   });
-  const wide = useMediaQuery("(min-width: 768px)");
+  const wide = useMediaQuery("(width >= 48rem)");
   const visibleColumns = computed<Record<ItemColumn, boolean>>(() =>
     wide.value
       ? columns.value

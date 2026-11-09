@@ -43,7 +43,7 @@
 
   const { t } = useI18n();
   const { closeDialog, activeDialog } = useDialog();
-  const isDesktop = useMediaQuery("(min-width: 768px)");
+  const isDesktop = useMediaQuery("(width >= 48rem)");
 
   // Remembered per dialog, like Linear.
   const createMore = useLocalStorage(`homebox:create-more:${props.dialogId}`, false);

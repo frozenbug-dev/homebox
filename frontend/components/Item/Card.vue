@@ -42,11 +42,13 @@
       </div>
       <div class="flex grow flex-col gap-1.5 p-4">
         <div class="flex items-start gap-2">
-          <h2 class="line-clamp-2 grow text-[15px] leading-snug font-semibold">{{ item.name }}</h2>
+          <h2 class="line-clamp-2 grow text-[15px] leading-snug font-semibold">
+            {{ item.name }}
+          </h2>
           <TooltipProvider :delay-duration="0">
             <Tooltip v-if="item.insured">
               <TooltipTrigger class="mt-0.5">
-                <MdiShieldCheck class="size-4 text-primary" />
+                <ShieldCheck class="size-4 text-primary" />
               </TooltipTrigger>
               <TooltipContent>
                 {{ $t("global.insured") }}
@@ -54,7 +56,7 @@
             </Tooltip>
             <Tooltip v-if="item.archived">
               <TooltipTrigger class="mt-0.5">
-                <MdiArchive class="size-4 text-destructive" />
+                <Archive class="size-4 text-destructive" />
               </TooltipTrigger>
               <TooltipContent>
                 {{ $t("global.archived") }}
@@ -81,12 +83,10 @@
 
 <script setup lang="ts">
   import type { EntityOut, EntitySummary } from "~~/lib/api/types/data-contracts";
-  import MdiShieldCheck from "~icons/mdi/shield-check";
-  import MdiArchive from "~icons/mdi/archive";
   import { Badge } from "@/components/ui/badge";
   import { Card } from "@/components/ui/card";
   import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-  import { Box, MapPin } from "@lucide/vue";
+  import { Archive, Box, MapPin, ShieldCheck } from "@lucide/vue";
   import Markdown from "@/components/global/Markdown.vue";
   import TagChip from "@/components/Tag/Chip.vue";
   import type { Row } from "@tanstack/vue-table";

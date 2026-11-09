@@ -29,7 +29,8 @@
     draftName.value?.$el?.scrollIntoView?.({ block: "nearest" });
     draftName.value?.edit();
   }
-  defineExpose({ add });
+  /** `adding` lets the parent hide its own "Add field" button while the new row is open. */
+  defineExpose({ add, adding });
 
   async function saveDraft(name: string) {
     adding.value = false;
@@ -139,6 +140,8 @@
           ref="draftName"
           value=""
           :label="t('global.name')"
+          class="text-muted-foreground"
+          :class="compact && '-ml-1.5'"
           :placeholder="t('shell.item_page.field_name')"
           @save="saveDraft"
           @focusout="onDraftBlur"

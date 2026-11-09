@@ -10,6 +10,8 @@
     HandCoins,
     QrCode,
     Link as LinkIcon,
+    Loader2,
+    Paperclip,
     Plus,
     Trash2,
     Wrench,
@@ -32,8 +34,7 @@
   import { Button } from "@/components/ui/button";
   import { useDialog } from "@/components/ui/dialog-provider";
   import { DialogID } from "~/components/ui/dialog-provider/utils";
-  import ItemImageDialog from "~/components/Item/ImageDialog.vue";
-  import AttachmentEditDialog from "~/components/Item/AttachmentEditDialog.vue";
+  import AttachmentDialog from "~/components/Item/AttachmentDialog.vue";
   import ItemDuplicateSettings from "~/components/Item/DuplicateSettings.vue";
   import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
   import PageQRCode from "~/components/global/PageQRCode.vue";
@@ -132,7 +133,7 @@
   }
 
   const placePickerOpen = ref(false);
-  const wide = useMediaQuery("(min-width: 1024px)");
+  const wide = useMediaQuery("(width >= 64rem)");
 
   // ----- Header, neighbours and shortcuts -----
 
@@ -230,35 +231,18 @@
     }
   }
 
-  function editAttachment(attachment: ItemAttachment) {
-    openDialog(DialogID.AttachmentEdit, {
-      params: { itemId: itemId.value, attachment },
-      onClose: result => {
-        if (result && item.value) {
-          item.value = { ...item.value, attachments: result.attachments };
-          queryClient.invalidateQueries({ queryKey: ["entities"] });
-        }
-      },
-    });
-  }
-
-  function openImageDialog(img: Photo, itemId: string) {
-    openDialog(DialogID.ItemImage, {
+  /** View an attachment; renames, type and cover changes show here as they're saved. */
+  function openAttachment(attachmentId: string) {
+    const attachment = item.value?.attachments.find(a => a.id === attachmentId);
+    if (!attachment) return;
+    openDialog(DialogID.Attachment, {
       params: {
-        type: "preloaded",
-        originalSrc: img.originalSrc,
-        originalType: img.originalType,
-        thumbnailSrc: img.thumbnailSrc,
-        attachmentId: img.attachmentId,
-        itemId,
-      },
-      onClose: result => {
-        if (result?.action === "delete") {
-          item.value!.attachments = item.value!.attachments.filter(a => a.id !== result.id);
-        } else if (result?.action === "edit") {
-          const attachment = item.value?.attachments.find(a => a.id === result.id);
-          if (attachment) editAttachment(attachment);
-        }
+        itemId: itemId.value,
+        attachment,
+        onChange: attachments => {
+          if (item.value) item.value = { ...item.value, attachments };
+          queryClient.invalidateQueries({ queryKey: ["entities"] });
+        },
       },
     });
   }
@@ -397,6 +381,9 @@
     });
   }
 
+  /** The attachments section's "Add attachment" row opens this instance's file input. */
+  const fileUpload = useTemplateRef<InstanceType<typeof AddAttachmentTiles>>("fileUpload");
+
   const soldRow =
     "grid min-h-8 grid-cols-[96px_minmax(0,1fr)] items-center gap-2 [&>dt]:text-muted-foreground [&>dd]:min-w-0";
 
@@ -430,8 +417,7 @@
     <!-- set page title -->
     <Title>{{ item.name }}</Title>
 
-    <ItemImageDialog />
-    <AttachmentEditDialog />
+    <AttachmentDialog />
     <Dialog :dialog-id="DialogID.DuplicateTemporarySettings">
       <DialogContent>
         <DialogHeader>
@@ -546,14 +532,14 @@
     <!-- Properties sit beside the content on wide screens and right below the title on narrow ones -->
     <div v-else class="grid flex-1 lg:grid-cols-[minmax(0,1fr)_minmax(300px,22rem)]">
       <div class="flex min-w-0 flex-col gap-[22px] px-4 py-6 sm:px-10 sm:pt-7 sm:pb-10">
-        <header class="flex max-w-190 items-start gap-4">
+        <header class="flex max-w-190 flex-col items-start gap-4 sm:flex-row">
           <CoverPhoto
             :entity-id="item.id"
             :photo="cover"
             @uploaded="onUploaded"
-            @view="p => openImageDialog(p, item!.id)"
+            @view="p => openAttachment(p.attachmentId)"
           />
-          <div class="flex min-w-0 flex-1 flex-col gap-1.5">
+          <div class="flex w-full min-w-0 flex-1 flex-col gap-1.5">
             <InlineText
               :value="item.name"
               :label="t('items.name')"
@@ -588,11 +574,11 @@
             :key="img.attachmentId"
             type="button"
             class="h-[90px] w-30 overflow-hidden rounded-[10px] border border-border bg-muted transition-opacity hover:opacity-90"
-            @click="openImageDialog(img, item.id)"
+            @click="openAttachment(img.attachmentId)"
           >
             <img class="size-full object-cover" :src="img.thumbnailSrc" :alt="$t('items.photo')" loading="lazy" />
           </button>
-          <AddAttachmentTiles :entity-id="item.id" @uploaded="onUploaded" />
+          <AddAttachmentTiles :entity-id="item.id" :kinds="['photo']" @uploaded="onUploaded" />
         </section>
 
         <div class="h-px bg-border/70" />
@@ -609,11 +595,34 @@
           />
         </section>
 
-        <section v-if="files.length > 0">
+        <section>
           <h2 class="mb-2 text-[13px] font-semibold text-foreground/80">
             {{ $t("items.attachments") }}
+            <span v-if="files.length" class="ml-1 font-normal text-muted-foreground tabular-nums">{{
+              files.length
+            }}</span>
           </h2>
-          <ItemAttachmentsList :attachments="files" :item-id="item.id" editable @edit="editAttachment" />
+          <ItemAttachmentsList
+            v-if="files.length > 0"
+            class="mb-2"
+            :attachments="files"
+            :item-id="item.id"
+            preview
+            @open="a => openAttachment(a.id)"
+          />
+          <button
+            type="button"
+            :disabled="!!fileUpload?.uploading"
+            class="flex w-full items-center gap-3 rounded-lg border border-dashed border-border py-2 pr-2 pl-3 text-left text-sm text-muted-foreground transition-colors hover:border-primary/50 hover:text-foreground disabled:opacity-60"
+            @click="fileUpload?.pick('file')"
+          >
+            <span class="flex size-8 shrink-0 items-center justify-center rounded-md bg-muted">
+              <Loader2 v-if="fileUpload?.uploading" class="size-4 animate-spin" aria-hidden="true" />
+              <Paperclip v-else class="size-4" aria-hidden="true" />
+            </span>
+            {{ fileUpload?.uploading ? t("shell.item_page.uploading") : t("shell.item_page.add_attachment") }}
+          </button>
+          <AddAttachmentTiles ref="fileUpload" :entity-id="item.id" :kinds="[]" @uploaded="onUploaded" />
         </section>
 
         <section v-if="showWarrantyDetails">

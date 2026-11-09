@@ -8,7 +8,7 @@
         'px-3 py-2': dense,
       }"
     >
-      <MdiMapMarkerOutline class="size-5 shrink-0 text-muted-foreground" aria-hidden="true" />
+      <MapPin class="size-5 shrink-0 text-muted-foreground" aria-hidden="true" />
       <span class="truncate font-medium">{{ location.name }}</span>
       <span class="ml-auto text-sm text-muted-foreground tabular-nums" :class="{ 'opacity-0': !hasCount }">
         {{ count }}
@@ -18,8 +18,8 @@
 </template>
 
 <script lang="ts" setup>
+  import { MapPin } from "@lucide/vue";
   import type { EntityOut, EntitySummary } from "~~/lib/api/types/data-contracts";
-  import MdiMapMarkerOutline from "~icons/mdi/map-marker-outline";
   import { Card } from "@/components/ui/card";
 
   const props = defineProps({

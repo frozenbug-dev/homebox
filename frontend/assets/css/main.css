@@ -197,9 +197,50 @@
   html {
     background-color: hsl(var(--page-background));
   }
+  /* overflow-x on <html> (the iPad fix above) makes it the page scroller, so the `overflow: hidden`
+     reka puts on <body> for open menus, dialogs and sheets doesn't stop scrolling. Lock <html> too. */
+  html:has(> body[style*="overflow: hidden"]) {
+    overflow: hidden;
+  }
   body {
     min-height: 100dvh;
     @apply bg-page;
+  }
+
+  /* --- Native feel on touch devices --- */
+  html {
+    /* Native controls (date pickers, scrollbars, autofill) in the light palette */
+    color-scheme: light;
+    /* No grey/blue flash over tapped elements; components show their own pressed states */
+    -webkit-tap-highlight-color: transparent;
+    /* iOS enlarges text in landscape; keep the sizes we set */
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+    /* Pan and pinch-zoom still work; double-tap-to-zoom (and the tap delay that comes with it) doesn't */
+    touch-action: manipulation;
+  }
+  /* Controls behave like buttons, not text: no selection or iOS link-preview callout on long-press */
+  button,
+  [role="button"],
+  [role="menuitem"],
+  [role="menuitemradio"],
+  [role="menuitemcheckbox"],
+  [role="option"],
+  [role="tab"],
+  [role="switch"],
+  [role="checkbox"],
+  [role="radio"],
+  nav a {
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
+  }
+  /* Installed to the home screen: no rubber-band bounce revealing the backdrop, no pull-to-refresh */
+  @media (display-mode: standalone) {
+    html,
+    body {
+      overscroll-behavior: none;
+    }
   }
 }
 

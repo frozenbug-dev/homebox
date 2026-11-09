@@ -1,6 +1,6 @@
 <script setup lang="ts">
+  import { ArrowUp } from "@lucide/vue";
   import type { TagOut, TagSummary } from "~~/lib/api/types/data-contracts";
-  import MdiArrowUp from "~icons/mdi/arrow-up";
   import { getContrastTextColor } from "~/lib/utils";
   import { getIconComponent } from "~/lib/icons";
 
@@ -54,7 +54,7 @@
           class="absolute inset-0 flex items-center justify-center transition-transform duration-300 group-hover/tag-chip:rotate-90"
         >
           <component :is="chipIcon" class="group-hover/tag-chip:hidden" />
-          <MdiArrowUp class="hidden group-hover/tag-chip:block" />
+          <ArrowUp class="hidden group-hover/tag-chip:block" />
         </div>
       </div>
     </template>

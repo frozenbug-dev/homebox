@@ -1,8 +1,7 @@
 <script setup lang="ts">
+  import { ArrowLeft, KeyRound } from "@lucide/vue";
   import { useI18n } from "vue-i18n";
   import { toast } from "@/components/ui/sonner";
-  import MdiLockReset from "~icons/mdi/lock-reset";
-  import MdiArrowLeft from "~icons/mdi/arrow-left";
   import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
   import { Button } from "@/components/ui/button";
   import AppLogo from "~/components/App/Logo.vue";
@@ -69,13 +68,15 @@
     <Card class="md:w-115">
       <CardHeader>
         <CardTitle class="flex items-center gap-2">
-          <MdiLockReset class="size-6" />
+          <KeyRound class="size-6" />
           {{ $t("index.reset_password_title") }}
         </CardTitle>
       </CardHeader>
 
       <CardContent>
-        <p class="mb-4 text-sm text-muted-foreground">{{ $t("index.reset_password_subtitle") }}</p>
+        <p class="mb-4 text-sm text-muted-foreground">
+          {{ $t("index.reset_password_subtitle") }}
+        </p>
         <form id="reset-password-form" @submit.prevent="submit">
           <FormPassword
             id="reset-password-new"
@@ -97,7 +98,7 @@
         </Button>
         <NuxtLink to="/" class="text-sm text-muted-foreground hover:underline">
           <span class="inline-flex items-center gap-1">
-            <MdiArrowLeft class="size-4" />
+            <ArrowLeft class="size-4" />
             {{ $t("index.back_to_login") }}
           </span>
         </NuxtLink>

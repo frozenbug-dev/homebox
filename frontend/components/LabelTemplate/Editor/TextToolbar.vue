@@ -1,12 +1,14 @@
 <script setup lang="ts">
+  import {
+    ALargeSmall,
+    BoldIcon,
+    TextAlignCenter,
+    TextAlignEnd,
+    TextAlignStart,
+    TextCursorInput,
+    WrapText,
+  } from "@lucide/vue";
   import { useI18n } from "vue-i18n";
-  import MdiFormatBold from "~icons/mdi/format-bold";
-  import MdiWrap from "~icons/mdi/wrap";
-  import MdiFormatAlignLeft from "~icons/mdi/format-align-left";
-  import MdiFormatAlignCenter from "~icons/mdi/format-align-center";
-  import MdiFormatAlignRight from "~icons/mdi/format-align-right";
-  import MdiFormatSize from "~icons/mdi/format-size";
-  import MdiTextBoxPlus from "~icons/mdi/text-box-plus";
   import { Button } from "@/components/ui/button";
   import { Label } from "@/components/ui/label";
   import { NumberField } from "@/components/ui/number-field";
@@ -131,7 +133,10 @@
     if (!isNaN(numValue) && numValue > 0) {
       const width = Math.max(1, Math.round(numValue * widthPxPerUnit.value));
       // Autofit sizes the box back to data.fixedWidth, so keep both in step.
-      emit("updateObject", { width, data: { ...(props.selectedObject?.data || {}), fixedWidth: width } });
+      emit("updateObject", {
+        width,
+        data: { ...(props.selectedObject?.data || {}), fixedWidth: width },
+      });
     }
   }
 
@@ -194,10 +199,13 @@
 </script>
 
 <template>
-  <div v-if="objectProps" class="flex flex-wrap items-center gap-3 rounded-lg border bg-card p-2">
+  <div
+    v-if="objectProps"
+    class="flex flex-wrap items-center gap-1.5 rounded-xl border bg-card p-1.5 shadow-md shadow-black/5"
+  >
     <!-- Insert Data Field - Prominently first -->
     <div class="flex items-center gap-2">
-      <MdiTextBoxPlus class="size-4 text-muted-foreground" />
+      <TextCursorInput class="size-4 text-muted-foreground" />
       <Select model-value="" @update:model-value="handleInsertField">
         <SelectTrigger class="h-8 w-40">
           <SelectValue :placeholder="$t('components.label_template.editor.properties.insert_field')" />
@@ -226,11 +234,11 @@
       </Select>
     </div>
 
-    <div class="h-6 w-px bg-border" />
+    <div class="h-5 w-px bg-border" />
 
     <!-- Font Size -->
     <div class="flex items-center gap-1">
-      <MdiFormatSize class="size-4 text-muted-foreground" />
+      <ALargeSmall class="size-4 text-muted-foreground" />
       <NumberField
         :model-value="objectProps.fontSize"
         class="h-8 w-16"
@@ -248,7 +256,7 @@
       :aria-label="$t('components.label_template.editor.toolbar.bold')"
       @click="handleFontWeightChange(objectProps.fontWeight !== 'bold')"
     >
-      <MdiFormatBold class="size-4" />
+      <BoldIcon class="size-4" />
     </Button>
     <Button
       :variant="objectProps.wrap ? 'default' : 'outline'"
@@ -259,10 +267,10 @@
       :title="$t('components.label_template.editor.toolbar.wrap')"
       @click="handleWrapChange(!objectProps.wrap)"
     >
-      <MdiWrap class="size-4" />
+      <WrapText class="size-4" />
     </Button>
 
-    <div class="h-6 w-px bg-border" />
+    <div class="h-5 w-px bg-border" />
 
     <!-- Text Alignment -->
     <div class="flex items-center">
@@ -273,7 +281,7 @@
         :aria-label="$t('components.label_template.editor.toolbar.align_left')"
         @click="handleTextAlignChange('left')"
       >
-        <MdiFormatAlignLeft class="size-4" />
+        <TextAlignStart class="size-4" />
       </Button>
       <Button
         :variant="objectProps.textAlign === 'center' ? 'default' : 'outline'"
@@ -282,7 +290,7 @@
         :aria-label="$t('components.label_template.editor.toolbar.align_center')"
         @click="handleTextAlignChange('center')"
       >
-        <MdiFormatAlignCenter class="size-4" />
+        <TextAlignCenter class="size-4" />
       </Button>
       <Button
         :variant="objectProps.textAlign === 'right' ? 'default' : 'outline'"
@@ -291,11 +299,11 @@
         :aria-label="$t('components.label_template.editor.toolbar.align_right')"
         @click="handleTextAlignChange('right')"
       >
-        <MdiFormatAlignRight class="size-4" />
+        <TextAlignEnd class="size-4" />
       </Button>
     </div>
 
-    <div class="h-6 w-px bg-border" />
+    <div class="h-5 w-px bg-border" />
 
     <!-- Text Color -->
     <div class="flex items-center gap-1">
@@ -307,7 +315,7 @@
       />
     </div>
 
-    <div class="h-6 w-px bg-border" />
+    <div class="h-5 w-px bg-border" />
 
     <!-- Text Width -->
     <div class="flex items-center gap-1">

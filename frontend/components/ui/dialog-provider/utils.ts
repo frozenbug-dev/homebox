@@ -11,7 +11,7 @@ import type {
 } from "~~/lib/api/types/data-contracts";
 
 export enum DialogID {
-  AttachmentEdit = "attachment-edit",
+  Attachment = "attachment",
   ChangePassword = "changePassword",
   CreateApiKey = "create-api-key",
   CreateApiKeyResult = "create-api-key-result",
@@ -27,7 +27,6 @@ export enum DialogID {
   DuplicateTemporarySettings = "duplicate-temporary-settings",
   EditMaintenance = "edit-maintenance",
   Import = "import",
-  ItemImage = "item-image",
   ItemTableSettings = "item-table-settings",
   PrintLabelTemplate = "print-label-template",
   ProductImport = "product-import",
@@ -38,7 +37,6 @@ export enum DialogID {
   UpdateTag = "update-tag",
   UpdateLabelTemplate = "update-label-template",
   UpdateLocation = "update-location",
-  UpdateTemplate = "update-template",
   ItemChangeDetails = "item-table-updater",
   ItemEditNumber = "item-edit-number",
   CreateEntityType = "create-entity-type",
@@ -52,24 +50,15 @@ export enum DialogID {
  * - Keys not present       => no params allowed
  */
 export type DialogParamsMap = {
-  [DialogID.ItemImage]: (
-    | {
-        type: "preloaded";
-        originalSrc: string;
-        originalType?: string;
-        thumbnailSrc?: string;
-      }
-    | {
-        type: "attachment";
-        mimeType: string;
-        thumbnailId?: string;
-      }
-  ) & {
+  /** View and edit one attachment; `onChange` gets the entity's attachments after every save or delete. */
+  [DialogID.Attachment]: {
     itemId: string;
-    attachmentId: string;
+    attachment: ItemAttachment;
+    onChange?: (attachments: ItemAttachment[]) => void;
   };
-  [DialogID.AttachmentEdit]: { itemId: string; attachment: ItemAttachment };
-  [DialogID.CreateEntity]: { baseType: "item"; product?: BarcodeProduct; subItem?: true } | { baseType: "location" };
+  [DialogID.CreateEntity]:
+    | { baseType: "item"; product?: BarcodeProduct; subItem?: true; /** Start from this item template. */ templateId?: string }
+    | { baseType: "location" };
   [DialogID.ProductImport]?: { barcode?: string };
   [DialogID.EditMaintenance]:
     | { type: "create"; itemId?: string | string[] }
@@ -99,9 +88,6 @@ export type DialogParamsMap = {
  * Defines the payload type for a dialog's onClose callback.
  */
 export type DialogResultMap = {
-  [DialogID.ItemImage]?: { action: "delete" | "edit"; id: string };
-  /** The item's attachments after the change, whether edited or deleted. */
-  [DialogID.AttachmentEdit]?: { attachments: ItemAttachment[] };
   [DialogID.EditMaintenance]?: boolean;
   [DialogID.ItemChangeDetails]?: boolean;
   [DialogID.ItemEditNumber]?: boolean;

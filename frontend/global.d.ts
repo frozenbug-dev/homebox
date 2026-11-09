@@ -1,5 +1,3 @@
-/// <reference types="unplugin-icons/types/vue" />
-
 declare module "#app" {
   interface NuxtApp {
     $otelEnabled: boolean;

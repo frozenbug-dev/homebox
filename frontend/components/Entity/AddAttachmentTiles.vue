@@ -4,32 +4,44 @@
   import { toast } from "@/components/ui/sonner";
   import { AttachmentTypes } from "~~/lib/api/types/non-generated";
 
+  type Kind = "photo" | "file";
+
   /**
    * "Add photo" and "Attach file" tiles that upload straight to an item or place.
    * Several files can be picked at once; `uploaded` fires once after any succeed,
    * so the page can reload the entity (the upload response may not list the new
    * attachment yet).
    */
-  const props = defineProps<{ entityId: string }>();
+  const props = withDefaults(
+    defineProps<{
+      entityId: string;
+      /** Which tiles to show; with none, only the hidden inputs render and `pick()` opens them. */
+      kinds?: Kind[];
+    }>(),
+    { kinds: () => ["photo", "file"] }
+  );
   const emit = defineEmits<{ uploaded: [] }>();
 
   const { t } = useI18n();
   const api = useUserApi();
 
-  type Kind = "photo" | "file";
   const photoInput = useTemplateRef<HTMLInputElement>("photoInput");
   const fileInput = useTemplateRef<HTMLInputElement>("fileInput");
   const uploading = ref<Kind | null>(null);
 
-  const tiles = computed(() => [
-    { key: "photo" as const, label: t("shell.item_page.add_photo"), icon: ImagePlus },
-    { key: "file" as const, label: t("shell.item_page.attach_file"), icon: Paperclip },
-  ]);
+  const tiles = computed(() =>
+    [
+      { key: "photo" as const, label: t("shell.item_page.add_photo"), icon: ImagePlus },
+      { key: "file" as const, label: t("shell.item_page.attach_file"), icon: Paperclip },
+    ].filter(tile => props.kinds.includes(tile.key))
+  );
 
   function pick(kind: Kind) {
     if (uploading.value) return;
     (kind === "photo" ? photoInput : fileInput).value?.click();
   }
+
+  defineExpose({ pick, uploading });
 
   async function upload(kind: Kind, e: Event) {
     const input = e.target as HTMLInputElement;
