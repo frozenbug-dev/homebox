@@ -3,9 +3,8 @@ import { useState } from 'react'
 import { View } from 'react-native'
 import { StyleSheet, useUnistyles } from 'react-native-unistyles'
 
-import { AccountButton } from '@/components/account-button'
 import { EntityList } from '@/components/entity-list'
-import { ActionFab, FAB_SPACE } from '@/components/action-fab'
+import { ActionFab, FAB_SPACE, ListHeaderActions } from '@/components/action-fab'
 import { useDebounced } from '@/lib/use-debounced'
 
 export default function ItemsScreen() {
@@ -26,11 +25,7 @@ export default function ItemsScreen() {
         onChangeText={(e) => setSearch(e.nativeEvent.text)}
         onCancelButtonPress={() => setSearch('')}
       />
-      <Stack.Toolbar placement="right">
-        <Stack.Toolbar.View>
-          <AccountButton />
-        </Stack.Toolbar.View>
-      </Stack.Toolbar>
+      <ListHeaderActions />
 
       <EntityList
         filters={{ q }}

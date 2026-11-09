@@ -1,5 +1,5 @@
 import * as Haptics from 'expo-haptics'
-import { useFocusEffect } from 'expo-router'
+import { Stack, useFocusEffect } from 'expo-router'
 import { useCallback, useState } from 'react'
 import { BackHandler, Pressable, Text, View } from 'react-native'
 import Animated, {
@@ -13,6 +13,7 @@ import Animated, {
 } from 'react-native-reanimated'
 import { StyleSheet, useUnistyles } from 'react-native-unistyles'
 
+import { AccountButton } from './account-button'
 import { useFabActions } from './action-fab.shared'
 import { Icon } from './icon'
 import { PressableFeedback } from './pressable-feedback'
@@ -160,3 +161,14 @@ const styles = StyleSheet.create((theme) => ({
     elevation: 6,
   }),
 }))
+
+/** Header actions of the list tabs (Android: the account avatar; actions live in the FAB). */
+export function ListHeaderActions() {
+  return (
+    <Stack.Toolbar placement="right">
+      <Stack.Toolbar.View>
+        <AccountButton />
+      </Stack.Toolbar.View>
+    </Stack.Toolbar>
+  )
+}

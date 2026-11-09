@@ -6,7 +6,6 @@ import { ActivityIndicator, ScrollView, Text, View } from 'react-native'
 import Animated, { FadeIn, FadeInDown, FadeOut, LinearTransition, useReducedMotion } from 'react-native-reanimated'
 import { StyleSheet, useUnistyles } from 'react-native-unistyles'
 import { Camera, useCameraDevice, useCameraPermission } from 'react-native-vision-camera'
-import { useBarcodeScannerOutput, type Barcode } from 'react-native-vision-camera-barcode-scanner'
 
 import { ActionButton } from '@/components/action-button'
 import { EntityThumb } from '@/components/entity-thumb'
@@ -18,6 +17,7 @@ import { usePatchAnyEntity } from '@/lib/api/mutations'
 import { useSession } from '@/lib/auth/session'
 import { pluralize } from '@/lib/format'
 import { parseScan, resolveScan, type ScanResult } from '@/lib/scan'
+import { useCodeScanner } from '@/lib/use-code-scanner'
 import { useSheets } from '@/lib/use-sheets'
 
 type Mode = 'find' | 'move'
@@ -109,13 +109,8 @@ export default function ScanScreen() {
     }
   }
 
-  const scanner = useBarcodeScannerOutput({
-    barcodeFormats: ['qr-code', 'data-matrix', 'ean-13', 'ean-8', 'upc-a', 'upc-e', 'code-128'],
-    outputResolution: 'preview',
-    onBarcodeScanned: (codes: Barcode[]) => {
-      void handle(codes.find((c) => c.rawValue)?.rawValue)
-    },
-    onError: (e) => console.warn('barcode scanner', e),
+  const scanner = useCodeScanner((values) => {
+    void handle(values[0])
   })
 
   const typeCode = () =>

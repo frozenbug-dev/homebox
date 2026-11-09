@@ -6,7 +6,7 @@ import { StyleSheet, useUnistyles } from 'react-native-unistyles'
 import { useCover } from '@/components/cover-scroll-view'
 
 import { EntityList } from '@/components/entity-list'
-import { HeaderButton, HeaderMenu } from '@/components/header-button'
+import { useHeaderIcon, useMoreMenuIcon } from '@/components/header-button'
 import { Icon, icons } from '@/components/icon'
 import { ListRow, RowSeparator } from '@/components/list-row'
 import { PhotoPager } from '@/components/photo-pager'
@@ -46,6 +46,8 @@ export default function PlaceDetailScreen() {
   const coverHeight = Math.round(width * 0.8) + rt.insets.top
   const cover = useCover({ coverHeight, title })
   const tint = hasCover ? cover.tint : undefined
+  const addIcon = useHeaderIcon('plus', 'add', tint)
+  const menuIcon = useMoreMenuIcon(tint)
 
   const rename = () =>
     sheets.editText({
@@ -121,8 +123,8 @@ export default function PlaceDetailScreen() {
     <View style={styles.root}>
       {hasCover ? null : <Stack.Screen options={{ title }} />}
       <Stack.Toolbar placement="right">
-        <HeaderButton sf="plus" md="add" label="Add item here" onPress={addItem} tint={tint} />
-        <HeaderMenu tint={tint}>
+        <Stack.Toolbar.Button {...addIcon} accessibilityLabel="Add item here" onPress={addItem} />
+        <Stack.Toolbar.Menu {...menuIcon}>
           <Stack.Toolbar.MenuAction onPress={addItem}>Add item here</Stack.Toolbar.MenuAction>
           <Stack.Toolbar.MenuAction
             onPress={() =>
@@ -136,7 +138,7 @@ export default function PlaceDetailScreen() {
           <Stack.Toolbar.MenuAction destructive onPress={onDelete}>
             Delete
           </Stack.Toolbar.MenuAction>
-        </HeaderMenu>
+        </Stack.Toolbar.Menu>
       </Stack.Toolbar>
       <EntityList
         filters={{ parentIds: [id] }}

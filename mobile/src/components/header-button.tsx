@@ -1,6 +1,4 @@
-import { Stack } from 'expo-router'
 import type { AndroidSymbol, SFSymbol } from 'expo-symbols'
-import type { ReactNode } from 'react'
 import { Platform } from 'react-native'
 import { useUnistyles } from 'react-native-unistyles'
 
@@ -20,43 +18,23 @@ function useToolbarIcon(sf: SFSymbol, md: AndroidSymbol, override?: string) {
   return { icon: Platform.OS === 'ios' ? sf : (source ?? undefined), tint }
 }
 
-interface HeaderButtonProps {
-  sf: SFSymbol
-  md: AndroidSymbol
-  label: string
-  onPress: () => void
-  /** Icon colour override, e.g. white over a cover photo (`useCover().tint`). */
-  tint?: string
+/**
+ * Props for a `Stack.Toolbar.Button` / `Stack.Toolbar.Menu` icon: an SF Symbol
+ * on iOS, a Material Symbol image on Android, plus its tint.
+ *
+ * These are props, not wrapper components, because on iOS `Stack.Toolbar`
+ * only keeps its direct Button / Menu / View / Spacer children and silently
+ * drops anything else (Android renders wrappers, iOS doesn't).
+ *
+ * @example
+ * <Stack.Toolbar.Button {...useHeaderIcon('plus', 'add', tint)} accessibilityLabel="Add" onPress={add} />
+ */
+export function useHeaderIcon(sf: SFSymbol, md: AndroidSymbol, tintOverride?: string) {
+  const { icon, tint } = useToolbarIcon(sf, md, tintOverride)
+  return { icon: icon ?? BLANK, hidden: !icon, tintColor: tint }
 }
 
-/** Icon button for a screen's `Stack.Toolbar` (SF Symbol on iOS, Material Symbol on Android). */
-export function HeaderButton({ sf, md, label, onPress, tint: override }: HeaderButtonProps) {
-  const { icon, tint } = useToolbarIcon(sf, md, override)
-  return (
-    <Stack.Toolbar.Button
-      icon={icon ?? BLANK}
-      hidden={!icon}
-      tintColor={tint}
-      accessibilityLabel={label}
-      onPress={onPress}
-    />
-  )
-}
-
-/** Overflow ("more") menu for a screen's `Stack.Toolbar`. */
-export function HeaderMenu({
-  children,
-  label = 'More actions',
-  tint: override,
-}: {
-  children: ReactNode
-  label?: string
-  tint?: string
-}) {
-  const { icon, tint } = useToolbarIcon('ellipsis.circle', 'more_vert', override)
-  return (
-    <Stack.Toolbar.Menu icon={icon ?? BLANK} hidden={!icon} tintColor={tint} accessibilityLabel={label}>
-      {children}
-    </Stack.Toolbar.Menu>
-  )
+/** Props for the overflow ("more") `Stack.Toolbar.Menu`. */
+export function useMoreMenuIcon(tintOverride?: string) {
+  return { ...useHeaderIcon('ellipsis.circle', 'more_vert', tintOverride), accessibilityLabel: 'More actions' }
 }

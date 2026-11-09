@@ -4,7 +4,7 @@ import { View } from 'react-native'
 import { StyleSheet } from 'react-native-unistyles'
 
 import { EntityList } from '@/components/entity-list'
-import { HeaderButton, HeaderMenu } from '@/components/header-button'
+import { useHeaderIcon, useMoreMenuIcon } from '@/components/header-button'
 import { confirmDelete, useDeleteTag } from '@/lib/api/mutations'
 import { tagsQuery } from '@/lib/api/queries'
 import { useSession } from '@/lib/auth/session'
@@ -15,6 +15,8 @@ export default function TagDetailScreen() {
   const { api } = useSession()
   const tags = useQuery(tagsQuery(api))
   const remove = useDeleteTag()
+  const addIcon = useHeaderIcon('plus', 'add')
+  const menuIcon = useMoreMenuIcon()
   const title = tags.data?.find((t) => t.id === id)?.name ?? name ?? 'Tag'
 
   const onDelete = async () => {
@@ -27,20 +29,19 @@ export default function TagDetailScreen() {
     <View style={styles.root}>
       <Stack.Screen options={{ title }} />
       <Stack.Toolbar placement="right">
-        <HeaderButton
-          sf="plus"
-          md="add"
-          label="Add item with this tag"
+        <Stack.Toolbar.Button
+          {...addIcon}
+          accessibilityLabel="Add item with this tag"
           onPress={() => router.push({ pathname: '/new-item', params: { tagId: id } })}
         />
-        <HeaderMenu>
+        <Stack.Toolbar.Menu {...menuIcon}>
           <Stack.Toolbar.MenuAction onPress={() => router.push({ pathname: '/edit-tag', params: { id } })}>
             Edit tag
           </Stack.Toolbar.MenuAction>
           <Stack.Toolbar.MenuAction destructive onPress={onDelete}>
             Delete tag
           </Stack.Toolbar.MenuAction>
-        </HeaderMenu>
+        </Stack.Toolbar.Menu>
       </Stack.Toolbar>
       <EntityList filters={{ tagIds: [id] }} emptyTitle="Nothing tagged yet" />
     </View>

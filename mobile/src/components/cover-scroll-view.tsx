@@ -13,6 +13,8 @@ import Animated, {
 import { StyleSheet, useUnistyles } from 'react-native-unistyles'
 import { scheduleOnRN } from 'react-native-worklets'
 
+import { useMoreMenuIcon } from './header-button'
+
 /** Height of the native header bar below the status bar. */
 const HEADER_BAR = Platform.OS === 'ios' ? 44 : 64
 const SHEET_RADIUS = 20
@@ -125,8 +127,12 @@ interface CoverScrollViewProps {
   /** Shown in the header once the cover has scrolled away. */
   title: string
   children: ReactNode
-  /** Header toolbar, given the icon colour to use over / past the cover. */
-  renderToolbar?: (tint: string) => ReactNode
+  /**
+   * Header toolbar. Receives ready-made props for the overflow menu's icon
+   * (coloured for over / past the cover) to spread onto a direct
+   * `<Stack.Toolbar.Menu>` child.
+   */
+  renderToolbar?: (menu: ReturnType<typeof useMoreMenuIcon>, tint: string) => ReactNode
   refreshControl?: ReactElement<RefreshControlProps>
   contentPaddingBottom?: number
 }
@@ -142,6 +148,7 @@ export function CoverScrollView({
   contentPaddingBottom = 0,
 }: CoverScrollViewProps) {
   const { onScroll, renderCover, chrome, sheetStyle, minContentHeight, tint } = useCover({ coverHeight, title })
+  const menu = useMoreMenuIcon(tint)
 
   return (
     <View style={styles.root}>
@@ -150,11 +157,12 @@ export function CoverScrollView({
         scrollEventThrottle={16}
         refreshControl={refreshControl}
         contentContainerStyle={{ paddingBottom: contentPaddingBottom, minHeight: minContentHeight }}>
-        {renderToolbar?.(tint)}
         {renderCover(cover)}
         <View style={sheetStyle}>{children}</View>
       </Animated.ScrollView>
       {chrome}
+      {/* Toolbars belong at the screen's top level (iOS ignores them inside a scroll view). */}
+      {renderToolbar?.(menu, tint)}
     </View>
   )
 }
@@ -194,8 +202,10 @@ const styles = StyleSheet.create((theme) => ({
   },
   title: {
     position: 'absolute',
-    left: 72,
-    right: 72,
+    // iOS: the back button carries the previous screen's name (~120pt wide
+    // with Liquid Glass), so keep a centred title clear of both sides.
+    left: Platform.OS === 'ios' ? 128 : 72,
+    right: Platform.OS === 'ios' ? 128 : 72,
     height: HEADER_BAR,
     textAlignVertical: 'center',
     lineHeight: HEADER_BAR,

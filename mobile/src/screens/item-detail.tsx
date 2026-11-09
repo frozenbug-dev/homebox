@@ -7,7 +7,7 @@ import { ActionButton } from '@/components/action-button'
 import { CoverScrollView } from '@/components/cover-scroll-view'
 import { PhotoPager } from '@/components/photo-pager'
 import { EmptyState } from '@/components/empty-state'
-import { HeaderMenu } from '@/components/header-button'
+import { useMoreMenuIcon } from '@/components/header-button'
 import { PressableFeedback } from '@/components/pressable-feedback'
 import { Icon, icons } from '@/components/icon'
 import { ListRow, RowSeparator } from '@/components/list-row'
@@ -38,6 +38,7 @@ export default function ItemDetailScreen() {
   const remove = useDeleteEntity()
   const duplicate = useDuplicateEntity()
   const sheets = useSheets()
+  const plainMenu = useMoreMenuIcon()
 
   if (!item.data) {
     return (
@@ -123,9 +124,9 @@ export default function ItemDetailScreen() {
     />
   )
 
-  const toolbar = (tint?: string) => (
+  const toolbar = (menu: ReturnType<typeof useMoreMenuIcon>) => (
       <Stack.Toolbar placement="right">
-        <HeaderMenu tint={tint}>
+        <Stack.Toolbar.Menu {...menu}>
           <Stack.Toolbar.MenuAction onPress={() => editText('Name', e.name, (name) => ({ name }), 'text', true)}>
             Rename
           </Stack.Toolbar.MenuAction>
@@ -140,7 +141,7 @@ export default function ItemDetailScreen() {
           <Stack.Toolbar.MenuAction destructive onPress={onDelete}>
             Delete
           </Stack.Toolbar.MenuAction>
-        </HeaderMenu>
+        </Stack.Toolbar.Menu>
       </Stack.Toolbar>
   )
 
@@ -271,7 +272,7 @@ export default function ItemDetailScreen() {
       contentContainerStyle={{ paddingBottom }}
       refreshControl={refresh}>
       <Stack.Screen options={{ title: '' }} />
-      {toolbar()}
+      {toolbar(plainMenu)}
       {body}
     </ScrollView>
   )

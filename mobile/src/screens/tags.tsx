@@ -5,11 +5,10 @@ import { useMemo, useState } from 'react'
 import { ActivityIndicator, RefreshControl, View } from 'react-native'
 import { StyleSheet, useUnistyles } from 'react-native-unistyles'
 
-import { AccountButton } from '@/components/account-button'
 import { EmptyState } from '@/components/empty-state'
 import { icons } from '@/components/icon'
 import { ListRow, RowSeparator } from '@/components/list-row'
-import { ActionFab, FAB_SPACE } from '@/components/action-fab'
+import { ActionFab, FAB_SPACE, ListHeaderActions } from '@/components/action-fab'
 import { TagDot } from '@/components/tag-chip'
 import { isNil } from '@/lib/api/api'
 import { tagsQuery } from '@/lib/api/queries'
@@ -44,11 +43,7 @@ export default function TagsScreen() {
         onChangeText={(e) => setSearch(e.nativeEvent.text)}
         onCancelButtonPress={() => setSearch('')}
       />
-      <Stack.Toolbar placement="right">
-        <Stack.Toolbar.View>
-          <AccountButton />
-        </Stack.Toolbar.View>
-      </Stack.Toolbar>
+      <ListHeaderActions />
 
       <FlashList
         data={rows}
