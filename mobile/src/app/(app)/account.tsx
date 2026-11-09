@@ -8,8 +8,8 @@ import { selfQuery, serverStatusQuery } from '@/lib/api/queries'
 import { useSession } from '@/lib/auth/session'
 
 export default function AccountScreen() {
-  const { session, authedRequest, signOut } = useSession()
-  const self = useQuery(selfQuery(session, authedRequest))
+  const { session, api, signOut } = useSession()
+  const self = useQuery(selfQuery(api))
   const status = useQuery({ ...serverStatusQuery(session?.serverUrl ?? ''), enabled: !!session })
 
   const confirmSignOut = () => {
@@ -27,7 +27,10 @@ export default function AccountScreen() {
   }
 
   return (
-    <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={styles.content}>
+    <ScrollView contentContainerStyle={styles.content}>
+      <Text style={styles.heading} accessibilityRole="header">
+        Account
+      </Text>
       <View style={styles.card}>
         <Row label="Name" value={self.data?.name} />
         <View style={styles.separator} />
@@ -57,14 +60,20 @@ function Row({ label, value }: { label: string; value?: string }) {
 }
 
 const styles = StyleSheet.create((theme, rt) => ({
+  heading: {
+    ...theme.type.title,
+    color: theme.colors.text,
+  },
   content: {
     gap: theme.spacing(5),
-    padding: theme.spacing(4),
+    padding: theme.spacing(5),
     paddingBottom: rt.insets.bottom + theme.spacing(4),
   },
   card: {
     borderRadius: theme.radius.lg,
     backgroundColor: theme.colors.surface,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: theme.colors.separator,
     paddingHorizontal: theme.spacing(4),
   },
   row: {

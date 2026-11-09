@@ -7,6 +7,6 @@ module.exports = defineConfig([
   expoConfig,
   ...pluginQuery.configs['flat/recommended'],
   {
-    ignores: ['dist/*', 'ios/*', 'android/*'],
+    ignores: ['dist/*', 'ios/*', 'android/*', '.expo/*'],
   },
 ])

@@ -1,7 +1,8 @@
 import { createContext, use, useCallback, useEffect, useMemo, useState, type ReactNode } from 'react'
 import { AppState } from 'react-native'
 
-import { ApiError, request, type RequestOptions } from '@/lib/api/client'
+import { createApiClient, type ApiClient } from '@/lib/api/api'
+import { ApiError } from '@/lib/api/client'
 import { queryClient } from '@/lib/query-client'
 
 import { refreshSession, revokeSession } from './api'
@@ -16,8 +17,8 @@ interface SessionContextValue {
   session: Session | null
   signIn: (session: Session) => Promise<void>
   signOut: () => Promise<void>
-  /** JSON request against the signed-in server; signs out when the token is rejected. */
-  authedRequest: <T>(path: string, options?: Omit<RequestOptions, 'token'>) => Promise<T>
+  /** Typed client for the signed-in server; a 401 signs out. Null while signed out. */
+  api: ApiClient | null
 }
 
 const SessionContext = createContext<SessionContextValue | null>(null)
@@ -82,22 +83,19 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     if (current) revokeSession(current).catch(() => {})
   }, [session, dropSession])
 
-  const authedRequest = useCallback(
-    async <T,>(path: string, options: Omit<RequestOptions, 'token'> = {}) => {
-      if (!session) throw new ApiError(401, 'Not signed in')
-      try {
-        return await request<T>(session.serverUrl, path, { ...options, token: session.token })
-      } catch (e) {
-        if (e instanceof ApiError && e.status === 401) await dropSession()
-        throw e
-      }
-    },
+  const api = useMemo(
+    () =>
+      session
+        ? createApiClient(session.serverUrl, session.token, () => {
+            dropSession()
+          })
+        : null,
     [session, dropSession],
   )
 
   const value = useMemo(
-    () => ({ isLoading, session, signIn, signOut, authedRequest }),
-    [isLoading, session, signIn, signOut, authedRequest],
+    () => ({ isLoading, session, signIn, signOut, api }),
+    [isLoading, session, signIn, signOut, api],
   )
 
   return <SessionContext value={value}>{children}</SessionContext>

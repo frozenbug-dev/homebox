@@ -24,6 +24,7 @@
     "expo-symbols": "~58.0.4",
     "expo-system-ui": "~58.0.7",
     "expo-web-browser": "~58.0.7",
+    "openapi-fetch": "^0.17.0",
     "react": "19.3.0",
     "react-native": "0.88.1",
     "react-native-gesture-handler": "~3.3.0",
@@ -43,6 +44,7 @@
     "@types/react": "~19.3.0",
     "eslint": "^9.39.5",
     "eslint-config-expo": "~58.0.4",
+    "openapi-typescript": "^7.13.0",
     "typescript": "~6.0.3"
   },
   "scripts": {
@@ -51,7 +53,8 @@
     "ios": "expo run:ios",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
-    "doctor": "expo-doctor"
+    "doctor": "expo-doctor",
+    "api:types": "openapi-typescript ../backend/app/api/static/docs/openapi-3.json -o src/lib/api/schema.d.ts"
   },
   "private": true
 }
