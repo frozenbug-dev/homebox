@@ -130,7 +130,7 @@
 
   async function deleteEntityType(et: EntityTypeSummary) {
     const { isCanceled } = await confirm.open(
-      t("components.entityTypes.confirm.delete_entity_type", { name: et.name })
+      t("components.entityTypes.confirm.delete_entity_type", { name: t(et.name) })
     );
     if (isCanceled) return;
 

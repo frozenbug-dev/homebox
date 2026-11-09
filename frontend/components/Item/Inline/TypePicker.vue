@@ -35,12 +35,12 @@
             <CommandItem
               v-for="type in store.itemTypes"
               :key="type.id"
-              :value="type.name"
+              :value="$t(type.name)"
               class="gap-2"
               @select="pick(type)"
             >
               <component :is="getIconComponent(type.icon)" class="size-4 shrink-0 text-muted-foreground" />
-              <span class="truncate" :class="{ 'font-medium': type.id === currentId }">{{ type.name }}</span>
+              <span class="truncate" :class="{ 'font-medium': type.id === currentId }">{{ $t(type.name) }}</span>
             </CommandItem>
           </CommandGroup>
         </CommandList>

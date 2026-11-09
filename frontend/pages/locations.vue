@@ -630,7 +630,7 @@
                   class="flex h-7 items-center gap-1.5 rounded-[7px] border border-border px-2 hover:bg-muted"
                 >
                   <span class="text-muted-foreground">{{ t("shell.places_page.type") }}</span>
-                  <span class="font-medium">{{ place.entityType?.name }}</span>
+                  <span class="font-medium">{{ place.entityType ? t(place.entityType.name) : "" }}</span>
                 </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="start" class="w-48">
@@ -640,7 +640,7 @@
                   :class="{ 'font-medium': type.id === place.entityType?.id }"
                   @select="type.id !== place.entityType?.id && updatePlace({ entityTypeId: type.id })"
                 >
-                  {{ type.name }}
+                  {{ t(type.name) }}
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>

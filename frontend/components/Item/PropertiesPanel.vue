@@ -307,7 +307,7 @@
                   :is="getIconComponent(item.entityType?.icon)"
                   class="size-3.5 shrink-0 text-muted-foreground"
                 />
-                <span class="truncate">{{ item.entityType?.name ?? "—" }}</span>
+                <span class="truncate">{{ item.entityType ? $t(item.entityType.name) : "—" }}</span>
                 <ChevronDown class="size-3 shrink-0 text-muted-foreground" aria-hidden="true" />
               </button>
             </TypePicker>
