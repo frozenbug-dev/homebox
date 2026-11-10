@@ -5951,7 +5951,9 @@ const docTemplate = `{
                 },
                 "clearParent": {
                     "description": "ClearParent moves the entity to the top level (parentId can't\nexpress that: a missing or null parentId means \"unchanged\").",
-                    "type": "boolean"
+                    "type": "boolean",
+                    "x-nullable": true,
+                    "x-omitempty": true
                 },
                 "description": {
                     "type": "string",

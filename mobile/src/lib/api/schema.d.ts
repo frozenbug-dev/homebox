@@ -4870,7 +4870,7 @@ export interface components {
              * @description ClearParent moves the entity to the top level (parentId can't
              *     express that: a missing or null parentId means "unchanged").
              */
-            clearParent?: boolean;
+            clearParent?: boolean | null;
             description?: string | null;
             entityTypeId?: string | null;
             /**

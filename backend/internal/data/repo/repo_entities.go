@@ -172,7 +172,7 @@ type (
 		Archived     *bool   `json:"archived,omitempty"     extensions:"x-nullable,x-omitempty"`
 		// ClearParent moves the entity to the top level (parentId can't
 		// express that: a missing or null parentId means "unchanged").
-		ClearParent bool `json:"clearParent,omitempty"`
+		ClearParent bool `json:"clearParent,omitempty" extensions:"x-nullable,x-omitempty"`
 
 		Quantity      *float64    `json:"quantity,omitempty"      extensions:"x-nullable,x-omitempty"`
 		PurchasePrice *float64    `json:"purchasePrice,omitempty" extensions:"x-nullable,x-omitempty"`
