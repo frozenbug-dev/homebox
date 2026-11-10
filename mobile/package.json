@@ -1,6 +1,6 @@
 {
   "name": "homecrate",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "main": "index.ts",
   "dependencies": {
     "@expo/ui": "~58.0.27",
