@@ -23,6 +23,8 @@ const lightTheme = {
     surface: '#f3f3f5',
     surfaceSelected: '#e8e8ec',
     elevated: '#ffffff',
+    /** Menus and popovers. */
+    menu: '#ffffff',
     text: '#1b1b1f',
     textMuted: '#6b6f76',
     textFaint: '#a0a3aa',
@@ -51,6 +53,7 @@ const darkTheme = {
     surface: '#18191b',
     surfaceSelected: '#222326',
     elevated: '#1c1d20',
+    menu: '#232427',
     text: '#f7f8f8',
     textMuted: '#8a8f98',
     textFaint: '#5c6068',

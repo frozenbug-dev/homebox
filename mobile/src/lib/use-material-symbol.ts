@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query'
+import { useQueries, useQuery } from '@tanstack/react-query'
 import { unstable_getMaterialSymbolSourceAsync, type AndroidSymbol } from 'expo-symbols'
 import { Platform } from 'react-native'
 
@@ -15,4 +15,22 @@ export function useMaterialSymbol(name: AndroidSymbol, size: number, color: stri
     gcTime: Infinity,
   })
   return data ?? null
+}
+
+/** Several Material Symbols at once, keyed by name (empty on iOS and until ready). */
+export function useMaterialSymbols(names: AndroidSymbol[], size: number, color: string) {
+  const unique = [...new Set(names)]
+  return useQueries({
+    queries: unique.map((name) => ({
+      queryKey: ['material-symbol', name, size, color],
+      queryFn: () => unstable_getMaterialSymbolSourceAsync(name, size, color),
+      enabled: Platform.OS === 'android',
+      staleTime: Infinity,
+      gcTime: Infinity,
+    })),
+    combine: (results) =>
+      Object.fromEntries(unique.flatMap((name, i) => (results[i].data ? [[name, results[i].data]] : []))) as Partial<
+        Record<AndroidSymbol, NonNullable<(typeof results)[number]['data']>>
+      >,
+  })
 }

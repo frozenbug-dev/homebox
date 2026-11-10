@@ -1,5 +1,5 @@
 import * as Haptics from 'expo-haptics'
-import { Stack, useFocusEffect } from 'expo-router'
+import { useFocusEffect } from 'expo-router'
 import { useCallback, useState } from 'react'
 import { BackHandler, Pressable, Text, View } from 'react-native'
 import Animated, {
@@ -13,7 +13,6 @@ import Animated, {
 } from 'react-native-reanimated'
 import { StyleSheet, useUnistyles } from 'react-native-unistyles'
 
-import { AccountButton } from './account-button'
 import { useFabActions } from './action-fab.shared'
 import { Icon } from './icon'
 import { PressableFeedback } from './pressable-feedback'
@@ -21,7 +20,11 @@ import { PressableFeedback } from './pressable-feedback'
 /** Space to leave at the bottom of lists so the FAB never covers the last row. */
 export const FAB_SPACE = 88
 
-const SPRING = { damping: 16, stiffness: 260 }
+// Material 3 Expressive "fast spatial" spring: stiffness 1400, damping ratio
+// 0.9 (damping = 2 · 0.9 · √1400). Quick, with only a hint of settle.
+const SPRING = { stiffness: 1400, damping: 67 }
+/** Delay between menu items appearing, nearest the FAB first. */
+const STAGGER = 15
 
 /**
  * Material 3 (Expressive) FAB menu: the FAB opens a stack of labelled
@@ -80,8 +83,8 @@ export function ActionFab() {
               return (
                 <Animated.View
                   key={a.key}
-                  entering={reducedMotion ? undefined : FadeInDown.springify().damping(16).stiffness(260).delay(order * 35)}
-                  exiting={reducedMotion ? undefined : FadeOutDown.duration(120)}>
+                  entering={reducedMotion ? undefined : FadeInDown.springify().stiffness(SPRING.stiffness).damping(SPRING.damping).delay(order * STAGGER)}
+                  exiting={reducedMotion ? undefined : FadeOutDown.duration(100)}>
                   <PressableFeedback
                     onPress={() => {
                       close()
@@ -162,13 +165,3 @@ const styles = StyleSheet.create((theme) => ({
   }),
 }))
 
-/** Header actions of the list tabs (Android: the account avatar; actions live in the FAB). */
-export function ListHeaderActions() {
-  return (
-    <Stack.Toolbar placement="right">
-      <Stack.Toolbar.View>
-        <AccountButton />
-      </Stack.Toolbar.View>
-    </Stack.Toolbar>
-  )
-}
