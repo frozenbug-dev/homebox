@@ -47,7 +47,13 @@
     enter-active-class="transition-opacity duration-150"
     leave-active-class="transition-opacity duration-150"
   >
-    <div v-if="createOpen" class="fixed inset-0 z-35 bg-foreground/30 md:hidden" aria-hidden="true" />
+    <!-- Swallows the tap that dismisses the menu, so it never reaches the page underneath. -->
+    <div
+      v-if="createOpen"
+      class="fixed inset-0 z-35 touch-none bg-foreground/30 md:hidden"
+      aria-hidden="true"
+      @click="createOpen = false"
+    />
   </Transition>
 
   <!-- Progressive blur behind the nav: stacked layers, each stronger and masked to a lower band,
@@ -94,7 +100,9 @@
       </NuxtLink>
     </div>
 
-    <DropdownMenu v-model:open="createOpen">
+    <!-- Non-modal: a modal menu sets pointer-events: none on <body>, so on touch the tap on the X
+         (or the backdrop) hit-tests straight through to the page content. -->
+    <DropdownMenu v-model:open="createOpen" :modal="false">
       <DropdownMenuTrigger as-child>
         <button
           type="button"
