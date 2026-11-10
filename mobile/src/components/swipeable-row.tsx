@@ -64,6 +64,9 @@ export function SwipeableRow({ children, leading, trailing }: SwipeableRowProps)
         rightThreshold={48}
         overshootLeft={false}
         overshootRight={false}
+        // Opaque, so a row dimmed by its press highlight (iOS) blends with the
+        // page instead of showing the action buttons underneath.
+        childrenContainerStyle={styles.row}
         renderLeftActions={leading ? () => renderAction(leading) : undefined}
         renderRightActions={trailing ? () => renderAction(trailing) : undefined}
         onSwipeableWillOpen={() => {
@@ -87,6 +90,9 @@ export function closeOpenSwipeable() {
 }
 
 const styles = StyleSheet.create((theme) => ({
+  row: {
+    backgroundColor: theme.colors.background,
+  },
   action: {
     width: 88,
     alignItems: 'center',

@@ -98,6 +98,7 @@ export function useCover({ coverHeight, title }: { coverHeight: number; title: s
       <Stack.Screen
         options={{
           headerTransparent: true,
+          headerLargeTitle: false,
           headerTitle: '',
           headerStyle: { backgroundColor: 'transparent' },
           headerTintColor: overCover ? '#ffffff' : theme.colors.text,

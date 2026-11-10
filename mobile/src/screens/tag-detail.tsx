@@ -1,7 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router'
-import { View } from 'react-native'
-import { StyleSheet } from 'react-native-unistyles'
 
 import { EntityList } from '@/components/entity-list'
 import { useHeaderIcon, useMoreMenuIcon } from '@/components/header-button'
@@ -25,8 +23,10 @@ export default function TagDetailScreen() {
     router.back()
   }
 
+  // No wrapper view: on iOS the large title only collapses with scrolling
+  // when the list is the screen's first native view.
   return (
-    <View style={styles.root}>
+    <>
       <Stack.Screen options={{ title }} />
       <Stack.Toolbar placement="right">
         <Stack.Toolbar.Button
@@ -44,13 +44,7 @@ export default function TagDetailScreen() {
         </Stack.Toolbar.Menu>
       </Stack.Toolbar>
       <EntityList filters={{ tagIds: [id] }} emptyTitle="Nothing tagged yet" />
-    </View>
+    </>
   )
 }
 
-const styles = StyleSheet.create((theme) => ({
-  root: {
-    flex: 1,
-    backgroundColor: theme.colors.background,
-  },
-}))

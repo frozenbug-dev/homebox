@@ -20,6 +20,7 @@ import type { Entity } from '@/lib/api/api'
 import { entityPathQuery, entityQuery, groupQuery } from '@/lib/api/queries'
 import { splitAttachments } from '@/lib/attachments'
 import { useSession } from '@/lib/auth/session'
+import { usePullToRefresh } from '@/lib/use-pull-to-refresh'
 import { formatDate, formatPrice } from '@/lib/format'
 
 import { ItemAttachments } from './item-attachments'
@@ -39,6 +40,7 @@ export default function ItemDetailScreen() {
   const duplicate = useDuplicateEntity()
   const sheets = useSheets()
   const plainMenu = useMoreMenuIcon()
+  const pull = usePullToRefresh(() => Promise.all([item.refetch(), path.refetch()]))
 
   if (!item.data) {
     return (
@@ -112,11 +114,7 @@ export default function ItemDetailScreen() {
   const coverHeight = Math.round(width * 0.95) + rt.insets.top
   const refresh = (
     <RefreshControl
-      refreshing={item.isRefetching}
-      onRefresh={() => {
-        item.refetch()
-        path.refetch()
-      }}
+      {...pull}
       progressViewOffset={photos.length ? rt.insets.top + 56 : undefined}
       colors={[theme.colors.primary]}
       tintColor={theme.colors.textMuted}

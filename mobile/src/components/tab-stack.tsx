@@ -1,4 +1,5 @@
 import { Stack } from 'expo-router'
+import { Platform } from 'react-native'
 import { useUnistyles } from 'react-native-unistyles'
 
 /**
@@ -13,14 +14,17 @@ export function TabStack({ root, title }: { root: string; title: string }) {
       screenOptions={{
         headerShadowVisible: false,
         headerLargeTitleShadowVisible: false,
-        headerStyle: { backgroundColor: theme.colors.background },
+        // iOS draws its own (glass) bar background; an opaque custom one hides
+        // the large title once the list drives it.
+        headerStyle: Platform.OS === 'ios' ? undefined : { backgroundColor: theme.colors.background },
         headerTintColor: theme.colors.text,
         contentStyle: { backgroundColor: theme.colors.background },
       }}>
       <Stack.Screen name={root} options={{ title, headerLargeTitle: true }} />
       <Stack.Screen name="item/[id]" options={{ title: '' }} />
-      <Stack.Screen name="place/[id]" options={{ title: '' }} />
-      <Stack.Screen name="tag/[id]" options={{ title: '' }} />
+      {/* Lists get a large title that collapses into the bar as you scroll (iOS). */}
+      <Stack.Screen name="place/[id]" options={{ title: '', headerLargeTitle: true }} />
+      <Stack.Screen name="tag/[id]" options={{ title: '', headerLargeTitle: true }} />
     </Stack>
   )
 }

@@ -119,8 +119,10 @@ export default function PlaceDetailScreen() {
     </View>
   )
 
+  // No wrapper view: on iOS the large title only collapses with scrolling
+  // when the list is the screen's first native view.
   return (
-    <View style={styles.root}>
+    <>
       {hasCover ? null : <Stack.Screen options={{ title }} />}
       <Stack.Toolbar placement="right">
         <Stack.Toolbar.Button {...addIcon} accessibilityLabel="Add item here" onPress={addItem} />
@@ -161,15 +163,11 @@ export default function PlaceDetailScreen() {
         minContentHeight={hasCover ? cover.minContentHeight : undefined}
       />
       {hasCover ? cover.chrome : null}
-    </View>
+    </>
   )
 }
 
 const styles = StyleSheet.create((theme) => ({
-  root: {
-    flex: 1,
-    backgroundColor: theme.colors.background,
-  },
   title: {
     ...theme.type.title,
     color: theme.colors.text,

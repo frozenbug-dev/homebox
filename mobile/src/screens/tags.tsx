@@ -2,7 +2,7 @@ import { FlashList } from '@shopify/flash-list'
 import { useQuery } from '@tanstack/react-query'
 import { Stack, useRouter } from 'expo-router'
 import { useMemo, useState } from 'react'
-import { ActivityIndicator, RefreshControl, View } from 'react-native'
+import { ActivityIndicator, RefreshControl, Platform, View } from 'react-native'
 import { StyleSheet, useUnistyles } from 'react-native-unistyles'
 
 import { EmptyState } from '@/components/empty-state'
@@ -13,12 +13,14 @@ import { TagDot } from '@/components/tag-chip'
 import { isNil } from '@/lib/api/api'
 import { tagsQuery } from '@/lib/api/queries'
 import { useSession } from '@/lib/auth/session'
+import { usePullToRefresh } from '@/lib/use-pull-to-refresh'
 
 export default function TagsScreen() {
   const { theme, rt } = useUnistyles()
   const router = useRouter()
   const { api } = useSession()
   const tags = useQuery(tagsQuery(api))
+  const pull = usePullToRefresh(tags.refetch)
   const [search, setSearch] = useState('')
 
   const rows = useMemo(() => {
@@ -30,19 +32,24 @@ export default function TagsScreen() {
       .map((t) => ({ ...t, parentName: isNil(t.parentId) ? undefined : byId.get(t.parentId!)?.name }))
   }, [tags.data, search])
 
+  // No wrapper view: on iOS the large title only collapses with scrolling
+  // when the list is the screen's first native view.
   return (
-    <View style={styles.root}>
-      <Stack.SearchBar
-        placeholder="Search tags"
-        autoCapitalize="none"
-        hideWhenScrolling={false}
-        headerIconColor={theme.colors.text}
-        tintColor={theme.colors.primary}
-        textColor={theme.colors.text}
-        hintTextColor={theme.colors.placeholder}
-        onChangeText={(e) => setSearch(e.nativeEvent.text)}
-        onCancelButtonPress={() => setSearch('')}
-      />
+    <>
+      {/* iOS searches from the search tab next to the tab bar. */}
+      {Platform.OS === 'android' ? (
+        <Stack.SearchBar
+          placeholder="Search tags"
+          autoCapitalize="none"
+          hideWhenScrolling={false}
+          headerIconColor={theme.colors.text}
+          tintColor={theme.colors.primary}
+          textColor={theme.colors.text}
+          hintTextColor={theme.colors.placeholder}
+          onChangeText={(e) => setSearch(e.nativeEvent.text)}
+          onCancelButtonPress={() => setSearch('')}
+        />
+      ) : null}
       <ListHeaderActions />
 
       <FlashList
@@ -61,10 +68,7 @@ export default function TagsScreen() {
         }
         refreshControl={
           <RefreshControl
-            refreshing={tags.isRefetching}
-            onRefresh={() => {
-              tags.refetch()
-            }}
+            {...pull}
             colors={[theme.colors.primary]}
             tintColor={theme.colors.textMuted}
             progressBackgroundColor={theme.colors.elevated}
@@ -87,15 +91,11 @@ export default function TagsScreen() {
         )}
       />
       <ActionFab />
-    </View>
+    </>
   )
 }
 
 const styles = StyleSheet.create((theme) => ({
-  root: {
-    flex: 1,
-    backgroundColor: theme.colors.background,
-  },
   dot: {
     width: 40,
     height: 40,

@@ -10,6 +10,7 @@ import type { EntitySummary } from '@/lib/api/api'
 import { confirmDelete, useDeleteEntity, usePatchAnyEntity } from '@/lib/api/mutations'
 import { itemsQuery, type ItemFilters } from '@/lib/api/queries'
 import { useSession } from '@/lib/auth/session'
+import { usePullToRefresh } from '@/lib/use-pull-to-refresh'
 import { useSheets } from '@/lib/use-sheets'
 
 import { ActionButton } from './action-button'
@@ -61,6 +62,7 @@ export function EntityList({
   const router = useRouter()
   const { api } = useSession()
   const query = useInfiniteQuery(itemsQuery(api, filters))
+  const pull = usePullToRefresh(query.refetch)
   const sheets = useSheets()
   const patch = usePatchAnyEntity()
   const remove = useDeleteEntity()
@@ -119,11 +121,8 @@ export function EntityList({
       onScrollBeginDrag={closeOpenSwipeable}
       refreshControl={
         <RefreshControl
-          refreshing={query.isRefetching && !query.isFetchingNextPage}
+          {...pull}
           progressViewOffset={edgeToEdge ? refreshOffset : undefined}
-          onRefresh={() => {
-            query.refetch()
-          }}
           colors={[theme.colors.primary]}
           tintColor={theme.colors.textMuted}
           progressBackgroundColor={theme.colors.elevated}

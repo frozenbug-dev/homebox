@@ -2,7 +2,7 @@ import { FlashList } from '@shopify/flash-list'
 import { useQuery } from '@tanstack/react-query'
 import { Stack, useRouter } from 'expo-router'
 import { useMemo, useState } from 'react'
-import { ActivityIndicator, RefreshControl, View } from 'react-native'
+import { ActivityIndicator, RefreshControl, Platform, View } from 'react-native'
 import { StyleSheet, useUnistyles } from 'react-native-unistyles'
 
 import { EmptyState } from '@/components/empty-state'
@@ -11,6 +11,7 @@ import { ListRow, RowSeparator } from '@/components/list-row'
 import { ActionFab, FAB_SPACE, ListHeaderActions } from '@/components/action-fab'
 import { flattenTree, placesTreeQuery } from '@/lib/api/queries'
 import { useSession } from '@/lib/auth/session'
+import { usePullToRefresh } from '@/lib/use-pull-to-refresh'
 import { pluralize } from '@/lib/format'
 
 export default function PlacesScreen() {
@@ -18,6 +19,7 @@ export default function PlacesScreen() {
   const router = useRouter()
   const { api } = useSession()
   const tree = useQuery(placesTreeQuery(api))
+  const pull = usePullToRefresh(tree.refetch)
   const [search, setSearch] = useState('')
 
   // Top level by default; searching looks through every level and shows full paths.
@@ -36,19 +38,24 @@ export default function PlacesScreen() {
       .map((p) => ({ id: p.id, name: p.name, subtitle: p.depth > 0 ? p.path : undefined }))
   }, [tree.data, search])
 
+  // No wrapper view: on iOS the large title only collapses with scrolling
+  // when the list is the screen's first native view.
   return (
-    <View style={styles.root}>
-      <Stack.SearchBar
-        placeholder="Search places"
-        autoCapitalize="none"
-        hideWhenScrolling={false}
-        headerIconColor={theme.colors.text}
-        tintColor={theme.colors.primary}
-        textColor={theme.colors.text}
-        hintTextColor={theme.colors.placeholder}
-        onChangeText={(e) => setSearch(e.nativeEvent.text)}
-        onCancelButtonPress={() => setSearch('')}
-      />
+    <>
+      {/* iOS searches from the search tab next to the tab bar. */}
+      {Platform.OS === 'android' ? (
+        <Stack.SearchBar
+          placeholder="Search places"
+          autoCapitalize="none"
+          hideWhenScrolling={false}
+          headerIconColor={theme.colors.text}
+          tintColor={theme.colors.primary}
+          textColor={theme.colors.text}
+          hintTextColor={theme.colors.placeholder}
+          onChangeText={(e) => setSearch(e.nativeEvent.text)}
+          onCancelButtonPress={() => setSearch('')}
+        />
+      ) : null}
       <ListHeaderActions />
 
       <FlashList
@@ -71,10 +78,7 @@ export default function PlacesScreen() {
         }
         refreshControl={
           <RefreshControl
-            refreshing={tree.isRefetching}
-            onRefresh={() => {
-              tree.refetch()
-            }}
+            {...pull}
             colors={[theme.colors.primary]}
             tintColor={theme.colors.textMuted}
             progressBackgroundColor={theme.colors.elevated}
@@ -95,15 +99,11 @@ export default function PlacesScreen() {
         )}
       />
       <ActionFab />
-    </View>
+    </>
   )
 }
 
 const styles = StyleSheet.create((theme) => ({
-  root: {
-    flex: 1,
-    backgroundColor: theme.colors.background,
-  },
   icon: {
     width: 40,
     height: 40,
