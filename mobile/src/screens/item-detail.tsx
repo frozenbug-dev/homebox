@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router'
 import { ActivityIndicator, RefreshControl, ScrollView, Text, View, useWindowDimensions } from 'react-native'
 import { StyleSheet, useUnistyles } from 'react-native-unistyles'
@@ -17,7 +17,7 @@ import { TagChip } from '@/components/tag-chip'
 import { confirmDelete, useDeleteEntity, useDuplicateEntity, usePatchEntity, type EntityPatch } from '@/lib/api/mutations'
 import { useSheets } from '@/lib/use-sheets'
 import type { Entity } from '@/lib/api/api'
-import { entityPathQuery, entityQuery, groupQuery } from '@/lib/api/queries'
+import { entityPathQuery, entityQuery, groupQuery, seedEntityFromList } from '@/lib/api/queries'
 import { splitAttachments } from '@/lib/attachments'
 import { useSession } from '@/lib/auth/session'
 import { usePullToRefresh } from '@/lib/use-pull-to-refresh'
@@ -27,12 +27,16 @@ import { ItemAttachments } from './item-attachments'
 
 
 export default function ItemDetailScreen() {
-  const { id, name } = useLocalSearchParams<{ id: string; name?: string }>()
+  const { id } = useLocalSearchParams<{ id: string }>()
   const { theme, rt } = useUnistyles()
   const { width } = useWindowDimensions()
   const router = useRouter()
+  const qc = useQueryClient()
   const { api } = useSession()
-  const item = useQuery(entityQuery(api, id))
+  const item = useQuery({
+    ...entityQuery(api, id),
+    placeholderData: () => seedEntityFromList(qc, id),
+  })
   const path = useQuery(entityPathQuery(api, id))
   const currency = useQuery(groupQuery(api)).data?.currency
   const patch = usePatchEntity(id)
@@ -45,7 +49,10 @@ export default function ItemDetailScreen() {
   if (!item.data) {
     return (
       <View style={styles.centered}>
-        <Stack.Screen options={{ title: name ?? '' }} />
+        <Stack.Screen options={{ title: '' }} />
+        <Stack.Toolbar placement="right">
+          <Stack.Toolbar.Menu {...plainMenu} />
+        </Stack.Toolbar>
         {item.isError ? (
           <EmptyState
             title="Couldn’t load this item"

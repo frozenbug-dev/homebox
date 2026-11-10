@@ -1,6 +1,6 @@
-import { infiniteQueryOptions, queryOptions, skipToken } from '@tanstack/react-query'
+import { infiniteQueryOptions, queryOptions, skipToken, type InfiniteData, type QueryClient } from '@tanstack/react-query'
 
-import { unwrap, type ApiClient, type TreeItem } from './api'
+import { unwrap, type ApiClient, type Entity, type EntitySummary, type TreeItem } from './api'
 import { fetchServerStatus } from './client'
 
 const ITEMS_PAGE_SIZE = 50
@@ -84,6 +84,36 @@ export const entityQuery = (api: ApiClient | null, id: string) =>
     queryKey: entityKeys.detail(id),
     queryFn: api ? ({ signal }) => unwrap(api.GET('/v1/entities/{id}', { signal, params: { path: { id } } })) : skipToken,
   })
+
+/**
+ * Builds a placeholder `Entity` from any cached list row so the item screen
+ * renders its final header/cover layout and toolbar immediately during the push
+ * transition instead of morphing once the detail request resolves.
+ */
+export function seedEntityFromList(qc: QueryClient, id: string): Entity | undefined {
+  const lists = qc.getQueriesData<InfiniteData<{ items?: EntitySummary[] }>>({ queryKey: entityKeys.lists() })
+  for (const [, data] of lists) {
+    for (const page of data?.pages ?? []) {
+      const summary = page.items?.find((item) => item.id === id)
+      if (summary) {
+        return {
+          ...summary,
+          attachments: summary.imageId
+            ? [
+                {
+                  id: summary.imageId,
+                  type: 'photo',
+                  primary: true,
+                  thumbnail: summary.thumbnailId ? { id: summary.thumbnailId } : undefined,
+                },
+              ]
+            : [],
+        }
+      }
+    }
+  }
+  return undefined
+}
 
 /** Breadcrumb of containers from the top-level place down to the entity. */
 export const entityPathQuery = (api: ApiClient | null, id: string) =>

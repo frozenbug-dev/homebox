@@ -12,7 +12,7 @@ import { ListRow, RowSeparator } from '@/components/list-row'
 import { PhotoPager } from '@/components/photo-pager'
 import { SectionHeader } from '@/components/section-header'
 import { confirmDelete, useDeleteEntity, usePatchEntity } from '@/lib/api/mutations'
-import { entityKeys, entityQuery, findInTree, placesTreeQuery } from '@/lib/api/queries'
+import { entityKeys, entityQuery, findInTree, placesTreeQuery, seedEntityFromList } from '@/lib/api/queries'
 import { splitAttachments } from '@/lib/attachments'
 import { useSession } from '@/lib/auth/session'
 import { pluralize } from '@/lib/format'
@@ -25,10 +25,13 @@ export default function PlaceDetailScreen() {
   const router = useRouter()
   const { api } = useSession()
   const tree = useQuery(placesTreeQuery(api))
-  const place = useQuery(entityQuery(api, id))
+  const qc = useQueryClient()
+  const place = useQuery({
+    ...entityQuery(api, id),
+    placeholderData: () => seedEntityFromList(qc, id),
+  })
   const { theme, rt } = useUnistyles()
   const { width } = useWindowDimensions()
-  const qc = useQueryClient()
   const sheets = useSheets()
   const patch = usePatchEntity(id)
   const remove = useDeleteEntity()

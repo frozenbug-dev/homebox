@@ -34,6 +34,7 @@ export function PhotoPager({ entityId, photos, height }: { entityId: string; pho
             <Image
               source={attachmentSource(session, entityId, p.id!)}
               placeholder={p.thumbnail?.id ? attachmentSource(session, entityId, p.thumbnail.id) : undefined}
+              placeholderContentFit="cover"
               style={{ width, height }}
               contentFit="cover"
               transition={150}
