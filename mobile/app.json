@@ -12,7 +12,8 @@
       "appleTeamId": "4AZ6RJF693",
       "icon": "./assets/expo.icon",
       "infoPlist": {
-        "NSCameraUsageDescription": "$(PRODUCT_NAME) uses the camera to photograph items and scan labels."
+        "NSCameraUsageDescription": "$(PRODUCT_NAME) uses the camera to photograph items and scan labels.",
+        "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {
