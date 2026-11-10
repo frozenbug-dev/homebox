@@ -86,6 +86,21 @@ export const entityQuery = (api: ApiClient | null, id: string) =>
   })
 
 /**
+ * An item's maintenance log, done and scheduled. Keyed under the item's detail
+ * key, so invalidating the item refreshes it too.
+ */
+export const maintenanceQuery = (api: ApiClient | null, id: string) =>
+  queryOptions({
+    queryKey: [...entityKeys.detail(id), 'maintenance'] as const,
+    queryFn: api
+      ? ({ signal }) =>
+          unwrap(
+            api.GET('/v1/entities/{id}/maintenance', { signal, params: { path: { id }, query: { status: 'both' } } }),
+          )
+      : skipToken,
+  })
+
+/**
  * Builds a placeholder `Entity` from any cached list row so the item screen
  * renders its final header/cover layout and toolbar immediately during the push
  * transition instead of morphing once the detail request resolves.

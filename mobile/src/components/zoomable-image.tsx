@@ -116,6 +116,9 @@ export function ZoomableImage({ source, placeholder, accessibilityLabel, onZoomC
         <Image
           source={source}
           placeholder={placeholder}
+          // Same fit as the photo, so a thumbnail placeholder doesn't show smaller
+          // (and jump) when the open animation hands over to this view.
+          placeholderContentFit="contain"
           style={{ width, height }}
           contentFit="contain"
           transition={150}

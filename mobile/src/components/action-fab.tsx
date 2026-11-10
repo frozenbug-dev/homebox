@@ -26,6 +26,8 @@ export function ActionFab() {
           </Stack.Toolbar.MenuAction>
         ))}
       </Stack.Toolbar.Menu>
+      {/* A fixed space splits the Liquid Glass background: actions | account. */}
+      <Stack.Toolbar.Spacer width={8} />
       <Stack.Toolbar.View>
         <AccountButton />
       </Stack.Toolbar.View>
@@ -33,7 +35,3 @@ export function ActionFab() {
   )
 }
 
-/** Header actions of the list tabs; on iOS they're all in `ActionFab`. */
-export function ListHeaderActions() {
-  return null
-}

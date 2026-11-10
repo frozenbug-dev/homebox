@@ -1,7 +1,9 @@
+import MaskedViewBase from '@react-native-masked-view/masked-view'
+import { BlurView } from 'expo-blur'
 import { Stack, useFocusEffect } from 'expo-router'
 import { setStatusBarStyle } from 'expo-status-bar'
-import { useCallback, useState, type ReactElement, type ReactNode } from 'react'
-import { Platform, View, useWindowDimensions, type RefreshControlProps } from 'react-native'
+import { useCallback, useState, type ComponentType, type ReactElement, type ReactNode } from 'react'
+import { Platform, View, useWindowDimensions, type RefreshControlProps, type ViewProps } from 'react-native'
 import Animated, {
   Extrapolation,
   interpolate,
@@ -14,10 +16,21 @@ import { StyleSheet, useUnistyles } from 'react-native-unistyles'
 import { scheduleOnRN } from 'react-native-worklets'
 
 import { useMoreMenuIcon } from './header-button'
+import { EmptyHeaderTitle } from './tab-stack'
+
+// The package's class typings predate current React types.
+const MaskedView = MaskedViewBase as unknown as ComponentType<ViewProps & { maskElement: ReactElement }>
 
 /** Height of the native header bar below the status bar. */
 const HEADER_BAR = Platform.OS === 'ios' ? 44 : 64
 const SHEET_RADIUS = 20
+/**
+ * Room for the floating bottom toolbar. Cover screens draw edge-to-edge (no
+ * automatic content insets), so they have to clear it themselves.
+ */
+const BOTTOM_BAR_SPACE = 64
+/** How far the header's blur fades out below the bar. */
+const HEADER_FADE = 28
 
 /**
  * Full-bleed cover under a transparent header, for any scrollable (ScrollView
@@ -99,12 +112,31 @@ export function useCover({ coverHeight, title }: { coverHeight: number; title: s
         options={{
           headerTransparent: true,
           headerLargeTitle: false,
-          headerTitle: '',
+          // Named for the back menu; the bar itself stays empty (the title fades in below).
+          title,
+          headerTitle: EmptyHeaderTitle,
           headerStyle: { backgroundColor: 'transparent' },
           headerTintColor: Platform.OS === 'ios' ? undefined : overCover ? '#ffffff' : theme.colors.text,
         }}
       />
-      <Animated.View style={[styles.header, { height: headerHeight }, headerStyle]} pointerEvents="none">
+      <Animated.View style={[styles.header, { height: headerHeight + HEADER_FADE }, headerStyle]} pointerEvents="none">
+        {Platform.OS === 'ios' ? (
+          // Progressive blur: full strength behind the bar, then fading out
+          // below it, so the header doesn't end in a hard edge under the buttons.
+          <MaskedView
+            style={StyleSheet.absoluteFill}
+            maskElement={<View style={[StyleSheet.absoluteFill, { backgroundImage: fadeMask(headerHeight) }]} />}>
+            <BlurView
+              style={StyleSheet.absoluteFill}
+              intensity={40}
+              tint={rt.themeName === 'dark' ? 'systemChromeMaterialDark' : 'systemChromeMaterialLight'}
+            />
+            <View style={[StyleSheet.absoluteFill, styles.headerTint]} />
+          </MaskedView>
+        ) : (
+          // Material top app bar: a solid container, no blur.
+          <View style={[styles.headerSolid, { height: headerHeight }]} />
+        )}
         <Animated.Text style={[styles.title, { top: rt.insets.top }, titleStyle]} numberOfLines={1}>
           {title}
         </Animated.Text>
@@ -118,7 +150,25 @@ export function useCover({ coverHeight, title }: { coverHeight: number; title: s
 
   const tint = Platform.OS === 'ios' || !overCover ? theme.colors.text : '#ffffff'
 
-  return { onScroll, renderCover, chrome, sheetStyle: styles.sheet, headerHeight, minContentHeight, tint }
+  return {
+    onScroll,
+    renderCover,
+    chrome,
+    sheetStyle: styles.sheet,
+    headerHeight,
+    minContentHeight,
+    bottomBarSpace: BOTTOM_BAR_SPACE,
+    tint,
+  }
+}
+
+/** Opaque down to just above the bar's bottom, then eased out to transparent. */
+function fadeMask(barBottom: number) {
+  const total = barBottom + HEADER_FADE
+  const pct = (y: number) => `${((y / total) * 100).toFixed(1)}%`
+  const start = barBottom - 12
+  const span = total - start
+  return `linear-gradient(to bottom, #000 ${pct(start)}, rgba(0,0,0,0.75) ${pct(start + span * 0.3)}, rgba(0,0,0,0.35) ${pct(start + span * 0.6)}, rgba(0,0,0,0.1) ${pct(start + span * 0.85)}, rgba(0,0,0,0) 100%)`
 }
 
 interface CoverScrollViewProps {
@@ -148,7 +198,10 @@ export function CoverScrollView({
   refreshControl,
   contentPaddingBottom = 0,
 }: CoverScrollViewProps) {
-  const { onScroll, renderCover, chrome, sheetStyle, minContentHeight, tint } = useCover({ coverHeight, title })
+  const { onScroll, renderCover, chrome, sheetStyle, minContentHeight, bottomBarSpace, tint } = useCover({
+    coverHeight,
+    title,
+  })
   const menu = useMoreMenuIcon(tint)
 
   return (
@@ -157,7 +210,7 @@ export function CoverScrollView({
         onScroll={onScroll}
         scrollEventThrottle={16}
         refreshControl={refreshControl}
-        contentContainerStyle={{ paddingBottom: contentPaddingBottom, minHeight: minContentHeight }}>
+        contentContainerStyle={{ paddingBottom: contentPaddingBottom + bottomBarSpace, minHeight: minContentHeight }}>
         {renderCover(cover)}
         <View style={sheetStyle}>{children}</View>
       </Animated.ScrollView>
@@ -197,9 +250,13 @@ const styles = StyleSheet.create((theme) => ({
     top: 0,
     left: 0,
     right: 0,
+  },
+  headerTint: {
     backgroundColor: theme.colors.background,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: theme.colors.separator,
+    opacity: 0.6,
+  },
+  headerSolid: {
+    backgroundColor: theme.colors.background,
   },
   title: {
     position: 'absolute',
@@ -211,8 +268,9 @@ const styles = StyleSheet.create((theme) => ({
     textAlignVertical: 'center',
     lineHeight: HEADER_BAR,
     textAlign: Platform.OS === 'ios' ? 'center' : 'left',
-    fontSize: 17,
-    fontWeight: '600',
+    // HIG navigation title / Material 3 "title large".
+    fontSize: Platform.OS === 'ios' ? 17 : 22,
+    fontWeight: Platform.OS === 'ios' ? '600' : '400',
     color: theme.colors.text,
   },
 }))

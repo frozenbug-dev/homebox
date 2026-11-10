@@ -1,9 +1,21 @@
+import { BlurView } from 'expo-blur'
 import { Image } from 'expo-image'
 import * as Haptics from 'expo-haptics'
 import { useIsFocused, useRouter } from 'expo-router'
 import { useEffect, useRef, useState } from 'react'
-import { ActivityIndicator, ScrollView, Text, View } from 'react-native'
-import Animated, { FadeIn, FadeInDown, FadeOut, LinearTransition, useReducedMotion } from 'react-native-reanimated'
+import { ActivityIndicator, Platform, ScrollView, Text, View } from 'react-native'
+import { GestureDetector, usePanGesture } from 'react-native-gesture-handler'
+import Animated, {
+  Easing,
+  FadeIn,
+  FadeInDown,
+  FadeOut,
+  LinearTransition,
+  useAnimatedStyle,
+  useReducedMotion,
+  useSharedValue,
+  withTiming,
+} from 'react-native-reanimated'
 import { StyleSheet, useUnistyles } from 'react-native-unistyles'
 import { Camera, useCameraDevice, useCameraPermission } from 'react-native-vision-camera'
 
@@ -11,7 +23,6 @@ import { ActionButton } from '@/components/action-button'
 import { EntityThumb } from '@/components/entity-thumb'
 import { Icon } from '@/components/icon'
 import { PressableFeedback } from '@/components/pressable-feedback'
-import { SegmentedControl } from '@/components/segmented-control'
 import type { EntitySummary } from '@/lib/api/api'
 import { usePatchAnyEntity } from '@/lib/api/mutations'
 import { useSession } from '@/lib/auth/session'
@@ -19,8 +30,20 @@ import { pluralize } from '@/lib/format'
 import { parseScan, resolveScan, type ScanResult } from '@/lib/scan'
 import { useCodeScanner } from '@/lib/use-code-scanner'
 import { useSheets } from '@/lib/use-sheets'
+import { scheduleOnRN } from 'react-native-worklets'
 
 type Mode = 'find' | 'move'
+
+const MODES: { value: Mode; label: string }[] = [
+  { value: 'find', label: 'Find' },
+  { value: 'move', label: 'Move' },
+]
+/** Mode switcher: width of one tab and the inset around them. */
+const TAB_WIDTH = 88
+const TAB_PADDING = 4
+/** A horizontal swipe this long (or this fast) switches mode. */
+const SWITCH_DISTANCE = 50
+const SWITCH_VELOCITY = 500
 
 /** Same code again within this window is the camera still seeing it, not a new scan. */
 const REPEAT_MS = 2500
@@ -32,7 +55,6 @@ const REPEAT_MS = 2500
  */
 export default function ScanScreen() {
   const router = useRouter()
-  const { theme } = useUnistyles()
   const reducedMotion = useReducedMotion()
   const isFocused = useIsFocused()
   const { api } = useSession()
@@ -71,7 +93,9 @@ export default function ScanScreen() {
       if (mode === 'find') {
         setResult(resolved)
         Haptics.notificationAsync(
-          resolved.kind === 'not-found' ? Haptics.NotificationFeedbackType.Warning : Haptics.NotificationFeedbackType.Success,
+          resolved.kind === 'not-found'
+            ? Haptics.NotificationFeedbackType.Warning
+            : Haptics.NotificationFeedbackType.Success,
         )
         return
       }
@@ -125,6 +149,8 @@ export default function ScanScreen() {
     })
 
   const switchMode = (next: Mode) => {
+    if (next === mode) return
+    Haptics.selectionAsync()
     setMode(next)
     setResult(null)
     setNotice(null)
@@ -165,92 +191,167 @@ export default function ScanScreen() {
   const layout = reducedMotion ? undefined : LinearTransition.duration(200)
   const enter = reducedMotion ? undefined : FadeInDown.duration(200)
 
+  // Swipe sideways anywhere to switch mode, like the Camera app.
+  const modeIndex = MODES.findIndex((m) => m.value === mode)
+  const swipe = usePanGesture({
+    activeOffsetX: [-20, 20],
+    failOffsetY: [-20, 20],
+    onDeactivate: (e) => {
+      'worklet'
+      const next =
+        e.translationX < -SWITCH_DISTANCE || e.velocityX < -SWITCH_VELOCITY
+          ? modeIndex + 1
+          : e.translationX > SWITCH_DISTANCE || e.velocityX > SWITCH_VELOCITY
+            ? modeIndex - 1
+            : modeIndex
+      if (next !== modeIndex && next >= 0 && next < MODES.length) scheduleOnRN(switchMode, MODES[next].value)
+    },
+  })
+
   return (
-    <View style={styles.root}>
-      {hasPermission && device && isFocused ? (
-        <Camera style={StyleSheet.absoluteFill} device={device} outputs={[scanner]} isActive enableNativeZoomGesture />
-      ) : null}
-
-      <View style={styles.frameArea} pointerEvents="none">
-        {hasPermission && device ? <Viewfinder /> : null}
-        {!hasPermission ? (
-          <Text style={styles.permissionText}>Allow the camera to scan labels and barcodes, or type a code below.</Text>
-        ) : !device ? (
-          <Text style={styles.permissionText}>No camera found. Type a code below.</Text>
-        ) : (
-          <Text style={styles.hint}>{hint}</Text>
-        )}
-      </View>
-
-      <View style={styles.top}>
-        <PressableFeedback
-          onPress={() => router.back()}
-          borderless
-          style={styles.round}
-          hitSlop={8}
-          accessibilityRole="button"
-          accessibilityLabel="Close scanner">
-          <Icon name={{ ios: 'xmark', android: 'close' }} size={22} color="#ffffff" />
-        </PressableFeedback>
-        <SegmentedControl
-          options={[
-            { value: 'find', label: 'Find' },
-            { value: 'move', label: 'Move' },
-          ]}
-          value={mode}
-          onChange={switchMode}
-          onDark
-        />
-        <View style={styles.spacer} />
-      </View>
-
-      <Animated.View style={styles.panel} layout={layout}>
-        {!hasPermission ? (
-          <ActionButton label="Allow camera" onPress={requestPermission} />
-        ) : null}
-
-        {busy ? (
-          <View style={styles.busy}>
-            <ActivityIndicator color={theme.colors.textMuted} />
-            <Text style={styles.muted}>Looking it up…</Text>
-          </View>
-        ) : null}
-
-        {notice ? (
-          <Animated.Text entering={enter} style={styles.notice} accessibilityLiveRegion="polite">
-            {notice}
-          </Animated.Text>
-        ) : null}
-
-        {mode === 'find' && result && !busy ? (
-          <Animated.View entering={enter} key={JSON.stringify(result).slice(0, 80)}>
-            <FindResult result={result} onOpen={openEntity} onAdd={addProduct} />
-          </Animated.View>
-        ) : null}
-
-        {mode === 'move' ? (
-          <MovePanel
-            target={target}
-            moved={moved}
-            onChangeTarget={() => {
-              setTarget(null)
-              setMoved([])
-              last.current = null
-            }}
+    <GestureDetector gesture={swipe}>
+      <View style={styles.root}>
+        {hasPermission && device && isFocused ? (
+          <Camera
+            style={StyleSheet.absoluteFill}
+            device={device}
+            outputs={[scanner]}
+            isActive
+            enableNativeZoomGesture
           />
         ) : null}
 
-        <View style={styles.actions}>
-          <View style={styles.flex}>
-            <ActionButton label="Type a code" variant="outlined" onPress={typeCode} />
-          </View>
-          {mode === 'move' && moved.length ? (
-            <View style={styles.flex}>
-              <ActionButton label="Done" onPress={() => router.back()} />
-            </View>
-          ) : null}
+        <View style={styles.frameArea} pointerEvents="none">
+          {hasPermission && device ? <Viewfinder /> : null}
+          {!hasPermission ? (
+            <Text style={styles.permissionText}>
+              Allow the camera to scan labels and barcodes, or type a code below.
+            </Text>
+          ) : !device ? (
+            <Text style={styles.permissionText}>No camera found. Type a code below.</Text>
+          ) : (
+            <Text style={styles.hint}>{hint}</Text>
+          )}
         </View>
-      </Animated.View>
+
+        <View style={styles.top}>
+          <PressableFeedback
+            onPress={() => router.back()}
+            borderless
+            style={styles.round}
+            hitSlop={8}
+            accessibilityRole="button"
+            accessibilityLabel="Close scanner">
+            <Icon name={{ ios: 'xmark', android: 'close' }} size={22} color="#ffffff" />
+          </PressableFeedback>
+        </View>
+
+        <Animated.View style={styles.bottom} layout={layout}>
+          <ModeTabs mode={mode} onChange={switchMode} />
+          <Animated.View style={styles.panel} layout={layout}>
+            {/* Always dark, like the Camera app: a light material over the camera feed
+              turns a washed-out grey. Text in the panel is light to match. */}
+            {Platform.OS === 'ios' ? (
+              <BlurView style={StyleSheet.absoluteFill} intensity={90} tint="systemChromeMaterialDark" />
+            ) : (
+              <View style={[StyleSheet.absoluteFill, styles.panelSolid]} />
+            )}
+            {!hasPermission ? <ActionButton label="Allow camera" onPress={requestPermission} /> : null}
+
+            {busy ? (
+              <View style={styles.busy}>
+                <ActivityIndicator color={ON_DARK.muted} />
+                <Text style={styles.muted}>Looking it up…</Text>
+              </View>
+            ) : null}
+
+            {notice ? (
+              <Animated.Text entering={enter} style={styles.notice} accessibilityLiveRegion="polite">
+                {notice}
+              </Animated.Text>
+            ) : null}
+
+            {/* Same shape as Move's intro, so switching modes doesn't resize the panel. */}
+            {mode === 'find' && !result && !busy ? (
+              <View style={styles.result}>
+                <Text style={styles.name}>Find things</Text>
+                <Text style={styles.muted}>Scan a label to open it, or a barcode to look it up.</Text>
+              </View>
+            ) : null}
+
+            {mode === 'find' && result && !busy ? (
+              <Animated.View entering={enter} key={JSON.stringify(result).slice(0, 80)}>
+                <FindResult result={result} onOpen={openEntity} onAdd={addProduct} />
+              </Animated.View>
+            ) : null}
+
+            {mode === 'move' ? (
+              <MovePanel
+                target={target}
+                moved={moved}
+                onChangeTarget={() => {
+                  setTarget(null)
+                  setMoved([])
+                  last.current = null
+                }}
+              />
+            ) : null}
+
+            <View style={styles.actions}>
+              <View style={styles.flex}>
+                <ActionButton label="Type a code" variant="outlined" onPress={typeCode} />
+              </View>
+              {mode === 'move' && moved.length ? (
+                <View style={styles.flex}>
+                  <ActionButton label="Done" onPress={() => router.back()} />
+                </View>
+              ) : null}
+            </View>
+          </Animated.View>
+        </Animated.View>
+      </View>
+    </GestureDetector>
+  )
+}
+
+/**
+ * Floating Find / Move switcher above the panel, with a highlight that slides
+ * to the selected mode. Tap a mode, or swipe sideways anywhere on the screen.
+ */
+function ModeTabs({ mode, onChange }: { mode: Mode; onChange: (mode: Mode) => void }) {
+  const reducedMotion = useReducedMotion()
+  const index = MODES.findIndex((m) => m.value === mode)
+  const x = useSharedValue(index * TAB_WIDTH)
+
+  useEffect(() => {
+    x.value = reducedMotion ? index * TAB_WIDTH : withTiming(index * TAB_WIDTH, { duration: 180, easing: Easing.out(Easing.cubic) })
+  }, [index, x, reducedMotion])
+
+  const indicatorStyle = useAnimatedStyle(() => ({ transform: [{ translateX: x.value }] }))
+
+  return (
+    <View style={styles.tabs} accessibilityRole="tablist">
+      {Platform.OS === 'ios' ? (
+        <BlurView style={StyleSheet.absoluteFill} intensity={80} tint="systemChromeMaterialDark" />
+      ) : (
+        <View style={[StyleSheet.absoluteFill, styles.panelSolid]} />
+      )}
+      <Animated.View style={[styles.tabIndicator, indicatorStyle]} />
+      {MODES.map((m) => {
+        const selected = m.value === mode
+        return (
+          <PressableFeedback
+            key={m.value}
+            onPress={() => onChange(m.value)}
+            style={styles.tab}
+            hitSlop={{ top: 4, bottom: 4 }}
+            accessibilityRole="tab"
+            accessibilityState={{ selected }}
+            accessibilityLabel={`${m.label} mode`}>
+            <Text style={styles.tabLabel(selected)}>{m.label}</Text>
+          </PressableFeedback>
+        )
+      })}
     </View>
   )
 }
@@ -399,7 +500,11 @@ function MovePanel({
           exiting={reducedMotion ? undefined : FadeOut.duration(150)}
           style={styles.movedRow}>
           <Icon
-            name={m.ok ? { ios: 'checkmark.circle.fill', android: 'check_circle' } : { ios: 'xmark.circle', android: 'error' }}
+            name={
+              m.ok
+                ? { ios: 'checkmark.circle.fill', android: 'check_circle' }
+                : { ios: 'xmark.circle', android: 'error' }
+            }
             size={18}
             color={m.ok ? theme.colors.success : theme.colors.danger}
           />
@@ -411,6 +516,13 @@ function MovePanel({
       ))}
     </View>
   )
+}
+
+/** Text on the scanner's dark panel, in either app theme. */
+const ON_DARK = {
+  text: '#ffffff',
+  muted: 'rgba(235, 235, 245, 0.6)',
+  accent: '#a5b4fc',
 }
 
 const FRAME = 240
@@ -468,9 +580,6 @@ const styles = StyleSheet.create((theme, rt) => ({
     alignItems: 'center',
     justifyContent: 'space-between',
   },
-  spacer: {
-    width: 44,
-  },
   round: {
     width: 44,
     height: 44,
@@ -480,18 +589,52 @@ const styles = StyleSheet.create((theme, rt) => ({
     backgroundColor: 'rgba(0, 0, 0, 0.4)',
     overflow: 'hidden',
   },
-  panel: {
+  bottom: {
     position: 'absolute',
     left: 0,
     right: 0,
     bottom: 0,
     gap: theme.spacing(3),
+  },
+  panel: {
+    gap: theme.spacing(3),
     padding: theme.spacing(4),
     paddingBottom: rt.insets.bottom + theme.spacing(4),
     borderTopLeftRadius: theme.radius.lg + 6,
     borderTopRightRadius: theme.radius.lg + 6,
-    backgroundColor: theme.colors.background,
+    overflow: 'hidden',
   },
+  panelSolid: {
+    backgroundColor: 'rgba(24, 24, 27, 0.94)',
+  },
+  tabs: {
+    alignSelf: 'center',
+    flexDirection: 'row',
+    padding: TAB_PADDING,
+    borderRadius: theme.radius.pill,
+    overflow: 'hidden',
+  },
+  tab: {
+    width: TAB_WIDTH,
+    height: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: theme.radius.pill,
+  },
+  tabIndicator: {
+    position: 'absolute',
+    top: TAB_PADDING,
+    left: TAB_PADDING,
+    width: TAB_WIDTH,
+    height: 40,
+    borderRadius: theme.radius.pill,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+  },
+  tabLabel: (selected: boolean) => ({
+    ...theme.type.body,
+    fontWeight: selected ? '600' : '500',
+    color: selected ? ON_DARK.text : ON_DARK.muted,
+  }),
   busy: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -499,7 +642,7 @@ const styles = StyleSheet.create((theme, rt) => ({
   },
   notice: {
     ...theme.type.body,
-    color: theme.colors.text,
+    color: ON_DARK.text,
   },
   result: {
     gap: theme.spacing(3),
@@ -513,15 +656,15 @@ const styles = StyleSheet.create((theme, rt) => ({
   name: {
     ...theme.type.rowTitle,
     fontSize: 16,
-    color: theme.colors.text,
+    color: ON_DARK.text,
   },
   muted: {
     ...theme.type.meta,
-    color: theme.colors.textMuted,
+    color: ON_DARK.muted,
   },
   label: {
     ...theme.type.label,
-    color: theme.colors.textMuted,
+    color: ON_DARK.muted,
   },
   productImage: {
     width: 56,
@@ -529,7 +672,7 @@ const styles = StyleSheet.create((theme, rt) => ({
     borderRadius: theme.radius.md,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: theme.colors.surface,
+    backgroundColor: 'rgba(255, 255, 255, 0.12)',
   },
   matches: {
     maxHeight: 160,
@@ -552,7 +695,7 @@ const styles = StyleSheet.create((theme, rt) => ({
   changeText: {
     ...theme.type.body,
     fontWeight: '600',
-    color: theme.colors.primary,
+    color: ON_DARK.accent,
   },
   movedRow: {
     flexDirection: 'row',
@@ -562,7 +705,7 @@ const styles = StyleSheet.create((theme, rt) => ({
   movedText: {
     ...theme.type.body,
     flex: 1,
-    color: theme.colors.text,
+    color: ON_DARK.text,
   },
   actions: {
     flexDirection: 'row',

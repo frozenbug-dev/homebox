@@ -6,7 +6,8 @@ import { StyleSheet, useUnistyles } from 'react-native-unistyles'
 import { useCover } from '@/components/cover-scroll-view'
 
 import { EntityList } from '@/components/entity-list'
-import { useHeaderIcon, useMoreMenuIcon } from '@/components/header-button'
+import { useHeaderIcon } from '@/components/header-button'
+import { toolbarMenu } from '@/components/toolbar-menu'
 import { Icon, icons } from '@/components/icon'
 import { ListRow, RowSeparator } from '@/components/list-row'
 import { PhotoPager } from '@/components/photo-pager'
@@ -17,6 +18,7 @@ import { splitAttachments } from '@/lib/attachments'
 import { useSession } from '@/lib/auth/session'
 import { pluralize } from '@/lib/format'
 import { useAddPhotos } from '@/lib/use-add-photos'
+import { useLeaving } from '@/lib/use-leaving'
 import { useSheets } from '@/lib/use-sheets'
 import { useUploads } from '@/lib/uploads'
 
@@ -45,12 +47,16 @@ export default function PlaceDetailScreen() {
   const { photos } = splitAttachments(place.data?.attachments)
   const hasCover = photos.length > 0
   const uploading = useUploads(id).filter((u) => u.status !== 'failed').length
-  const { addPhotos } = useAddPhotos(id, hasCover)
+  const { takePhotos, pickPhotos } = useAddPhotos(id, hasCover)
   const coverHeight = Math.round(width * 0.8) + rt.insets.top
   const cover = useCover({ coverHeight, title })
   const tint = hasCover ? cover.tint : undefined
-  const addIcon = useHeaderIcon('plus', 'add', tint)
-  const menuIcon = useMoreMenuIcon(tint)
+  const addItemIcon = useHeaderIcon('plus', 'add')
+  const addPlaceIcon = useHeaderIcon('folder.badge.plus', 'create_new_folder')
+  const moveIcon = useHeaderIcon('tray.and.arrow.down', 'drive_file_move')
+  // Cleared as soon as a swipe back starts (see useLeaving).
+  const leaving = useLeaving()
+  const photoLabel = hasCover ? 'Add photos' : 'Add a cover photo'
 
   const rename = () =>
     sheets.editText({
@@ -82,6 +88,8 @@ export default function PlaceDetailScreen() {
   }
 
   const addItem = () => router.push({ pathname: '/new-item', params: { parentId: id, parentName: title } })
+  const addPlace = () =>
+    router.push({ pathname: '/new-item', params: { kind: 'place', parentId: id, parentName: title } })
 
   const header = (
     <View style={hasCover ? cover.sheetStyle : undefined}>
@@ -128,22 +136,16 @@ export default function PlaceDetailScreen() {
     <>
       {hasCover ? null : <Stack.Screen options={{ title }} />}
       <Stack.Toolbar placement="right">
-        <Stack.Toolbar.Button {...addIcon} accessibilityLabel="Add item here" onPress={addItem} />
-        <Stack.Toolbar.Menu {...menuIcon}>
-          <Stack.Toolbar.MenuAction onPress={addItem}>Add item here</Stack.Toolbar.MenuAction>
-          <Stack.Toolbar.MenuAction
-            onPress={() =>
-              router.push({ pathname: '/new-item', params: { kind: 'place', parentId: id, parentName: title } })
-            }>
-            Add place inside
-          </Stack.Toolbar.MenuAction>
-          <Stack.Toolbar.MenuAction onPress={addPhotos}>{hasCover ? 'Add photos' : 'Add a cover photo'}</Stack.Toolbar.MenuAction>
-          <Stack.Toolbar.MenuAction onPress={rename}>Rename</Stack.Toolbar.MenuAction>
-          <Stack.Toolbar.MenuAction onPress={move}>Move…</Stack.Toolbar.MenuAction>
-          <Stack.Toolbar.MenuAction destructive onPress={onDelete}>
-            Delete
-          </Stack.Toolbar.MenuAction>
-        </Stack.Toolbar.Menu>
+        {toolbarMenu({
+          id: 'more',
+          label: 'More actions',
+          icon: { ios: 'ellipsis.circle', android: 'more_vert' },
+          tint,
+          groups: [
+            [{ label: 'Rename', icon: { ios: 'pencil', android: 'edit' }, onPress: rename }],
+            [{ label: 'Delete', icon: { ios: 'trash', android: 'delete' }, destructive: true, onPress: onDelete }],
+          ],
+        })}
       </Stack.Toolbar>
       <EntityList
         filters={{ parentIds: [id] }}
@@ -162,10 +164,44 @@ export default function PlaceDetailScreen() {
         emptyMessage={subPlaces.length ? 'Items stored directly in this place show up here.' : undefined}
         onScroll={hasCover ? cover.onScroll : undefined}
         edgeToEdge={hasCover}
+        bottomSpace={hasCover ? cover.bottomBarSpace : undefined}
         refreshOffset={cover.headerHeight}
         minContentHeight={hasCover ? cover.minContentHeight : undefined}
       />
       {hasCover ? cover.chrome : null}
+      {/* Everyday actions sit in the bottom toolbar; rarer ones stay in the ⋯ menu. */}
+      {/* One centred group, rather than buttons spread across the bar. */}
+      {leaving ? null : (
+        <Stack.Toolbar placement="bottom">
+          <Stack.Toolbar.Spacer />
+          <Stack.Toolbar.Button {...addItemIcon} onPress={addItem}>
+            Add item here
+          </Stack.Toolbar.Button>
+          <Stack.Toolbar.Button {...addPlaceIcon} onPress={addPlace}>
+            Add place inside
+          </Stack.Toolbar.Button>
+          {toolbarMenu({
+            id: 'photos',
+            label: photoLabel,
+            showTitle: true,
+            icon: { ios: 'camera', android: 'photo_camera' },
+            groups: [
+              [
+                { label: 'Take photo', icon: { ios: 'camera', android: 'photo_camera' }, onPress: takePhotos },
+                {
+                  label: 'Choose from library',
+                  icon: { ios: 'photo.on.rectangle', android: 'photo_library' },
+                  onPress: pickPhotos,
+                },
+              ],
+            ],
+          })}
+          <Stack.Toolbar.Button {...moveIcon} onPress={move}>
+            Move inside
+          </Stack.Toolbar.Button>
+          <Stack.Toolbar.Spacer />
+        </Stack.Toolbar>
+      )}
     </>
   )
 }

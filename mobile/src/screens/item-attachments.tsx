@@ -13,6 +13,8 @@ import type { Attachment, Entity } from '@/lib/api/api'
 import { confirmDelete, useDeleteAttachment } from '@/lib/api/mutations'
 import { attachmentLink, attachmentSource, splitAttachments } from '@/lib/attachments'
 import { useSession } from '@/lib/auth/session'
+import type { Session } from '@/lib/auth/storage'
+import { rememberAspect, usePhotoSlot } from '@/lib/photo-transition'
 import { useAddPhotos } from '@/lib/use-add-photos'
 import { dismissUpload, enqueueUploads, retryUpload, useUploads, type AttachmentKind, type UploadTask } from '@/lib/uploads'
 
@@ -66,25 +68,16 @@ export function ItemAttachments({ entity }: { entity: Entity }) {
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.strip}>
         {session
           ? photos.map((p, i) => (
-              <PressableFeedback
+              <StripThumb
                 key={p.id}
-                feedback="scale"
-                style={styles.thumb}
-                onPress={() => router.push({ pathname: '/photos', params: { entityId: entity.id!, start: p.id! } })}
-                accessibilityRole="button"
-                accessibilityLabel={`Photo ${i + 1}${p.primary ? ', cover' : ''}. Open`}>
-                <Image
-                  source={attachmentSource(session, entity.id!, p.thumbnail?.id ?? p.id!)}
-                  style={styles.thumbImage}
-                  contentFit="cover"
-                  recyclingKey={p.id}
-                />
-                {p.primary ? (
-                  <View style={styles.cover}>
-                    <Icon name={{ ios: 'star.fill', android: 'star' }} size={10} color="#ffffff" />
-                  </View>
-                ) : null}
-              </PressableFeedback>
+                session={session}
+                entityId={entity.id!}
+                photo={p}
+                label={`Photo ${i + 1}${p.primary ? ', cover' : ''}. Open`}
+                onPress={() =>
+                  router.push({ pathname: '/photos', params: { entityId: entity.id!, start: p.id!, source: 'strip' } })
+                }
+              />
             ))
           : null}
         {pendingPhotos.map((u) => (
@@ -138,6 +131,42 @@ export function ItemAttachments({ entity }: { entity: Entity }) {
         onPress={pickFiles}
       />
     </>
+  )
+}
+
+function StripThumb({
+  session,
+  entityId,
+  photo: p,
+  label,
+  onPress,
+}: {
+  session: Session
+  entityId: string
+  photo: Attachment
+  label: string
+  onPress: () => void
+}) {
+  const { theme } = useUnistyles()
+  // The viewer morphs out of (and back into) this slot.
+  const { ref: slotRef, hidden } = usePhotoSlot('strip', p.id!, theme.radius.md)
+  return (
+    <PressableFeedback feedback="scale" style={styles.thumb} onPress={onPress} accessibilityRole="button" accessibilityLabel={label}>
+      <View ref={slotRef} collapsable={false} style={{ opacity: hidden ? 0 : 1 }}>
+        <Image
+          source={attachmentSource(session, entityId, p.thumbnail?.id ?? p.id!)}
+          style={styles.thumbImage}
+          contentFit="cover"
+          recyclingKey={p.id}
+          onLoad={(e) => rememberAspect(p.id!, e.source.width, e.source.height)}
+        />
+      </View>
+      {p.primary ? (
+        <View style={styles.cover}>
+          <Icon name={{ ios: 'star.fill', android: 'star' }} size={10} color="#ffffff" />
+        </View>
+      ) : null}
+    </PressableFeedback>
   )
 }
 

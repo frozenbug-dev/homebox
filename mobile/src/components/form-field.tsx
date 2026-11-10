@@ -33,9 +33,10 @@ export function FormField({ ref, label, error, onSubmit, submitKeyType = 'done',
         placeholderTextColor={theme.colors.placeholder}
         selectionColor={theme.colors.primary}
         cursorColor={theme.colors.primary}
-        returnKeyType={isLast ? submitKeyType : 'next'}
-        submitBehavior={isLast ? 'blurAndSubmit' : 'submit'}
-        onSubmitEditing={isLast ? onSubmit : () => KeyboardController.setFocusTo('next')}
+        // Multiline fields keep the return key for new lines.
+        returnKeyType={props.multiline ? 'default' : isLast ? submitKeyType : 'next'}
+        submitBehavior={props.multiline ? 'newline' : isLast ? 'blurAndSubmit' : 'submit'}
+        onSubmitEditing={props.multiline ? undefined : isLast ? onSubmit : () => KeyboardController.setFocusTo('next')}
         style={[styles.input(!!error), style]}
         {...props}
       />

@@ -74,6 +74,17 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
-    }
+    },
+    "extra": {
+      "router": {
+        "asyncRoutes": {
+          "web": true
+        }
+      },
+      "eas": {
+        "projectId": "8b81d242-4cf3-475d-81c0-acc7f96376ea"
+      }
+    },
+    "owner": "frozenbug"
   }
 }

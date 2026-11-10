@@ -203,3 +203,19 @@ export function useDeleteAttachment(entityId: string) {
     onSettled: () => qc.invalidateQueries({ queryKey: entityKeys.all }),
   })
 }
+
+export type MaintenanceInput = Schemas['repo.MaintenanceEntryCreate']
+
+/** Logs a maintenance entry (done or scheduled) on an item. */
+export function useAddMaintenance(entityId: string) {
+  const qc = useQueryClient()
+  const getApi = useApiOrThrow()
+
+  return useMutation({
+    mutationFn: (body: MaintenanceInput) =>
+      unwrap(getApi().POST('/v1/entities/{id}/maintenance', { params: { path: { id: entityId } }, body })),
+    onSuccess: () => Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success),
+    onError: showError('Couldn’t save maintenance'),
+    onSettled: () => qc.invalidateQueries({ queryKey: entityKeys.detail(entityId) }),
+  })
+}
