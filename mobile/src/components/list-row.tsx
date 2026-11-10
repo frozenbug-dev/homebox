@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import { Text, View } from 'react-native'
+import { Platform, Text, View } from 'react-native'
 import { StyleSheet } from 'react-native-unistyles'
 
 import { Icon, icons } from './icon'
@@ -14,7 +14,7 @@ interface ListRowProps {
   trailing?: ReactNode
   onPress?: () => void
   onLongPress?: () => void
-  /** Shows a disclosure chevron (navigates somewhere). */
+  /** Shows a disclosure chevron (navigates somewhere). iOS only: Material lists don't use them. */
   chevron?: boolean
   accessibilityHint?: string
 }
@@ -50,7 +50,7 @@ export function ListRow({
       </View>
       {detail ? <Text style={styles.detail}>{detail}</Text> : null}
       {trailing}
-      {chevron ? <Icon name={icons.chevron} size={16} /> : null}
+      {chevron && Platform.OS === 'ios' ? <Icon name={icons.chevron} size={16} /> : null}
     </>
   )
 

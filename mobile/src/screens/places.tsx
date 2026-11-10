@@ -1,15 +1,16 @@
 import { FlashList } from '@shopify/flash-list'
 import { useQuery } from '@tanstack/react-query'
-import { Stack, useRouter } from 'expo-router'
-import { useMemo, useState } from 'react'
-import { ActivityIndicator, RefreshControl, Platform, View } from 'react-native'
+import { useRouter } from 'expo-router'
+import { useMemo } from 'react'
+import { ActivityIndicator, RefreshControl, View } from 'react-native'
 import { StyleSheet, useUnistyles } from 'react-native-unistyles'
 
+import { TabScreen } from '@/components/search-app-bar'
 import { EmptyState } from '@/components/empty-state'
 import { Icon, icons } from '@/components/icon'
 import { ListRow, RowSeparator } from '@/components/list-row'
-import { ActionFab, FAB_SPACE, ListHeaderActions } from '@/components/action-fab'
-import { flattenTree, placesTreeQuery } from '@/lib/api/queries'
+import { ActionFab, FAB_SPACE } from '@/components/action-fab'
+import { placesTreeQuery } from '@/lib/api/queries'
 import { useSession } from '@/lib/auth/session'
 import { usePullToRefresh } from '@/lib/use-pull-to-refresh'
 import { pluralize } from '@/lib/format'
@@ -20,44 +21,19 @@ export default function PlacesScreen() {
   const { api } = useSession()
   const tree = useQuery(placesTreeQuery(api))
   const pull = usePullToRefresh(tree.refetch)
-  const [search, setSearch] = useState('')
-
-  // Top level by default; searching looks through every level and shows full paths.
-  const rows = useMemo(() => {
-    const data = tree.data ?? []
-    const q = search.trim().toLowerCase()
-    if (!q) {
-      return data.map((p) => ({
+  // Top level; search (the search bar / tab) looks through every level.
+  const rows = useMemo(
+    () =>
+      (tree.data ?? []).map((p) => ({
         id: p.id!,
         name: p.name ?? '',
         subtitle: p.children?.length ? pluralize(p.children.length, 'place') : undefined,
-      }))
-    }
-    return flattenTree(data)
-      .filter((p) => p.name.toLowerCase().includes(q))
-      .map((p) => ({ id: p.id, name: p.name, subtitle: p.depth > 0 ? p.path : undefined }))
-  }, [tree.data, search])
+      })),
+    [tree.data],
+  )
 
-  // No wrapper view: on iOS the large title only collapses with scrolling
-  // when the list is the screen's first native view.
   return (
-    <>
-      {/* iOS searches from the search tab next to the tab bar. */}
-      {Platform.OS === 'android' ? (
-        <Stack.SearchBar
-          placeholder="Search places"
-          autoCapitalize="none"
-          hideWhenScrolling={false}
-          headerIconColor={theme.colors.text}
-          tintColor={theme.colors.primary}
-          textColor={theme.colors.text}
-          hintTextColor={theme.colors.placeholder}
-          onChangeText={(e) => setSearch(e.nativeEvent.text)}
-          onCancelButtonPress={() => setSearch('')}
-        />
-      ) : null}
-      <ListHeaderActions />
-
+    <TabScreen>
       <FlashList
         data={rows}
         keyExtractor={(p) => p.id}
@@ -71,8 +47,8 @@ export default function PlacesScreen() {
           ) : (
             <EmptyState
               icon={icons.placeFolder}
-              title={search ? 'No matches' : 'No places yet'}
-              message={search ? undefined : 'Rooms, shelves and boxes you add show up here.'}
+              title="No places yet"
+              message="Rooms, shelves and boxes you add show up here."
             />
           )
         }
@@ -99,7 +75,7 @@ export default function PlacesScreen() {
         )}
       />
       <ActionFab />
-    </>
+    </TabScreen>
   )
 }
 

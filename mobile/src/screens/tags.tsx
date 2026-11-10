@@ -1,14 +1,15 @@
 import { FlashList } from '@shopify/flash-list'
 import { useQuery } from '@tanstack/react-query'
-import { Stack, useRouter } from 'expo-router'
-import { useMemo, useState } from 'react'
-import { ActivityIndicator, RefreshControl, Platform, View } from 'react-native'
+import { useRouter } from 'expo-router'
+import { useMemo } from 'react'
+import { ActivityIndicator, RefreshControl, View } from 'react-native'
 import { StyleSheet, useUnistyles } from 'react-native-unistyles'
 
+import { TabScreen } from '@/components/search-app-bar'
 import { EmptyState } from '@/components/empty-state'
 import { icons } from '@/components/icon'
 import { ListRow, RowSeparator } from '@/components/list-row'
-import { ActionFab, FAB_SPACE, ListHeaderActions } from '@/components/action-fab'
+import { ActionFab, FAB_SPACE } from '@/components/action-fab'
 import { TagDot } from '@/components/tag-chip'
 import { isNil } from '@/lib/api/api'
 import { tagsQuery } from '@/lib/api/queries'
@@ -21,37 +22,15 @@ export default function TagsScreen() {
   const { api } = useSession()
   const tags = useQuery(tagsQuery(api))
   const pull = usePullToRefresh(tags.refetch)
-  const [search, setSearch] = useState('')
 
   const rows = useMemo(() => {
     const all = tags.data ?? []
     const byId = new Map(all.map((t) => [t.id, t]))
-    const q = search.trim().toLowerCase()
-    return all
-      .filter((t) => !q || (t.name ?? '').toLowerCase().includes(q))
-      .map((t) => ({ ...t, parentName: isNil(t.parentId) ? undefined : byId.get(t.parentId!)?.name }))
-  }, [tags.data, search])
+    return all.map((t) => ({ ...t, parentName: isNil(t.parentId) ? undefined : byId.get(t.parentId!)?.name }))
+  }, [tags.data])
 
-  // No wrapper view: on iOS the large title only collapses with scrolling
-  // when the list is the screen's first native view.
   return (
-    <>
-      {/* iOS searches from the search tab next to the tab bar. */}
-      {Platform.OS === 'android' ? (
-        <Stack.SearchBar
-          placeholder="Search tags"
-          autoCapitalize="none"
-          hideWhenScrolling={false}
-          headerIconColor={theme.colors.text}
-          tintColor={theme.colors.primary}
-          textColor={theme.colors.text}
-          hintTextColor={theme.colors.placeholder}
-          onChangeText={(e) => setSearch(e.nativeEvent.text)}
-          onCancelButtonPress={() => setSearch('')}
-        />
-      ) : null}
-      <ListHeaderActions />
-
+    <TabScreen>
       <FlashList
         data={rows}
         keyExtractor={(t) => t.id!}
@@ -63,7 +42,7 @@ export default function TagsScreen() {
           tags.isPending ? (
             <ActivityIndicator style={styles.loading} color={theme.colors.textMuted} />
           ) : (
-            <EmptyState icon={icons.tag} title={search ? 'No matches' : 'No tags yet'} />
+            <EmptyState icon={icons.tag} title="No tags yet" />
           )
         }
         refreshControl={
@@ -91,7 +70,7 @@ export default function TagsScreen() {
         )}
       />
       <ActionFab />
-    </>
+    </TabScreen>
   )
 }
 

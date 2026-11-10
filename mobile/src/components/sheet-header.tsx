@@ -1,6 +1,7 @@
-import { Text, View } from 'react-native'
-import { StyleSheet } from 'react-native-unistyles'
+import { Platform, Text, View } from 'react-native'
+import { StyleSheet, useUnistyles } from 'react-native-unistyles'
 
+import { Icon } from './icon'
 import { PressableFeedback } from './pressable-feedback'
 
 interface SheetAction {
@@ -11,8 +12,21 @@ interface SheetAction {
   primary?: boolean
 }
 
-/** Title row for form sheets: cancel on the left, the primary action on the right. */
-export function SheetHeader({ title, left, right }: { title: string; left?: SheetAction; right?: SheetAction }) {
+interface SheetHeaderProps {
+  title: string
+  /** Dismisses the sheet (Cancel / Done). Android shows it as a close icon. */
+  left?: SheetAction
+  right?: SheetAction
+}
+
+/**
+ * Title row for form sheets.
+ * iOS: text buttons either side of a centred title (Cancel · Title · Save).
+ * Android (Material 3): close icon, start-aligned title, filled primary button.
+ */
+export function SheetHeader({ title, left, right }: SheetHeaderProps) {
+  if (Platform.OS === 'android') return <MaterialSheetHeader title={title} left={left} right={right} />
+
   return (
     <View style={styles.root}>
       <View style={styles.side}>{left ? <HeaderAction {...left} /> : null}</View>
@@ -20,6 +34,45 @@ export function SheetHeader({ title, left, right }: { title: string; left?: Shee
         {title}
       </Text>
       <View style={[styles.side, styles.right]}>{right ? <HeaderAction {...right} /> : null}</View>
+    </View>
+  )
+}
+
+function MaterialSheetHeader({ title, left, right }: SheetHeaderProps) {
+  const { theme } = useUnistyles()
+  return (
+    <View style={[styles.root, styles.materialRoot]}>
+      {left ? (
+        <PressableFeedback
+          onPress={left.onPress}
+          disabled={left.disabled}
+          borderless
+          style={styles.close}
+          accessibilityRole="button"
+          accessibilityLabel={left.label}>
+          <Icon name={{ ios: 'xmark', android: 'close' }} size={24} color={theme.colors.text} />
+        </PressableFeedback>
+      ) : (
+        <View style={styles.inset} />
+      )}
+      <Text style={styles.materialTitle} numberOfLines={1} accessibilityRole="header">
+        {title}
+      </Text>
+      {right ? (
+        right.primary ? (
+          <PressableFeedback
+            onPress={right.onPress}
+            disabled={right.disabled}
+            style={styles.filled(!!right.disabled)}
+            accessibilityRole="button"
+            accessibilityLabel={right.label}
+            accessibilityState={{ disabled: right.disabled }}>
+            <Text style={styles.filledText(!!right.disabled)}>{right.label}</Text>
+          </PressableFeedback>
+        ) : (
+          <HeaderAction {...right} />
+        )
+      ) : null}
     </View>
   )
 }
@@ -74,5 +127,40 @@ const styles = StyleSheet.create((theme) => ({
     ...theme.type.body,
     fontWeight: primary ? '600' : '400',
     color: disabled ? theme.colors.textFaint : primary ? theme.colors.primary : theme.colors.textMuted,
+  }),
+  materialRoot: {
+    gap: theme.spacing(1),
+    paddingLeft: theme.spacing(1),
+    paddingRight: theme.spacing(4),
+  },
+  close: {
+    width: 48,
+    height: 48,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  inset: {
+    width: theme.spacing(3),
+  },
+  materialTitle: {
+    flex: 1,
+    fontSize: 20,
+    fontWeight: '500',
+    color: theme.colors.text,
+  },
+  filled: (disabled: boolean) => ({
+    height: 40,
+    paddingHorizontal: theme.spacing(6),
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden',
+    backgroundColor: disabled ? theme.colors.surfaceSelected : theme.colors.primary,
+  }),
+  filledText: (disabled: boolean) => ({
+    fontSize: 14,
+    fontWeight: '600',
+    letterSpacing: 0.1,
+    color: disabled ? theme.colors.textFaint : theme.colors.onPrimary,
   }),
 }))

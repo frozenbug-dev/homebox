@@ -39,6 +39,8 @@ interface EntityListProps {
   refreshOffset?: number
   /** Pads short content to at least this height (so a cover can scroll away). */
   minContentHeight?: number
+  /** Called when a row is opened (e.g. to remember a search). */
+  onOpen?: () => void
 }
 
 type ScrollHandler = ReturnType<typeof useAnimatedScrollHandler>
@@ -57,6 +59,7 @@ export function EntityList({
   edgeToEdge,
   refreshOffset,
   minContentHeight,
+  onOpen,
 }: EntityListProps) {
   const { theme, rt } = useUnistyles()
   const router = useRouter()
@@ -154,11 +157,12 @@ export function EntityList({
           <EntityRow
             entity={item}
             showPlace={showPlace}
-            onPress={() =>
-              item.entityType?.isLocation
+            onPress={() => {
+              onOpen?.()
+              return item.entityType?.isLocation
                 ? router.push({ pathname: '/place/[id]', params: { id: item.id!, name: item.name } })
                 : router.push({ pathname: '/item/[id]', params: { id: item.id!, name: item.name } })
-            }
+            }}
           />
         </SwipeableRow>
       )}
