@@ -6,7 +6,7 @@ import { ActivityIndicator, Text, View } from 'react-native'
 import { StyleSheet, useUnistyles } from 'react-native-unistyles'
 
 import type { TagSummary } from '@/lib/api/api'
-import { flattenTree, placesTreeQuery, tagsQuery } from '@/lib/api/queries'
+import { flattenTree, placesTreeQuery, tagsQuery, tagTree } from '@/lib/api/queries'
 import { useSession } from '@/lib/auth/session'
 
 import { EmptyState } from './empty-state'
@@ -47,8 +47,12 @@ export function SearchResults({ q, scope = 'all', onScopeChange, onOpen }: Searc
     () => flattenTree(tree.data ?? []).filter((p) => p.name.toLowerCase().includes(needle)),
     [tree.data, needle],
   )
+  // Tree order, so sub-tags follow their parent; each carries its path.
   const matchingTags = useMemo(
-    () => (tags.data ?? []).filter((t) => (t.name ?? '').toLowerCase().includes(needle)),
+    () =>
+      tagTree(tags.data ?? [])
+        .filter((n) => (n.tag.name ?? '').toLowerCase().includes(needle))
+        .map((n): TagResult => ({ ...n.tag, path: n.trail.map((t) => t.name).join(' › ') })),
     [tags.data, needle],
   )
 
@@ -63,7 +67,7 @@ export function SearchResults({ q, scope = 'all', onScopeChange, onOpen }: Searc
 
   if (scope === 'places' || scope === 'tags') {
     const pending = scope === 'places' ? tree.isPending : tags.isPending
-    const rows: (PlaceResult | TagSummary)[] = scope === 'places' ? places : matchingTags
+    const rows: (PlaceResult | TagResult)[] = scope === 'places' ? places : matchingTags
     return (
       <FlashList
         data={rows}
@@ -88,7 +92,7 @@ export function SearchResults({ q, scope = 'all', onScopeChange, onOpen }: Searc
           scope === 'places' ? (
             <PlaceRow place={item as PlaceResult} onPress={() => openPlace(item as PlaceResult)} />
           ) : (
-            <TagRow tag={item as TagSummary} onPress={() => openTag(item as TagSummary)} />
+            <TagRow tag={item as TagResult} onPress={() => openTag(item as TagResult)} />
           )
         }
       />
@@ -162,11 +166,13 @@ function PlaceRow({ place, onPress }: { place: PlaceResult; onPress: () => void 
   )
 }
 
-function TagRow({ tag, onPress }: { tag: TagSummary; onPress: () => void }) {
+type TagResult = TagSummary & { path: string }
+
+function TagRow({ tag, onPress }: { tag: TagResult; onPress: () => void }) {
   return (
     <ListRow
       title={tag.name ?? ''}
-      subtitle={tag.description || undefined}
+      subtitle={tag.path ? `in ${tag.path}` : tag.description || undefined}
       leading={
         <View style={styles.dot}>
           <TagDot color={tag.color} size={12} />

@@ -19,6 +19,14 @@ export interface TagsPickRequest {
   onChange: (ids: string[]) => void
 }
 
+/** Picks the tag a tag sits under (or none: top level). */
+export interface TagParentPickRequest {
+  selectedId: string | null
+  /** The tag being edited: it can't sit under itself or its own sub-tags. */
+  excludeId?: string
+  onSelect: (tag: { id: string | null; name: string }) => void
+}
+
 export interface TextEditRequest {
   title: string
   value: string
@@ -37,6 +45,7 @@ export interface CaptureRequest {
 export interface SheetRequests {
   place: PlacePickRequest
   tags: TagsPickRequest
+  tagParent: TagParentPickRequest
   text: TextEditRequest
   capture: CaptureRequest
 }

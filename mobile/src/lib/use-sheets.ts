@@ -7,6 +7,7 @@ import {
   setSheetRequest,
   type PlacePickRequest,
   type SheetRequests,
+  type TagParentPickRequest,
   type TagsPickRequest,
   type TextEditRequest,
 } from './sheet-requests'
@@ -22,6 +23,10 @@ export function useSheets() {
     pickTags(request: TagsPickRequest) {
       setSheetRequest('tags', request)
       router.push('/pick-tags')
+    },
+    pickTagParent(request: TagParentPickRequest) {
+      setSheetRequest('tagParent', request)
+      router.push('/pick-tag-parent')
     },
     editText(request: TextEditRequest) {
       setSheetRequest('text', request)

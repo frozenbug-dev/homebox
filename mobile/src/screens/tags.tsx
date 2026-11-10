@@ -11,9 +11,9 @@ import { icons } from '@/components/icon'
 import { ListRow, RowSeparator } from '@/components/list-row'
 import { ActionFab, FAB_SPACE } from '@/components/action-fab'
 import { TagDot } from '@/components/tag-chip'
-import { isNil } from '@/lib/api/api'
-import { tagsQuery } from '@/lib/api/queries'
+import { tagsQuery, tagTree } from '@/lib/api/queries'
 import { useSession } from '@/lib/auth/session'
+import { pluralize } from '@/lib/format'
 import { usePullToRefresh } from '@/lib/use-pull-to-refresh'
 
 export default function TagsScreen() {
@@ -23,11 +23,18 @@ export default function TagsScreen() {
   const tags = useQuery(tagsQuery(api))
   const pull = usePullToRefresh(tags.refetch)
 
-  const rows = useMemo(() => {
-    const all = tags.data ?? []
-    const byId = new Map(all.map((t) => [t.id, t]))
-    return all.map((t) => ({ ...t, parentName: isNil(t.parentId) ? undefined : byId.get(t.parentId!)?.name }))
-  }, [tags.data])
+  // Top level, like places: sub-tags are listed on their parent's page, and
+  // search looks through every level.
+  const rows = useMemo(
+    () =>
+      tagTree(tags.data ?? [])
+        .filter((n) => n.depth === 0)
+        .map((n) => ({
+          ...n.tag,
+          subtitle: n.children.length ? pluralize(n.children.length, 'sub-tag') : n.tag.description || undefined,
+        })),
+    [tags.data],
+  )
 
   return (
     <TabScreen>
@@ -56,7 +63,7 @@ export default function TagsScreen() {
         renderItem={({ item }) => (
           <ListRow
             title={item.name ?? ''}
-            subtitle={item.parentName ? `in ${item.parentName}` : item.description || undefined}
+            subtitle={item.subtitle}
             leading={
               <View style={styles.dot}>
                 <TagDot color={item.color} size={12} />

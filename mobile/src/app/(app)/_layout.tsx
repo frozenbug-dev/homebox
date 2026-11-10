@@ -96,6 +96,7 @@ export default function AppLayout() {
       <Stack.Screen name="edit-text" options={sheet([0.5, 1])} />
       <Stack.Screen name="pick-place" options={sheet([0.7, 1])} />
       <Stack.Screen name="pick-tags" options={sheet([0.7, 1])} />
+      <Stack.Screen name="pick-tag-parent" options={sheet([0.7, 1])} />
       <Stack.Screen name="maintenance" options={sheet([0.7, 1])} />
       <Stack.Screen name="edit-field" options={sheet([0.6, 1])} />
     </Stack>

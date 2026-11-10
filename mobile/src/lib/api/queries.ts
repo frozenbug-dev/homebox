@@ -1,6 +1,6 @@
 import { infiniteQueryOptions, queryOptions, skipToken, type InfiniteData, type QueryClient } from '@tanstack/react-query'
 
-import { unwrap, type ApiClient, type Entity, type EntitySummary, type TreeItem } from './api'
+import { isNil, unwrap, type ApiClient, type Entity, type EntitySummary, type TagSummary, type TreeItem } from './api'
 import { fetchServerStatus } from './client'
 
 const ITEMS_PAGE_SIZE = 50
@@ -46,6 +46,7 @@ export interface ItemFilters {
   parentIds?: string[]
   /** true = places, false = items, undefined = items. */
   isLocation?: boolean
+  /** Defaults to createdAt, which the backend sorts newest first. */
   orderBy?: 'name' | 'createdAt' | 'updatedAt'
 }
 
@@ -62,7 +63,7 @@ export const itemsQuery = (api: ApiClient | null, filters: ItemFilters = {}) =>
                   q: filters.q || undefined,
                   tags: filters.tagIds?.length ? filters.tagIds : undefined,
                   parentIds: filters.parentIds?.length ? filters.parentIds : undefined,
-                  orderBy: filters.orderBy ?? 'name',
+                  orderBy: filters.orderBy ?? 'createdAt',
                   page: pageParam,
                   pageSize: ITEMS_PAGE_SIZE,
                   ...(filters.isLocation !== undefined ? { isLocation: filters.isLocation } : {}),
@@ -197,6 +198,62 @@ export function flattenTree(tree: TreeItem[], depth = 0, path: string[] = []) {
     const nodePath = [...path, node.name ?? '']
     out.push({ id: node.id!, name: node.name ?? '', depth, path: nodePath.join(' › ') })
     out.push(...flattenTree(node.children ?? [], depth + 1, nodePath))
+  }
+  return out
+}
+
+/** The backend caps tag nesting at five levels. */
+export const MAX_TAG_DEPTH = 5
+
+export interface TagNode {
+  tag: TagSummary
+  /** 0 for top-level tags. */
+  depth: number
+  /** Ancestors, outermost first. */
+  trail: TagSummary[]
+  /** Direct sub-tags. */
+  children: TagSummary[]
+}
+
+/**
+ * Tags in tree order: each tag followed by its sub-tags, alphabetical within
+ * a level (the input is already sorted by name). A tag whose parent is missing
+ * counts as top level.
+ */
+export function tagTree(tags: TagSummary[]): TagNode[] {
+  const ids = new Set(tags.map((t) => t.id))
+  const parentOf = (t: TagSummary) => (isNil(t.parentId) || !ids.has(t.parentId!) ? null : t.parentId!)
+  const childrenOf = new Map<string | null, TagSummary[]>()
+  for (const t of tags) {
+    const key = parentOf(t)
+    childrenOf.set(key, [...(childrenOf.get(key) ?? []), t])
+  }
+  const out: TagNode[] = []
+  const seen = new Set<string>()
+  const walk = (parent: string | null, trail: TagSummary[]) => {
+    for (const tag of childrenOf.get(parent) ?? []) {
+      if (seen.has(tag.id!)) continue
+      seen.add(tag.id!)
+      out.push({ tag, depth: trail.length, trail, children: childrenOf.get(tag.id!) ?? [] })
+      walk(tag.id!, [...trail, tag])
+    }
+  }
+  walk(null, [])
+  return out
+}
+
+/** The tag's id plus every sub-tag below it. */
+export function tagSubtreeIds(tags: TagSummary[], id: string): Set<string> {
+  const out = new Set([id])
+  let grew = true
+  while (grew) {
+    grew = false
+    for (const t of tags) {
+      if (!isNil(t.parentId) && out.has(t.parentId!) && !out.has(t.id!)) {
+        out.add(t.id!)
+        grew = true
+      }
+    }
   }
   return out
 }

@@ -12,7 +12,7 @@ import { SearchField } from '@/components/search-field'
 import { SheetHeader } from '@/components/sheet-header'
 import { TagDot } from '@/components/tag-chip'
 import { useSaveTag } from '@/lib/api/mutations'
-import { tagsQuery } from '@/lib/api/queries'
+import { tagsQuery, tagTree } from '@/lib/api/queries'
 import { useSession } from '@/lib/auth/session'
 import { useSheetRequest } from '@/lib/use-sheets'
 import { TAG_COLORS } from '@/lib/tag-colors'
@@ -40,9 +40,13 @@ export default function PickTagsSheet() {
     }
   }, [request])
 
+  // Sub-tags sit indented under their parent; while searching the list is
+  // flat, so each match shows its path instead.
   const rows = useMemo(() => {
     const q = search.trim().toLowerCase()
-    return (tags.data ?? []).filter((t) => !q || (t.name ?? '').toLowerCase().includes(q))
+    return tagTree(tags.data ?? [])
+      .filter((n) => !q || (n.tag.name ?? '').toLowerCase().includes(q))
+      .map((n) => ({ ...n.tag, depth: n.depth, path: n.trail.map((t) => t.name).join(' › ') }))
   }, [tags.data, search])
 
   const toggle = (id: string) => {
@@ -102,17 +106,24 @@ export default function PickTagsSheet() {
             const on = selected.has(item.id!)
             return (
               <PressableFeedback
-                style={styles.row}
+                style={[styles.row, { paddingLeft: theme.spacing(4) + (query ? 0 : item.depth) * theme.spacing(5) }]}
                 onPress={() => toggle(item.id!)}
                 accessibilityRole="checkbox"
                 accessibilityState={{ checked: on }}
-                accessibilityLabel={item.name}>
+                accessibilityLabel={item.path ? `${item.name}, in ${item.path}` : item.name}>
                 <View style={styles.dot}>
                   <TagDot color={item.color} size={10} />
                 </View>
-                <Text style={styles.name} numberOfLines={1}>
-                  {item.name}
-                </Text>
+                <View style={styles.text}>
+                  <Text style={styles.name} numberOfLines={1}>
+                    {item.name}
+                  </Text>
+                  {query && item.path ? (
+                    <Text style={styles.path} numberOfLines={1}>
+                      {item.path}
+                    </Text>
+                  ) : null}
+                </View>
                 <View style={styles.check(on)}>
                   {on ? <Icon name={{ ios: 'checkmark', android: 'check' }} size={14} color={theme.colors.onPrimary} /> : null}
                 </View>
@@ -145,10 +156,16 @@ const styles = StyleSheet.create((theme) => ({
     width: 18,
     alignItems: 'center',
   },
+  text: {
+    flex: 1,
+  },
   name: {
     ...theme.type.body,
-    flex: 1,
     color: theme.colors.text,
+  },
+  path: {
+    ...theme.type.meta,
+    color: theme.colors.textMuted,
   },
   create: {
     ...theme.type.body,
