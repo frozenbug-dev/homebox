@@ -2714,9 +2714,10 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "barcode to be searched",
-                        "name": "data",
-                        "in": "query"
+                        "description": "barcode to be searched (EAN, UPC, GS1-128; max 80 characters)",
+                        "name": "productEAN",
+                        "in": "query",
+                        "required": true
                     }
                 ],
                 "responses": {
@@ -5943,16 +5944,73 @@ const docTemplate = `{
         "repo.EntityPatch": {
             "type": "object",
             "properties": {
+                "archived": {
+                    "type": "boolean",
+                    "x-nullable": true,
+                    "x-omitempty": true
+                },
+                "clearParent": {
+                    "description": "ClearParent moves the entity to the top level (parentId can't\nexpress that: a missing or null parentId means \"unchanged\").",
+                    "type": "boolean",
+                    "x-nullable": true,
+                    "x-omitempty": true
+                },
+                "description": {
+                    "type": "string",
+                    "maxLength": 1000,
+                    "x-nullable": true,
+                    "x-omitempty": true
+                },
                 "entityTypeId": {
                     "type": "string",
+                    "x-nullable": true,
+                    "x-omitempty": true
+                },
+                "fields": {
+                    "description": "Fields replaces the custom fields when set: entries with an id are\nupdated, ones without are created, and missing ones are deleted.\nOmit (null) to leave them unchanged; [] removes them all.",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/repo.EntityFieldData"
+                    },
                     "x-nullable": true,
                     "x-omitempty": true
                 },
                 "id": {
                     "type": "string"
                 },
+                "insured": {
+                    "type": "boolean",
+                    "x-nullable": true,
+                    "x-omitempty": true
+                },
                 "locationId": {
                     "type": "string",
+                    "x-nullable": true,
+                    "x-omitempty": true
+                },
+                "manufacturer": {
+                    "type": "string",
+                    "maxLength": 255,
+                    "x-nullable": true,
+                    "x-omitempty": true
+                },
+                "modelNumber": {
+                    "type": "string",
+                    "maxLength": 255,
+                    "x-nullable": true,
+                    "x-omitempty": true
+                },
+                "name": {
+                    "description": "Text and flags; nil leaves the field unchanged.",
+                    "type": "string",
+                    "maxLength": 255,
+                    "minLength": 1,
+                    "x-nullable": true,
+                    "x-omitempty": true
+                },
+                "notes": {
+                    "type": "string",
+                    "maxLength": 1000,
                     "x-nullable": true,
                     "x-omitempty": true
                 },
@@ -5968,6 +6026,12 @@ const docTemplate = `{
                 },
                 "quantity": {
                     "type": "number",
+                    "x-nullable": true,
+                    "x-omitempty": true
+                },
+                "serialNumber": {
+                    "type": "string",
+                    "maxLength": 255,
                     "x-nullable": true,
                     "x-omitempty": true
                 },

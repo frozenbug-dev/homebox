@@ -1,5 +1,5 @@
-// Subset of the Homebox API contracts the app uses. The full set is generated
-// for the web frontend in frontend/lib/api/types/data-contracts.ts.
+// Auth-flow contracts, used before a session (and the typed client) exists.
+// Everything else comes from the generated schema.d.ts (`pnpm api:types`).
 
 export interface ServerStatus {
   health: boolean
@@ -29,54 +29,4 @@ export interface TokenDetail {
   raw: string
   expiresAt: string
   attachmentToken: string
-}
-
-export interface UserOut {
-  id: string
-  name: string
-  email: string
-  defaultGroupId: string
-  groupIds: string[]
-  isSuperuser: boolean
-  oidcIssuer: string
-  oidcSubject: string
-}
-
-export interface TagSummary {
-  id: string
-  name: string
-  color: string
-}
-
-export interface EntityTypeSummary {
-  id: string
-  name: string
-  icon?: string
-  isLocation: boolean
-}
-
-export interface EntitySummary {
-  id: string
-  assetId: string
-  name: string
-  description: string
-  quantity: number
-  archived: boolean
-  insured: boolean
-  purchasePrice: number
-  imageId?: string | null
-  thumbnailId?: string | null
-  entityType?: EntityTypeSummary | null
-  parent?: EntitySummary | null
-  tags: TagSummary[]
-  createdAt: string
-  updatedAt: string
-}
-
-export interface EntityListResult {
-  items: EntitySummary[]
-  page: number
-  pageSize: number
-  total: number
-  totalPrice: number
 }

@@ -429,6 +429,135 @@ func TestEntityRepository_Patch_RejectsNonFiniteQuantity(t *testing.T) {
 	assert.Contains(t, err.Error(), "invalid quantity: must be a finite number")
 }
 
+func TestEntityRepository_Patch_TextAndFlags(t *testing.T) {
+	e := useEntities(t, 1)[0]
+	ctx := context.Background()
+
+	name, notes, insured := "  Renamed drill  ", "Charger in the blue box", true
+	err := tRepos.Entities.Patch(ctx, tGroup.ID, e.ID, EntityPatch{Name: &name, Notes: &notes, Insured: &insured})
+	require.NoError(t, err)
+
+	got, err := tRepos.Entities.GetOneByGroup(ctx, tGroup.ID, e.ID)
+	require.NoError(t, err)
+	assert.Equal(t, "Renamed drill", got.Name)
+	assert.Equal(t, notes, got.Notes)
+	assert.True(t, got.Insured)
+	// Fields that weren't sent stay as they were.
+	assert.Equal(t, e.Description, got.Description)
+	assert.InDelta(t, e.Quantity, got.Quantity, 0.0001)
+
+	empty := "   "
+	err = tRepos.Entities.Patch(ctx, tGroup.ID, e.ID, EntityPatch{Name: &empty})
+	require.Error(t, err)
+
+	long := strings.Repeat("x", 1001)
+	err = tRepos.Entities.Patch(ctx, tGroup.ID, e.ID, EntityPatch{Description: &long})
+	require.Error(t, err)
+}
+
+func TestEntityRepository_Patch_ClearParent(t *testing.T) {
+	ctx := context.Background()
+	containerET := useContainerEntityType(t)
+
+	outer := containerFactory()
+	outer.EntityTypeID = containerET.ID
+	parent, err := tRepos.Entities.Create(ctx, tGroup.ID, outer)
+	require.NoError(t, err)
+	inner := containerFactory()
+	inner.EntityTypeID = containerET.ID
+	inner.ParentID = parent.ID
+	child, err := tRepos.Entities.Create(ctx, tGroup.ID, inner)
+	require.NoError(t, err)
+	t.Cleanup(func() {
+		_ = tRepos.Entities.Delete(ctx, child.ID)
+		_ = tRepos.Entities.Delete(ctx, parent.ID)
+	})
+
+	require.NoError(t, tRepos.Entities.Patch(ctx, tGroup.ID, child.ID, EntityPatch{ClearParent: true}))
+	got, err := tRepos.Entities.GetOneByGroup(ctx, tGroup.ID, child.ID)
+	require.NoError(t, err)
+	assert.Nil(t, got.Parent)
+
+	err = tRepos.Entities.Patch(ctx, tGroup.ID, child.ID, EntityPatch{ClearParent: true, ParentID: parent.ID})
+	require.Error(t, err)
+}
+
+func TestEntityRepository_Patch_Fields(t *testing.T) {
+	e := useEntities(t, 1)[0]
+	ctx := context.Background()
+
+	get := func() []EntityFieldData {
+		got, err := tRepos.Entities.GetOneByGroup(ctx, tGroup.ID, e.ID)
+		require.NoError(t, err)
+		return got.Fields
+	}
+
+	// Create.
+	err := tRepos.Entities.Patch(ctx, tGroup.ID, e.ID, EntityPatch{Fields: []EntityFieldData{
+		{Name: " Colour ", Type: "text", TextValue: "Red"},
+		{Name: "Watts", Type: "number", NumberValue: 1200},
+	}})
+	require.NoError(t, err)
+	fields := get()
+	require.Len(t, fields, 2)
+	byName := map[string]EntityFieldData{}
+	for _, f := range fields {
+		byName[f.Name] = f
+	}
+	assert.Equal(t, "Red", byName["Colour"].TextValue)
+	assert.Equal(t, 1200, byName["Watts"].NumberValue)
+
+	// Leaving fields out keeps them.
+	notes := "unrelated change"
+	require.NoError(t, tRepos.Entities.Patch(ctx, tGroup.ID, e.ID, EntityPatch{Notes: &notes}))
+	require.Len(t, get(), 2)
+
+	// Update one, drop the other, add a new one.
+	colour := byName["Colour"]
+	colour.TextValue = "Blue"
+	err = tRepos.Entities.Patch(ctx, tGroup.ID, e.ID, EntityPatch{Fields: []EntityFieldData{
+		colour,
+		{Name: "Cordless", Type: "boolean", BooleanValue: true},
+	}})
+	require.NoError(t, err)
+	fields = get()
+	require.Len(t, fields, 2)
+	for _, f := range fields {
+		switch f.Name {
+		case "Colour":
+			assert.Equal(t, colour.ID, f.ID, "updated in place")
+			assert.Equal(t, "Blue", f.TextValue)
+		case "Cordless":
+			assert.True(t, f.BooleanValue)
+		default:
+			t.Fatalf("unexpected field %q", f.Name)
+		}
+	}
+
+	// Blank names and unknown types are rejected; nothing changes.
+	err = tRepos.Entities.Patch(ctx, tGroup.ID, e.ID, EntityPatch{Fields: []EntityFieldData{{Name: "  "}}})
+	require.Error(t, err)
+	err = tRepos.Entities.Patch(ctx, tGroup.ID, e.ID, EntityPatch{Fields: []EntityFieldData{{Name: "x", Type: "colour"}}})
+	require.Error(t, err)
+	require.Len(t, get(), 2)
+
+	// An empty list removes them all.
+	require.NoError(t, tRepos.Entities.Patch(ctx, tGroup.ID, e.ID, EntityPatch{Fields: []EntityFieldData{}}))
+	assert.Empty(t, get())
+}
+
+func TestEntityRepository_Patch_FieldsForeignGroup(t *testing.T) {
+	e := useEntities(t, 1)[0]
+	ctx := context.Background()
+
+	err := tRepos.Entities.Patch(ctx, uuid.New(), e.ID, EntityPatch{Fields: []EntityFieldData{{Name: "Sneaky", Type: "text"}}})
+	require.Error(t, err)
+
+	got, err := tRepos.Entities.GetOneByGroup(ctx, tGroup.ID, e.ID)
+	require.NoError(t, err)
+	assert.Empty(t, got.Fields)
+}
+
 func TestEntityRepository_CreateFromTemplate_RejectsNonFiniteQuantity(t *testing.T) {
 	containerET := useContainerEntityType(t)
 

@@ -157,8 +157,23 @@ type (
 		LifetimeWarranty bool `json:"lifetimeWarranty"`
 	}
 
+	// EntityPatch updates only the fields that are set (non-nil / non-zero
+	// IDs), so clients can change one property without resending the entity.
 	EntityPatch struct {
-		ID            uuid.UUID   `json:"id"`
+		ID uuid.UUID `json:"id"`
+		// Text and flags; nil leaves the field unchanged.
+		Name         *string `json:"name,omitempty"         validate:"omitnil,min=1,max=255"    extensions:"x-nullable,x-omitempty"`
+		Description  *string `json:"description,omitempty"  validate:"omitnil,max=1000"         extensions:"x-nullable,x-omitempty"`
+		Notes        *string `json:"notes,omitempty"        validate:"omitnil,max=1000"         extensions:"x-nullable,x-omitempty"`
+		Manufacturer *string `json:"manufacturer,omitempty" validate:"omitnil,max=255"          extensions:"x-nullable,x-omitempty"`
+		ModelNumber  *string `json:"modelNumber,omitempty"  validate:"omitnil,max=255"          extensions:"x-nullable,x-omitempty"`
+		SerialNumber *string `json:"serialNumber,omitempty" validate:"omitnil,max=255"          extensions:"x-nullable,x-omitempty"`
+		Insured      *bool   `json:"insured,omitempty"      extensions:"x-nullable,x-omitempty"`
+		Archived     *bool   `json:"archived,omitempty"     extensions:"x-nullable,x-omitempty"`
+		// ClearParent moves the entity to the top level (parentId can't
+		// express that: a missing or null parentId means "unchanged").
+		ClearParent bool `json:"clearParent,omitempty" extensions:"x-nullable,x-omitempty"`
+
 		Quantity      *float64    `json:"quantity,omitempty"      extensions:"x-nullable,x-omitempty"`
 		PurchasePrice *float64    `json:"purchasePrice,omitempty" extensions:"x-nullable,x-omitempty"`
 		ImportRef     *string     `json:"-"                       extensions:"x-nullable,x-omitempty"`
@@ -166,6 +181,10 @@ type (
 		LocationID    uuid.UUID   `json:"locationId"              extensions:"x-nullable,x-omitempty"`
 		EntityTypeID  uuid.UUID   `json:"entityTypeId"            extensions:"x-nullable,x-omitempty"`
 		TagIDs        []uuid.UUID `json:"tagIds"                  extensions:"x-nullable,x-omitempty"`
+		// Fields replaces the custom fields when set: entries with an id are
+		// updated, ones without are created, and missing ones are deleted.
+		// Omit (null) to leave them unchanged; [] removes them all.
+		Fields []EntityFieldData `json:"fields" extensions:"x-nullable,x-omitempty"`
 	}
 
 	EntitySummary struct {
@@ -2148,6 +2167,140 @@ func (r *EntityRepository) validatePatchRefs(ctx context.Context, gid, id uuid.U
 	return nil
 }
 
+// applyPatchScalars validates and sets a patch's plain fields (text, flags,
+// numbers); relations (parent, location, type, tags) are handled by Patch.
+func applyPatchScalars(q *ent.EntityUpdate, data EntityPatch) error {
+	if data.ClearParent && (data.ParentID != uuid.Nil || data.LocationID != uuid.Nil) {
+		return fmt.Errorf("patch entity: clearParent can't be combined with parentId or locationId")
+	}
+	if data.Quantity != nil {
+		if err := validateQuantity("patch entity", *data.Quantity); err != nil {
+			return err
+		}
+		q.SetQuantity(*data.Quantity)
+	}
+	if data.PurchasePrice != nil {
+		if p := *data.PurchasePrice; math.IsNaN(p) || math.IsInf(p, 0) || p < 0 {
+			return fmt.Errorf("patch entity: invalid purchase price: must be a finite, non-negative number")
+		}
+		q.SetPurchasePrice(*data.PurchasePrice)
+	}
+	if data.Name != nil {
+		name := strings.TrimSpace(*data.Name)
+		if name == "" || len(name) > 255 {
+			return fmt.Errorf("patch entity: name must be 1-255 characters")
+		}
+		q.SetName(name)
+	}
+	for _, f := range []struct {
+		value *string
+		max   int
+		set   func(string) *ent.EntityUpdate
+		label string
+	}{
+		{data.Description, 1000, q.SetDescription, "description"},
+		{data.Notes, 1000, q.SetNotes, "notes"},
+		{data.Manufacturer, 255, q.SetManufacturer, "manufacturer"},
+		{data.ModelNumber, 255, q.SetModelNumber, "model number"},
+		{data.SerialNumber, 255, q.SetSerialNumber, "serial number"},
+	} {
+		if f.value == nil {
+			continue
+		}
+		if len(*f.value) > f.max {
+			return fmt.Errorf("patch entity: %s must be at most %d characters", f.label, f.max)
+		}
+		f.set(*f.value)
+	}
+	if data.Insured != nil {
+		q.SetInsured(*data.Insured)
+	}
+	if data.Archived != nil {
+		q.SetArchived(*data.Archived)
+	}
+	return nil
+}
+
+// patchSyncFields makes the entity's custom fields exactly `want`, inside
+// the patch transaction. Updates and deletes are scoped to this entity in
+// this group, so ids from another entity are ignored rather than modified.
+func patchSyncFields(ctx context.Context, tx *ent.Tx, gid, id uuid.UUID, want []EntityFieldData) error {
+	fieldsCtx, fieldsSpan := entityTracer().Start(ctx, "repo.EntityRepository.Patch.fields",
+		trace.WithAttributes(attribute.Int("fields.input.count", len(want))))
+	defer fieldsSpan.End()
+
+	ownedBy := entityfield.HasEntityWith(entity.ID(id), entity.HasGroupWith(group.ID(gid)))
+	existing, err := tx.EntityField.Query().Where(ownedBy).All(fieldsCtx)
+	if err != nil {
+		recordSpanError(fieldsSpan, err)
+		return err
+	}
+	stale := newIDSet(existing)
+
+	created, updated := 0, 0
+	for _, f := range want {
+		name := strings.TrimSpace(f.Name)
+		if name == "" || len(name) > 255 {
+			err := fmt.Errorf("patch entity: field names must be 1-255 characters")
+			recordSpanError(fieldsSpan, err)
+			return err
+		}
+		if f.Type == "" {
+			f.Type = string(entityfield.TypeText)
+		}
+		if err := entityfield.TypeValidator(entityfield.Type(f.Type)); err != nil {
+			err = fmt.Errorf("patch entity: invalid field type %q", f.Type)
+			recordSpanError(fieldsSpan, err)
+			return err
+		}
+
+		if f.ID != uuid.Nil && stale.Contains(f.ID) {
+			if err := tx.EntityField.Update().
+				Where(entityfield.ID(f.ID), ownedBy).
+				SetType(entityfield.Type(f.Type)).
+				SetName(name).
+				SetTextValue(f.TextValue).
+				SetNumberValue(f.NumberValue).
+				SetBooleanValue(f.BooleanValue).
+				Exec(fieldsCtx); err != nil {
+				recordSpanError(fieldsSpan, err)
+				return err
+			}
+			stale.Remove(f.ID)
+			updated++
+			continue
+		}
+
+		if _, err := tx.EntityField.Create().
+			SetEntityID(id).
+			SetType(entityfield.Type(f.Type)).
+			SetName(name).
+			SetTextValue(f.TextValue).
+			SetNumberValue(f.NumberValue).
+			SetBooleanValue(f.BooleanValue).
+			Save(fieldsCtx); err != nil {
+			recordSpanError(fieldsSpan, err)
+			return err
+		}
+		created++
+	}
+
+	deleted := 0
+	if stale.Len() > 0 {
+		deleted, err = tx.EntityField.Delete().Where(entityfield.IDIn(stale.Slice()...), ownedBy).Exec(fieldsCtx)
+		if err != nil {
+			recordSpanError(fieldsSpan, err)
+			return err
+		}
+	}
+	fieldsSpan.SetAttributes(
+		attribute.Int("fields.created.count", created),
+		attribute.Int("fields.updated.count", updated),
+		attribute.Int("fields.deleted.count", deleted),
+	)
+	return nil
+}
+
 func (r *EntityRepository) Patch(ctx context.Context, gid, id uuid.UUID, data EntityPatch) error {
 	ctx, span := entityTracer().Start(ctx, "repo.EntityRepository.Patch",
 		trace.WithAttributes(
@@ -2159,6 +2312,7 @@ func (r *EntityRepository) Patch(ctx context.Context, gid, id uuid.UUID, data En
 			attribute.Bool("patch.parent_id.set", data.ParentID != uuid.Nil),
 			attribute.Bool("patch.entity_type_id.set", data.EntityTypeID != uuid.Nil),
 			attribute.Bool("patch.tag_ids.set", data.TagIDs != nil),
+			attribute.Bool("patch.fields.set", data.Fields != nil),
 		))
 	defer span.End()
 
@@ -2191,25 +2345,16 @@ func (r *EntityRepository) Patch(ctx context.Context, gid, id uuid.UUID, data En
 		q.SetImportRef(*data.ImportRef)
 	}
 
-	if data.Quantity != nil {
-		if err := validateQuantity("patch entity", *data.Quantity); err != nil {
-			recordSpanError(span, err)
-			return err
-		}
-
-		q.SetQuantity(*data.Quantity)
-	}
-
-	if data.PurchasePrice != nil {
-		if p := *data.PurchasePrice; math.IsNaN(p) || math.IsInf(p, 0) || p < 0 {
-			err := fmt.Errorf("patch entity: invalid purchase price: must be a finite, non-negative number")
-			recordSpanError(span, err)
-			return err
-		}
-		q.SetPurchasePrice(*data.PurchasePrice)
+	if err := applyPatchScalars(q, data); err != nil {
+		recordSpanError(span, err)
+		return err
 	}
 
 	switch {
+	case data.ClearParent:
+		q.ClearParent()
+		q.ClearLocation()
+
 	case data.LocationID != uuid.Nil:
 		// Validate against the parent we'll end up with, not the one we were
 		// handed — a location-only patch doesn't carry a parent.
@@ -2279,6 +2424,25 @@ func (r *EntityRepository) Patch(ctx context.Context, gid, id uuid.UUID, data En
 
 	if data.TagIDs != nil {
 		if err := patchSyncTags(ctx, tx, gid, id, data.TagIDs); err != nil {
+			recordSpanError(span, err)
+			return err
+		}
+	}
+
+	if data.Fields != nil {
+		// Checked here (not in the update above) so a foreign id can't attach
+		// fields to another group's entity.
+		exists, err := tx.Entity.Query().Where(entity.ID(id), entity.HasGroupWith(group.ID(gid))).Exist(ctx)
+		if err != nil {
+			recordSpanError(span, err)
+			return err
+		}
+		if !exists {
+			err := &ent.NotFoundError{}
+			recordSpanError(span, err)
+			return err
+		}
+		if err := patchSyncFields(ctx, tx, gid, id, data.Fields); err != nil {
 			recordSpanError(span, err)
 			return err
 		}

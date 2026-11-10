@@ -1,3 +1,4 @@
+import { useHeaderHeight } from 'expo-router/react-navigation'
 import type { ReactNode } from 'react'
 import { Platform, View } from 'react-native'
 import { KeyboardAwareScrollView, KeyboardGestureArea, KeyboardStickyView } from 'react-native-keyboard-controller'
@@ -18,15 +19,20 @@ interface FormScreenProps {
  */
 export function FormScreen({ children, footer }: FormScreenProps) {
   const { rt } = useUnistyles()
+  const headerHeight = useHeaderHeight()
   const footerSpace = footer ? FOOTER_HEIGHT : 0
+  // iOS: KeyboardAwareScrollView ignores the large title's automatic content
+  // inset and scrolls the focused form up behind the header, so pad by the
+  // header height ourselves instead.
+  const ios = Platform.OS === 'ios'
 
   const scroll = (
     <KeyboardAwareScrollView
       bottomOffset={footerSpace + 16}
       keyboardDismissMode="interactive"
       keyboardShouldPersistTaps="handled"
-      contentInsetAdjustmentBehavior="automatic"
-      contentContainerStyle={styles.content(footerSpace)}
+      contentInsetAdjustmentBehavior={ios ? 'never' : 'automatic'}
+      contentContainerStyle={[styles.content(footerSpace), ios && { paddingTop: headerHeight + 20 }]}
       style={styles.scroll}>
       {children}
     </KeyboardAwareScrollView>

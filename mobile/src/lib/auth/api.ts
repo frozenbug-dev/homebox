@@ -96,7 +96,7 @@ export async function signInWithOidc(serverUrl: string): Promise<Session> {
 export async function refreshSession(session: Session): Promise<Session> {
   const res = await request<TokenDetail>(session.serverUrl, '/users/refresh', { token: session.token })
   return {
-    serverUrl: session.serverUrl,
+    ...session,
     token: `Bearer ${res.raw}`,
     expiresAt: res.expiresAt,
     attachmentToken: res.attachmentToken,

@@ -9,6 +9,8 @@ export interface Session {
   expiresAt: string
   /** Token for attachment URLs (images), passed as ?access_token=. */
   attachmentToken: string
+  /** Collection (group) to work in; unset means the user's default one. Sent as X-Tenant. */
+  tenantId?: string
 }
 
 const SESSION_KEY = 'homebox.session'

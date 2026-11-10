@@ -1,8 +1,10 @@
 import { createContext, use, useCallback, useEffect, useMemo, useState, type ReactNode } from 'react'
 import { AppState } from 'react-native'
 
-import { ApiError, request, type RequestOptions } from '@/lib/api/client'
+import { createApiClient, type ApiClient } from '@/lib/api/api'
+import { ApiError } from '@/lib/api/client'
 import { queryClient } from '@/lib/query-client'
+import { clearUploads } from '@/lib/uploads'
 
 import { refreshSession, revokeSession } from './api'
 import { clearSession, loadSession, saveSession, type Session } from './storage'
@@ -16,8 +18,10 @@ interface SessionContextValue {
   session: Session | null
   signIn: (session: Session) => Promise<void>
   signOut: () => Promise<void>
-  /** JSON request against the signed-in server; signs out when the token is rejected. */
-  authedRequest: <T>(path: string, options?: Omit<RequestOptions, 'token'>) => Promise<T>
+  /** Switch collection; clears cached data from the previous one. */
+  setTenant: (tenantId: string) => Promise<void>
+  /** Typed client for the signed-in server; a 401 signs out. Null while signed out. */
+  api: ApiClient | null
 }
 
 const SessionContext = createContext<SessionContextValue | null>(null)
@@ -29,6 +33,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   const dropSession = useCallback(async () => {
     setSession(null)
     queryClient.clear()
+    clearUploads()
     await clearSession()
   }, [])
 
@@ -82,22 +87,30 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     if (current) revokeSession(current).catch(() => {})
   }, [session, dropSession])
 
-  const authedRequest = useCallback(
-    async <T,>(path: string, options: Omit<RequestOptions, 'token'> = {}) => {
-      if (!session) throw new ApiError(401, 'Not signed in')
-      try {
-        return await request<T>(session.serverUrl, path, { ...options, token: session.token })
-      } catch (e) {
-        if (e instanceof ApiError && e.status === 401) await dropSession()
-        throw e
-      }
-    },
+  const api = useMemo(
+    () =>
+      session
+        ? createApiClient(session.serverUrl, session.token, session.tenantId, () => {
+            dropSession()
+          })
+        : null,
     [session, dropSession],
   )
 
+  const setTenant = useCallback(
+    async (tenantId: string) => {
+      if (!session || session.tenantId === tenantId) return
+      const next = { ...session, tenantId }
+      queryClient.clear()
+      await saveSession(next)
+      setSession(next)
+    },
+    [session],
+  )
+
   const value = useMemo(
-    () => ({ isLoading, session, signIn, signOut, authedRequest }),
-    [isLoading, session, signIn, signOut, authedRequest],
+    () => ({ isLoading, session, signIn, signOut, setTenant, api }),
+    [isLoading, session, signIn, signOut, setTenant, api],
   )
 
   return <SessionContext value={value}>{children}</SessionContext>

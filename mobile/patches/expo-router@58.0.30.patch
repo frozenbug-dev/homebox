@@ -1,0 +1,16 @@
+diff --git a/build/react-navigation/native-stack/views/useHeaderConfigProps.js b/build/react-navigation/native-stack/views/useHeaderConfigProps.js
+index 65358d6b13970387c5c637d534482411b86f97a4..445876691894cbd00c72e03295a0c388fc555d76 100644
+--- a/build/react-navigation/native-stack/views/useHeaderConfigProps.js
++++ b/build/react-navigation/native-stack/views/useHeaderConfigProps.js
+@@ -52,7 +52,10 @@ const processBarButtonItems = (items, colors, fonts)=>{
+             if (item.spacing == null) {
+                 throw new Error(`Spacing item must have a 'spacing' property defined: ${JSON.stringify(item)}`);
+             }
+-            return item;
++            return {
++                ...item,
++                index
++            };
+         }
+         if (item.type === 'button' || item.type === 'menu') {
+             if (item.type === 'menu' && item.menu == null) {
