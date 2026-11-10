@@ -1,8 +1,7 @@
-import { Image } from 'expo-image'
 import * as Haptics from 'expo-haptics'
 import { useIsFocused, useLocalSearchParams, useRouter } from 'expo-router'
 import { type ComponentRef, type ReactNode, useEffect, useMemo, useRef, useState } from 'react'
-import { FlatList, ScrollView, Text, useWindowDimensions, View } from 'react-native'
+import { FlatList, Platform, ScrollView, Text, useWindowDimensions, View } from 'react-native'
 import { GestureDetector, usePanGesture } from 'react-native-gesture-handler'
 import Animated, {
   Easing,
@@ -30,11 +29,13 @@ import {
   useCameraPermission,
   usePhotoOutput,
 } from 'react-native-vision-camera'
+import { loadImage } from 'react-native-nitro-image'
 import { scheduleOnRN } from 'react-native-worklets'
 
 import { ActionButton } from '@/components/action-button'
 import { CAMERA_ACCENT, FocusIndicator, LensPicker, useBackCamera, useCameraControls } from '@/components/camera-controls'
 import { Icon, type IconName } from '@/components/icon'
+import { Image } from '@/components/image'
 import { PressableFeedback } from '@/components/pressable-feedback'
 import { ZoomableImage } from '@/components/zoomable-image'
 import { useSession } from '@/lib/auth/session'
@@ -52,8 +53,10 @@ const PHOTO_ASPECT = 3 / 4
 /**
  * Locking the stream to 60 fps caps auto-exposure at 1/60 s, so handheld
  * shots stay sharp instead of the camera stretching the shutter for light.
+ * iOS only: Android phones mostly offer 60 fps only at 16:9 sizes, so the
+ * preview stopped matching the 3:4 photo and showed up pillarboxed.
  */
-const CONSTRAINTS_FPS = 60
+const CONSTRAINTS_FPS = Platform.OS === 'ios' ? 60 : undefined
 
 const FLASH_MODES: { mode: FlashMode; label: string; icon: IconName }[] = [
   { mode: 'off', label: 'Flash off', icon: { ios: 'bolt.slash.fill', android: 'flash_off' } },
@@ -99,7 +102,10 @@ export default function CaptureScreen() {
     qualityPrioritization: device?.supportsSpeedQualityPrioritization ? 'speed' : 'balanced',
   })
   // Full resolution comes first; 60 fps (the shutter cap) is kept where the sensor allows it.
-  const constraints = useMemo<Constraint[]>(() => [{ resolutionBias: photoOutput }, { fps: CONSTRAINTS_FPS }], [photoOutput])
+  const constraints = useMemo<Constraint[]>(
+    () => [{ resolutionBias: photoOutput }, ...(CONSTRAINTS_FPS ? [{ fps: CONSTRAINTS_FPS }] : [])],
+    [photoOutput],
+  )
   const camera = useRef<CameraRef>(null)
   const [shots, setShots] = useState<Shot[]>([])
   const [busy, setBusy] = useState(false)
@@ -130,7 +136,7 @@ export default function CaptureScreen() {
       )
       const uri = file.filePath.startsWith('file://') ? file.filePath : `file://${file.filePath}`
       setShots((s) => [...s, { uri, name: `photo-${Date.now()}.jpg` }])
-      if (__DEV__) Image.loadAsync(uri).then((img) => console.log('photo captured', `${img.width}×${img.height}`))
+      if (__DEV__) Promise.resolve(loadImage({ filePath: file.filePath.replace(/^file:\/\//, '') })).then((img) => console.log('photo captured', `${img.width}×${img.height}`))
     } catch (e) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error)
       console.warn('capture failed', e)
@@ -185,7 +191,9 @@ export default function CaptureScreen() {
                 outputs={[photoOutput]}
                 constraints={constraints}
                 zoom={controls.zoom}
-                resizeMode="contain"
+                // Android picks the preview size itself (not always 3:4), so fill the
+                // frame rather than letterboxing; iOS matches the photo exactly.
+                resizeMode={Platform.OS === 'ios' ? 'contain' : 'cover'}
                 isActive
                 onError={(e) => console.warn('camera error', e)}
                 onSessionConfigSelected={(c) =>

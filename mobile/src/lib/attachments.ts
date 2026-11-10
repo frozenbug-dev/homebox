@@ -1,15 +1,17 @@
-import type { ImageSource } from 'expo-image'
-
 import type { Attachment } from '@/lib/api/api'
+import type { ImageSource } from '@/components/image'
 
 import { apiUrl } from '@/lib/api/client'
 import type { Session } from '@/lib/auth/storage'
 
-/** Image source for an entity attachment, authenticated with the session's bearer token. */
+/**
+ * Image source for an entity attachment. The image loader can't send
+ * headers, so it authenticates like `attachmentLink` (query params); the
+ * cache key leaves the token out so the cache outlives it.
+ */
 export function attachmentSource(session: Session, entityId: string, attachmentId: string): ImageSource {
   return {
-    uri: apiUrl(session.serverUrl, `/entities/${entityId}/attachments/${attachmentId}`),
-    headers: { Authorization: session.token, ...(session.tenantId ? { 'X-Tenant': session.tenantId } : {}) },
+    uri: attachmentLink(session, entityId, attachmentId),
     cacheKey: `${session.serverUrl}/attachments/${attachmentId}`,
   }
 }

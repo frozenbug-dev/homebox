@@ -1,7 +1,6 @@
 import { Host, Switch } from '@expo/ui'
 import { useForm } from '@tanstack/react-form'
 import { useQuery } from '@tanstack/react-query'
-import { Image } from 'expo-image'
 import * as Haptics from 'expo-haptics'
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import { useRef, useState } from 'react'
@@ -10,6 +9,7 @@ import { KeyboardAwareScrollView } from 'react-native-keyboard-controller'
 import { StyleSheet, useUnistyles } from 'react-native-unistyles'
 
 import { FormField } from '@/components/form-field'
+import { Image } from '@/components/image'
 import { Icon, icons } from '@/components/icon'
 import { PressableFeedback } from '@/components/pressable-feedback'
 import { PropertyChip } from '@/components/property-chip'
@@ -26,6 +26,13 @@ interface PendingPhoto {
   uri: string
   name: string
   mimeType?: string
+  /** The looked-up product's picture; it sits after your own photos. */
+  product?: boolean
+}
+
+/** The scanned product's picture, as the first pending photo. */
+function productPhoto(uri: string | undefined): PendingPhoto[] {
+  return uri ? [{ uri, name: `product-${Date.now()}.jpg`, mimeType: 'image/jpeg', product: true }] : []
 }
 
 /**
@@ -69,25 +76,41 @@ export default function NewItemSheet() {
   )
   const [addAnother, setAddAnother] = useState(false)
   const [added, setAdded] = useState(0)
-  const [photos, setPhotos] = useState<PendingPhoto[]>([])
+  const [photos, setPhotos] = useState<PendingPhoto[]>(() => productPhoto(params.imageUrl))
+  const scanned = !!params.barcode
 
-  // A barcode the product lookup didn't recognise still identifies the
-  // item, so keep it in the notes rather than losing it.
-  const barcodeNotes = params.barcode && !params.name ? `Barcode: ${params.barcode}` : ''
+  // Items have no barcode field, but notes are searched, so keeping it there
+  // lets the next scan of this barcode find the item.
+  const barcodeNotes = params.barcode ? `Barcode: ${params.barcode}` : ''
 
+  // Your own photos go before the product's, so the first of them is the cover.
   const takePhotos = () =>
-    sheets.capturePhotos({ onDone: (shots) => setPhotos((p) => [...p, ...shots.map((s) => ({ ...s, mimeType: 'image/jpeg' }))]) })
+    sheets.capturePhotos({
+      onDone: (shots) =>
+        setPhotos((p) => [
+          ...p.filter((x) => !x.product),
+          ...shots.map((s) => ({ ...s, mimeType: 'image/jpeg' })),
+          ...p.filter((x) => x.product),
+        ]),
+    })
 
 
   const form = useForm({
-    defaultValues: { name: params.name ?? '', quantity: '1', description: params.description ?? '', notes: barcodeNotes },
+    defaultValues: {
+      name: params.name ?? '',
+      quantity: '1',
+      description: params.description ?? '',
+      manufacturer: params.manufacturer ?? '',
+      modelNumber: params.modelNumber ?? '',
+      notes: barcodeNotes,
+    },
     onSubmit: async ({ value, formApi }) => {
       const quantity = Number(value.quantity.replace(',', '.'))
       const locationType = types.data?.find((t) => t.isLocation)
       const created = await create.mutateAsync({
         name: value.name.trim(),
-        manufacturer: params.manufacturer || undefined,
-        modelNumber: params.modelNumber || undefined,
+        manufacturer: value.manufacturer.trim() || undefined,
+        modelNumber: value.modelNumber.trim() || undefined,
         description: value.description.trim() || undefined,
         quantity: Number.isFinite(quantity) && quantity > 0 ? quantity : 1,
         parentId: place?.id ?? undefined,
@@ -95,16 +118,15 @@ export default function NewItemSheet() {
         entityTypeId: isPlace ? locationType?.id : undefined,
       })
       if (created.id && session) {
-        // Your own first photo is the cover; otherwise the product photo is.
-        if (photos.length) {
-          enqueueUploads(
-            session,
-            created.id,
-            photos.map((p, i) => ({ ...p, kind: 'photo', primary: i === 0 })),
-          )
-        }
-        // Failures just mean no product photo.
-        if (params.imageUrl) void attachRemotePhoto(session, created.id, params.imageUrl, !photos.length)
+        // The first photo is the cover. A remote product photo is downloaded
+        // first; failing that just means no product photo.
+        const local = photos.flatMap((p, i) =>
+          p.uri.startsWith('http') ? [] : [{ ...p, kind: 'photo' as const, primary: i === 0 }],
+        )
+        if (local.length) enqueueUploads(session, created.id, local)
+        photos.forEach((p, i) => {
+          if (p.uri.startsWith('http')) void attachRemotePhoto(session, created.id!, p.uri, i === 0)
+        })
       }
       // Notes can't be set on create, so they follow in a patch.
       const notes = value.notes.trim()
@@ -253,6 +275,38 @@ export default function NewItemSheet() {
           </form.Field>
         ) : null}
 
+        {scanned && !isPlace ? (
+          <View style={styles.pair}>
+            <form.Field name="manufacturer">
+              {(field) => (
+                <View style={styles.flex}>
+                  <FormField
+                    label="Manufacturer"
+                    placeholder="Optional"
+                    value={field.state.value}
+                    onChangeText={field.handleChange}
+                    autoCapitalize="words"
+                  />
+                </View>
+              )}
+            </form.Field>
+            <form.Field name="modelNumber">
+              {(field) => (
+                <View style={styles.flex}>
+                  <FormField
+                    label="Model number"
+                    placeholder="Optional"
+                    value={field.state.value}
+                    onChangeText={field.handleChange}
+                    autoCapitalize="characters"
+                    autoCorrect={false}
+                  />
+                </View>
+              )}
+            </form.Field>
+          </View>
+        ) : null}
+
         <form.Field name="description">
           {(field) => (
             <FormField
@@ -305,6 +359,13 @@ const styles = StyleSheet.create((theme) => ({
     gap: theme.spacing(5),
     padding: theme.spacing(4),
     paddingBottom: theme.spacing(10),
+  },
+  pair: {
+    flexDirection: 'row',
+    gap: theme.spacing(3),
+  },
+  flex: {
+    flex: 1,
   },
   chips: {
     flexDirection: 'row',

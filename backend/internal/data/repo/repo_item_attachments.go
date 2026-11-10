@@ -773,9 +773,12 @@ func (r *AttachmentRepo) CreateThumbnail(ctx context.Context, groupId, attachmen
 	}
 
 	// Pre-read orientation once for all image types that support it
-	// This avoids re-decoding the metadata for each image type
+	// This avoids re-decoding the metadata for each image type.
+	// AVIF, JPEG XL and HEIC/HEIF are skipped: their decoders already apply the
+	// container's rotation (irot/imir), so applying EXIF orientation on top
+	// rotates them twice; an iPhone photo with orientation 3 came out upside down.
 	var orientation uint16 = 1 // Default orientation
-	if contentType != "image/avif" && contentType != "image/jxl" {
+	if contentType != "image/avif" && contentType != "image/jxl" && contentType != "image/heic" && contentType != "image/heif" {
 		imageMeta, err := imagemeta.Decode(bytes.NewReader(contentBytes))
 		if err == nil {
 			// imagemeta v1 groups the primary image tags under IFD0 rather than

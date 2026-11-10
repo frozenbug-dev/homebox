@@ -1,5 +1,4 @@
 import { BlurView } from 'expo-blur'
-import { Image } from 'expo-image'
 import * as Haptics from 'expo-haptics'
 import { useIsFocused, useRouter } from 'expo-router'
 import { useEffect, useRef, useState } from 'react'
@@ -28,13 +27,14 @@ import {
   useCameraControls,
 } from '@/components/camera-controls'
 import { EntityThumb } from '@/components/entity-thumb'
+import { Image } from '@/components/image'
 import { Icon } from '@/components/icon'
 import { PressableFeedback } from '@/components/pressable-feedback'
 import type { EntitySummary } from '@/lib/api/api'
 import { usePatchAnyEntity } from '@/lib/api/mutations'
 import { useSession } from '@/lib/auth/session'
 import { pluralize } from '@/lib/format'
-import { parseScan, resolveScan, type ScanResult } from '@/lib/scan'
+import { parseScan, resolveScan, type ProductInfo, type ScanResult } from '@/lib/scan'
 import { useCodeScanner } from '@/lib/use-code-scanner'
 import { useSheets } from '@/lib/use-sheets'
 import { scheduleOnRN } from 'react-native-worklets'
@@ -183,18 +183,17 @@ export default function ScanScreen() {
     })
   }
 
-  const addProduct = (r: Extract<ScanResult, { kind: 'product' }>) => {
-    const p = r.product
+  const addProduct = (code: string, p: ProductInfo | undefined) => {
     router.back()
     router.push({
       pathname: '/new-item',
       params: {
-        name: p?.item?.name || '',
-        description: p?.item?.description || '',
-        manufacturer: p?.manufacturer || p?.item?.manufacturer || '',
-        modelNumber: p?.modelNumber || p?.item?.modelNumber || '',
-        imageUrl: p?.imageURL || '',
-        barcode: r.code,
+        name: p?.name ?? '',
+        description: p?.description ?? '',
+        manufacturer: p?.manufacturer ?? '',
+        modelNumber: p?.modelNumber ?? '',
+        imageUrl: p?.image ?? '',
+        barcode: code,
       },
     })
   }
@@ -326,7 +325,7 @@ export default function ScanScreen() {
             ) : null}
 
             {mode === 'find' && result && !busy ? (
-              <Animated.View entering={enter} key={JSON.stringify(result).slice(0, 80)}>
+              <Animated.View entering={enter} key={resultKey(result)}>
                 <FindResult result={result} onOpen={openEntity} onAdd={addProduct} />
               </Animated.View>
             ) : null}
@@ -431,6 +430,32 @@ function EntityLine({ entity, subtitle }: { entity: EntitySummary; subtitle?: st
   )
 }
 
+function resultKey(r: ScanResult) {
+  return r.kind === 'entity' ? `entity-${r.entity.id}` : r.kind === 'product' ? `product-${r.code}` : `none-${r.value}`
+}
+
+function ProductLine({ product, code }: { product: ProductInfo | undefined; code: string }) {
+  return (
+    <View style={[styles.entity, styles.flex]}>
+      {product?.image ? (
+        <Image source={{ uri: product.image }} style={styles.productImage} contentFit="cover" />
+      ) : (
+        <View style={styles.productImage}>
+          <Icon name={{ ios: 'barcode', android: 'barcode' }} size={20} />
+        </View>
+      )}
+      <View style={styles.flex}>
+        <Text style={styles.name} numberOfLines={2}>
+          {product?.name ?? 'Unknown product'}
+        </Text>
+        <Text style={styles.muted} numberOfLines={1}>
+          {[product?.manufacturer, product?.source ?? code].filter(Boolean).join(' · ')}
+        </Text>
+      </View>
+    </View>
+  )
+}
+
 function FindResult({
   result,
   onOpen,
@@ -438,8 +463,11 @@ function FindResult({
 }: {
   result: ScanResult
   onOpen: (e: EntitySummary) => void
-  onAdd: (r: Extract<ScanResult, { kind: 'product' }>) => void
+  onAdd: (code: string, product: ProductInfo | undefined) => void
 }) {
+  // Providers can disagree about a code, so you pick which answer to use.
+  const [picked, setPicked] = useState(0)
+
   if (result.kind === 'entity') {
     const e = result.entity
     const where = e.entityType?.isLocation ? 'Place' : e.parent?.name ? `In ${e.parent.name}` : undefined
@@ -452,26 +480,32 @@ function FindResult({
   }
 
   if (result.kind === 'product') {
-    const p = result.product
+    const { products } = result
+    const p = products[picked] ?? products[0]
     return (
       <View style={styles.result}>
-        <View style={styles.entity}>
-          {p?.imageURL ? (
-            <Image source={{ uri: p.imageURL }} style={styles.productImage} contentFit="cover" />
-          ) : (
-            <View style={styles.productImage}>
-              <Icon name={{ ios: 'barcode', android: 'barcode' }} size={20} />
-            </View>
-          )}
-          <View style={styles.flex}>
-            <Text style={styles.name} numberOfLines={2}>
-              {p?.item?.name || 'Unknown product'}
-            </Text>
-            <Text style={styles.muted} numberOfLines={1}>
-              {[p?.manufacturer, result.code].filter(Boolean).join(' · ')}
-            </Text>
-          </View>
-        </View>
+        {products.length > 1 ? (
+          <ScrollView style={styles.matches} contentContainerStyle={styles.matchesContent}>
+            <Text style={styles.label}>Pick the right product</Text>
+            {products.map((option, i) => (
+              <PressableFeedback
+                key={`${option.source}-${i}`}
+                onPress={() => {
+                  Haptics.selectionAsync()
+                  setPicked(i)
+                }}
+                style={[styles.option, i === picked && styles.optionPicked]}
+                accessibilityRole="radio"
+                accessibilityState={{ selected: i === picked }}
+                accessibilityLabel={`${option.name}${option.source ? `, from ${option.source}` : ''}`}>
+                <ProductLine product={option} code={result.code} />
+                {i === picked ? <Icon name={{ ios: 'checkmark', android: 'check' }} size={18} color={ON_DARK.text} /> : null}
+              </PressableFeedback>
+            ))}
+          </ScrollView>
+        ) : (
+          <ProductLine product={p} code={result.code} />
+        )}
         {result.matches.length ? (
           <ScrollView style={styles.matches} contentContainerStyle={styles.matchesContent}>
             <Text style={styles.label}>You may already have it</Text>
@@ -486,7 +520,7 @@ function FindResult({
             ))}
           </ScrollView>
         ) : null}
-        <ActionButton label="Add as new item" onPress={() => onAdd(result)} />
+        <ActionButton label="Add as new item" onPress={() => onAdd(result.code, p)} />
       </View>
     )
   }
@@ -716,6 +750,17 @@ const styles = StyleSheet.create((theme, rt) => ({
   },
   matches: {
     maxHeight: 160,
+  },
+  option: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: theme.spacing(2),
+    paddingHorizontal: theme.spacing(2),
+    borderRadius: theme.radius.md,
+    overflow: 'hidden',
+  },
+  optionPicked: {
+    backgroundColor: 'rgba(255, 255, 255, 0.12)',
   },
   matchesContent: {
     gap: theme.spacing(1),

@@ -1,4 +1,3 @@
-import { Image } from 'expo-image'
 import { View } from 'react-native'
 import { StyleSheet } from 'react-native-unistyles'
 
@@ -7,6 +6,7 @@ import { attachmentSource } from '@/lib/attachments'
 import { useSession } from '@/lib/auth/session'
 
 import { Icon, icons } from './icon'
+import { Image } from './image'
 
 interface EntityThumbProps {
   entity: Pick<EntitySummary, 'id' | 'thumbnailId' | 'imageId' | 'entityType'>
@@ -26,7 +26,6 @@ export function EntityThumb({ entity, size = 40 }: EntityThumbProps) {
           source={attachmentSource(session, entity.id!, imageId)}
           style={styles.image(size)}
           contentFit="cover"
-          transition={120}
           recyclingKey={entity.id}
         />
       ) : (

@@ -1,11 +1,11 @@
 import * as DocumentPicker from 'expo-document-picker'
-import { Image } from 'expo-image'
 import { useRouter } from 'expo-router'
 import * as WebBrowser from 'expo-web-browser'
 import { ActivityIndicator, Alert, ScrollView, Text, View } from 'react-native'
 import { StyleSheet, useUnistyles } from 'react-native-unistyles'
 
 import { Icon, icons } from '@/components/icon'
+import { Image } from '@/components/image'
 import { ListRow, RowSeparator } from '@/components/list-row'
 import { PressableFeedback } from '@/components/pressable-feedback'
 import { SectionHeader } from '@/components/section-header'
@@ -158,7 +158,7 @@ function StripThumb({
           style={styles.thumbImage}
           contentFit="cover"
           recyclingKey={p.id}
-          onLoad={(e) => rememberAspect(p.id!, e.source.width, e.source.height)}
+          onLoad={(size) => rememberAspect(p.id!, size.width, size.height)}
         />
       </View>
       {p.primary ? (
