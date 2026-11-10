@@ -2,6 +2,7 @@ import { useRouter } from 'expo-router'
 import { useEffect, useState } from 'react'
 
 import {
+  type CaptureRequest,
   getSheetRequest,
   setSheetRequest,
   type PlacePickRequest,
@@ -25,6 +26,11 @@ export function useSheets() {
     editText(request: TextEditRequest) {
       setSheetRequest('text', request)
       router.push('/edit-text')
+    },
+    /** Opens the camera and hands the photos back instead of uploading them. */
+    capturePhotos(request: CaptureRequest) {
+      setSheetRequest('capture', request)
+      router.push('/capture')
     },
   }
 }

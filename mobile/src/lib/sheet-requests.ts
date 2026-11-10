@@ -29,10 +29,16 @@ export interface TextEditRequest {
   onSave: (value: string) => void
 }
 
+/** Photos taken before there's an entity to attach them to (e.g. while adding an item). */
+export interface CaptureRequest {
+  onDone: (photos: { uri: string; name: string }[]) => void
+}
+
 export interface SheetRequests {
   place: PlacePickRequest
   tags: TagsPickRequest
   text: TextEditRequest
+  capture: CaptureRequest
 }
 
 const slots: Partial<SheetRequests> = {}

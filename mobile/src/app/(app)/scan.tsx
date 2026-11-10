@@ -17,9 +17,16 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated'
 import { StyleSheet, useUnistyles } from 'react-native-unistyles'
-import { Camera, useCameraDevice, useCameraPermission } from 'react-native-vision-camera'
+import { Camera, type CameraRef, type Constraint, useCameraPermission } from 'react-native-vision-camera'
 
 import { ActionButton } from '@/components/action-button'
+import {
+  CAMERA_ACCENT,
+  FocusIndicator,
+  LensPicker,
+  useBackCamera,
+  useCameraControls,
+} from '@/components/camera-controls'
 import { EntityThumb } from '@/components/entity-thumb'
 import { Icon } from '@/components/icon'
 import { PressableFeedback } from '@/components/pressable-feedback'
@@ -45,6 +52,13 @@ const TAB_PADDING = 4
 const SWITCH_DISTANCE = 50
 const SWITCH_VELOCITY = 500
 
+/**
+ * Locking the stream to 60 fps caps auto-exposure at 1/60 s, so codes stay
+ * sharp while the phone moves. Scanning doesn't need full resolution, so a
+ * binned (brighter, lower-res) format is fine.
+ */
+const CONSTRAINTS: Constraint[] = [{ fps: 60 }]
+
 /** Same code again within this window is the camera still seeing it, not a new scan. */
 const REPEAT_MS = 2500
 
@@ -61,7 +75,11 @@ export default function ScanScreen() {
   const sheets = useSheets()
   const patch = usePatchAnyEntity()
   const { hasPermission, requestPermission } = useCameraPermission()
-  const device = useCameraDevice('back') ?? undefined
+  const device = useBackCamera()
+  const camera = useRef<CameraRef>(null)
+  const controls = useCameraControls(device, camera)
+  // A steady light helps with labels in dark cupboards; flash would only fire once.
+  const [torch, setTorch] = useState(false)
 
   const [mode, setMode] = useState<Mode>('find')
   const [busy, setBusy] = useState(false)
@@ -212,13 +230,25 @@ export default function ScanScreen() {
     <GestureDetector gesture={swipe}>
       <View style={styles.root}>
         {hasPermission && device && isFocused ? (
-          <Camera
-            style={StyleSheet.absoluteFill}
-            device={device}
-            outputs={[scanner]}
-            isActive
-            enableNativeZoomGesture
-          />
+          <GestureDetector gesture={controls.gesture}>
+            <View style={StyleSheet.absoluteFill}>
+              <Camera
+                ref={camera}
+                style={StyleSheet.absoluteFill}
+                device={device}
+                outputs={[scanner]}
+                constraints={CONSTRAINTS}
+                onSessionConfigSelected={(c) =>
+                  __DEV__ &&
+                  console.log('scanner session', { fps: c.selectedFPS, binned: c.isBinned, device: device.type })
+                }
+                zoom={controls.zoom}
+                torchMode={torch && device.hasTorch ? 'on' : 'off'}
+                isActive
+              />
+              <FocusIndicator controls={controls} />
+            </View>
+          </GestureDetector>
         ) : null}
 
         <View style={styles.frameArea} pointerEvents="none">
@@ -244,9 +274,33 @@ export default function ScanScreen() {
             accessibilityLabel="Close scanner">
             <Icon name={{ ios: 'xmark', android: 'close' }} size={22} color="#ffffff" />
           </PressableFeedback>
+          {hasPermission && device?.hasTorch ? (
+            <PressableFeedback
+              onPress={() => {
+                Haptics.selectionAsync()
+                setTorch((t) => !t)
+              }}
+              borderless
+              style={styles.round}
+              hitSlop={8}
+              accessibilityRole="switch"
+              accessibilityState={{ checked: torch }}
+              accessibilityLabel="Torch">
+              <Icon
+                name={
+                  torch
+                    ? { ios: 'flashlight.on.fill', android: 'flashlight_on' }
+                    : { ios: 'flashlight.off.fill', android: 'flashlight_off' }
+                }
+                size={20}
+                color={torch ? CAMERA_ACCENT : '#ffffff'}
+              />
+            </PressableFeedback>
+          ) : null}
         </View>
 
         <Animated.View style={styles.bottom} layout={layout}>
+          {hasPermission ? <LensPicker controls={controls} /> : null}
           <ModeTabs mode={mode} onChange={switchMode} />
           <Animated.View style={styles.panel} layout={layout}>
             {/* Always dark, like the Camera app: a light material over the camera feed
@@ -269,14 +323,6 @@ export default function ScanScreen() {
               <Animated.Text entering={enter} style={styles.notice} accessibilityLiveRegion="polite">
                 {notice}
               </Animated.Text>
-            ) : null}
-
-            {/* Same shape as Move's intro, so switching modes doesn't resize the panel. */}
-            {mode === 'find' && !result && !busy ? (
-              <View style={styles.result}>
-                <Text style={styles.name}>Find things</Text>
-                <Text style={styles.muted}>Scan a label to open it, or a barcode to look it up.</Text>
-              </View>
             ) : null}
 
             {mode === 'find' && result && !busy ? (
@@ -467,14 +513,8 @@ function MovePanel({
   const { theme } = useUnistyles()
   const reducedMotion = useReducedMotion()
 
-  if (!target) {
-    return (
-      <View style={styles.result}>
-        <Text style={styles.name}>Move things</Text>
-        <Text style={styles.muted}>Scan the label of the place or box things are going into.</Text>
-      </View>
-    )
-  }
+  // Until there's a destination, the hint under the viewfinder says what to do.
+  if (!target) return null
 
   const okCount = moved.filter((m) => m.ok).length
 

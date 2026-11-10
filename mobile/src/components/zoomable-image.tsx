@@ -13,7 +13,8 @@ import { scheduleOnRN } from 'react-native-worklets'
 
 const MAX_SCALE = 5
 const DOUBLE_TAP_SCALE = 2.5
-const SPRING = { damping: 20, stiffness: 220 }
+/** Critically damped: settles quickly without bouncing past the target. */
+const SPRING = { stiffness: 220, damping: 32, overshootClamping: true }
 
 interface ZoomableImageProps {
   source: ImageSource

@@ -9,6 +9,7 @@
     "userInterfaceStyle": "automatic",
     "ios": {
       "bundleIdentifier": "com.frozenbug.homecrate",
+      "appleTeamId": "4AZ6RJF693",
       "icon": "./assets/expo.icon",
       "infoPlist": {
         "NSCameraUsageDescription": "$(PRODUCT_NAME) uses the camera to photograph items and scan labels."
