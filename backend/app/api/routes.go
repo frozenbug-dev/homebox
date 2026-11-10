@@ -112,6 +112,7 @@ func (a *app) mountRoutes(r *chi.Mux, chain *errchain.ErrChain, repos *repo.AllR
 		if a.conf.OIDC.Enabled {
 			r.Get("/users/login/oidc", chain.ToHandlerFunc(v1Ctrl.HandleOIDCLogin(), a.mwAuthRateLimit))
 			r.Get("/users/login/oidc/callback", chain.ToHandlerFunc(v1Ctrl.HandleOIDCCallback(), a.mwAuthRateLimit))
+			r.Post("/users/login/oidc/exchange", chain.ToHandlerFunc(v1Ctrl.HandleOIDCExchange(), a.mwAuthRateLimit))
 		}
 
 		userMW := []errchain.Middleware{

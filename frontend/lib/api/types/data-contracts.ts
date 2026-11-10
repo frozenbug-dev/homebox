@@ -1779,8 +1779,18 @@ export interface LoginForm {
   username: string;
 }
 
+export interface OIDCExchangeRequest {
+  code: string;
+  codeVerifier: string;
+}
+
 export interface OIDCStatus {
   allowLocal: boolean;
+  /**
+   * AppLogin is true when native apps can sign in with OIDC through the
+   * redirect_uri + code_challenge handoff (see HandleOIDCExchange).
+   */
+  appLogin: boolean;
   autoRedirect: boolean;
   buttonText: string;
   enabled: boolean;

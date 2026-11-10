@@ -208,6 +208,10 @@ type OIDCConf struct {
 	Enabled            bool          `yaml:"enabled"              conf:"default:false"`
 	AutoRedirect       bool          `yaml:"auto_redirect"        conf:"default:false"`
 	VerifyEmail        bool          `yaml:"verify_email"         conf:"default:false"`
+	// AppRedirectURIs is a comma separated allow list of redirect URIs native
+	// apps may ask to be sent back to after signing in with OIDC (exact match).
+	// Empty disables OIDC sign-in from apps.
+	AppRedirectURIs string `yaml:"app_redirect_uris" conf:"default:homecrate://auth/callback"`
 }
 
 func (c OIDCConf) MarshalJSON() ([]byte, error) {

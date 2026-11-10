@@ -2158,6 +2158,41 @@ paths:
       responses:
         "302":
           description: Found
+  /v1/users/login/oidc/exchange:
+    post:
+      description: >-
+        Completes an OIDC sign-in started by a native app. The app starts the
+        flow with
+
+        GET /v1/users/login/oidc?redirect_uri=<allowed app URI>&code_challenge=<S256 challenge>,
+
+        receives a single-use code on its redirect URI and exchanges it here together with
+
+        the PKCE code verifier. Codes expire after two minutes.
+      tags:
+        - Authentication
+      summary: OIDC App Sign-In Exchange
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/v1.OIDCExchangeRequest"
+        description: Handoff code and verifier
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/v1.TokenResponse"
+        "401":
+          description: code is invalid, expired, already used, or the verifier does not
+            match
+          content:
+            application/json:
+              schema:
+                type: string
   /v1/users/logout:
     post:
       security:
@@ -5316,10 +5351,25 @@ components:
         username:
           type: string
           example: admin@admin.com
+    v1.OIDCExchangeRequest:
+      type: object
+      required:
+        - code
+        - codeVerifier
+      properties:
+        code:
+          type: string
+        codeVerifier:
+          type: string
     v1.OIDCStatus:
       type: object
       properties:
         allowLocal:
+          type: boolean
+        appLogin:
+          description: |-
+            AppLogin is true when native apps can sign in with OIDC through the
+            redirect_uri + code_challenge handoff (see HandleOIDCExchange).
           type: boolean
         autoRedirect:
           type: boolean

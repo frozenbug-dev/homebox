@@ -137,6 +137,9 @@ type (
 		Enabled      bool   `json:"enabled"`
 		AutoRedirect bool   `json:"autoRedirect,omitempty"`
 		AllowLocal   bool   `json:"allowLocal"`
+		// AppLogin is true when native apps can sign in with OIDC through the
+		// redirect_uri + code_challenge handoff (see HandleOIDCExchange).
+		AppLogin bool `json:"appLogin"`
 	}
 
 	TelemetryStatus struct {
@@ -197,6 +200,7 @@ func (ctrl *V1Controller) HandleBase(ready ReadyFunc, build Build) errchain.Hand
 				ButtonText:   ctrl.config.OIDC.ButtonText,
 				AutoRedirect: ctrl.config.OIDC.AutoRedirect,
 				AllowLocal:   ctrl.config.Options.AllowLocalLogin,
+				AppLogin:     ctrl.oidcProvider != nil && len(ctrl.oidcProvider.AppRedirectURIs()) > 0,
 			},
 			Telemetry: TelemetryStatus{
 				Enabled: ctrl.config.Otel.Enabled,
