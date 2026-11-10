@@ -14,10 +14,10 @@ export function TabStack({ root, title }: { root: string; title: string }) {
       screenOptions={{
         headerShadowVisible: false,
         headerLargeTitleShadowVisible: false,
-        // iOS draws its own (glass) bar background; an opaque custom one hides
-        // the large title once the list drives it.
+        // iOS draws its own (glass) bar background and adapts button vibrancy to
+        // the backdrop; setting a fixed color disables that adaptation.
         headerStyle: Platform.OS === 'ios' ? undefined : { backgroundColor: theme.colors.background },
-        headerTintColor: theme.colors.text,
+        headerTintColor: Platform.OS === 'ios' ? undefined : theme.colors.text,
         contentStyle: { backgroundColor: theme.colors.background },
       }}>
       <Stack.Screen name={root} options={{ title, headerLargeTitle: true }} />

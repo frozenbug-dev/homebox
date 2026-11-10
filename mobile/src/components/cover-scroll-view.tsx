@@ -101,7 +101,7 @@ export function useCover({ coverHeight, title }: { coverHeight: number; title: s
           headerLargeTitle: false,
           headerTitle: '',
           headerStyle: { backgroundColor: 'transparent' },
-          headerTintColor: Platform.OS === 'ios' || !overCover ? theme.colors.text : '#ffffff',
+          headerTintColor: Platform.OS === 'ios' ? undefined : overCover ? '#ffffff' : theme.colors.text,
         }}
       />
       <Animated.View style={[styles.header, { height: headerHeight }, headerStyle]} pointerEvents="none">
