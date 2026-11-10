@@ -6261,6 +6261,15 @@
                         "x-omitempty": true,
                         "nullable": true
                     },
+                    "fields": {
+                        "description": "Fields replaces the custom fields when set: entries with an id are\nupdated, ones without are created, and missing ones are deleted.\nOmit (null) to leave them unchanged; [] removes them all.",
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/repo.EntityFieldData"
+                        },
+                        "x-omitempty": true,
+                        "nullable": true
+                    },
                     "id": {
                         "type": "string"
                     },

@@ -4873,6 +4873,12 @@ export interface components {
             clearParent?: boolean;
             description?: string | null;
             entityTypeId?: string | null;
+            /**
+             * @description Fields replaces the custom fields when set: entries with an id are
+             *     updated, ones without are created, and missing ones are deleted.
+             *     Omit (null) to leave them unchanged; [] removes them all.
+             */
+            fields?: components["schemas"]["repo.EntityFieldData"][] | null;
             id?: string;
             insured?: boolean | null;
             locationId?: string | null;

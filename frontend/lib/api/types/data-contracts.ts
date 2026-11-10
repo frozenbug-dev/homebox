@@ -1010,6 +1010,12 @@ export interface EntityPatch {
   /** @maxLength 1000 */
   description?: string | null;
   entityTypeId?: string | null;
+  /**
+   * Fields replaces the custom fields when set: entries with an id are
+   * updated, ones without are created, and missing ones are deleted.
+   * Omit (null) to leave them unchanged; [] removes them all.
+   */
+  fields?: EntityFieldData[] | null;
   id: string;
   insured?: boolean | null;
   locationId?: string | null;

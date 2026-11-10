@@ -181,6 +181,10 @@ type (
 		LocationID    uuid.UUID   `json:"locationId"              extensions:"x-nullable,x-omitempty"`
 		EntityTypeID  uuid.UUID   `json:"entityTypeId"            extensions:"x-nullable,x-omitempty"`
 		TagIDs        []uuid.UUID `json:"tagIds"                  extensions:"x-nullable,x-omitempty"`
+		// Fields replaces the custom fields when set: entries with an id are
+		// updated, ones without are created, and missing ones are deleted.
+		// Omit (null) to leave them unchanged; [] removes them all.
+		Fields []EntityFieldData `json:"fields" extensions:"x-nullable,x-omitempty"`
 	}
 
 	EntitySummary struct {
@@ -2217,6 +2221,86 @@ func applyPatchScalars(q *ent.EntityUpdate, data EntityPatch) error {
 	return nil
 }
 
+// patchSyncFields makes the entity's custom fields exactly `want`, inside
+// the patch transaction. Updates and deletes are scoped to this entity in
+// this group, so ids from another entity are ignored rather than modified.
+func patchSyncFields(ctx context.Context, tx *ent.Tx, gid, id uuid.UUID, want []EntityFieldData) error {
+	fieldsCtx, fieldsSpan := entityTracer().Start(ctx, "repo.EntityRepository.Patch.fields",
+		trace.WithAttributes(attribute.Int("fields.input.count", len(want))))
+	defer fieldsSpan.End()
+
+	ownedBy := entityfield.HasEntityWith(entity.ID(id), entity.HasGroupWith(group.ID(gid)))
+	existing, err := tx.EntityField.Query().Where(ownedBy).All(fieldsCtx)
+	if err != nil {
+		recordSpanError(fieldsSpan, err)
+		return err
+	}
+	stale := newIDSet(existing)
+
+	created, updated := 0, 0
+	for _, f := range want {
+		name := strings.TrimSpace(f.Name)
+		if name == "" || len(name) > 255 {
+			err := fmt.Errorf("patch entity: field names must be 1-255 characters")
+			recordSpanError(fieldsSpan, err)
+			return err
+		}
+		if f.Type == "" {
+			f.Type = string(entityfield.TypeText)
+		}
+		if err := entityfield.TypeValidator(entityfield.Type(f.Type)); err != nil {
+			err = fmt.Errorf("patch entity: invalid field type %q", f.Type)
+			recordSpanError(fieldsSpan, err)
+			return err
+		}
+
+		if f.ID != uuid.Nil && stale.Contains(f.ID) {
+			if err := tx.EntityField.Update().
+				Where(entityfield.ID(f.ID), ownedBy).
+				SetType(entityfield.Type(f.Type)).
+				SetName(name).
+				SetTextValue(f.TextValue).
+				SetNumberValue(f.NumberValue).
+				SetBooleanValue(f.BooleanValue).
+				Exec(fieldsCtx); err != nil {
+				recordSpanError(fieldsSpan, err)
+				return err
+			}
+			stale.Remove(f.ID)
+			updated++
+			continue
+		}
+
+		if _, err := tx.EntityField.Create().
+			SetEntityID(id).
+			SetType(entityfield.Type(f.Type)).
+			SetName(name).
+			SetTextValue(f.TextValue).
+			SetNumberValue(f.NumberValue).
+			SetBooleanValue(f.BooleanValue).
+			Save(fieldsCtx); err != nil {
+			recordSpanError(fieldsSpan, err)
+			return err
+		}
+		created++
+	}
+
+	deleted := 0
+	if stale.Len() > 0 {
+		deleted, err = tx.EntityField.Delete().Where(entityfield.IDIn(stale.Slice()...), ownedBy).Exec(fieldsCtx)
+		if err != nil {
+			recordSpanError(fieldsSpan, err)
+			return err
+		}
+	}
+	fieldsSpan.SetAttributes(
+		attribute.Int("fields.created.count", created),
+		attribute.Int("fields.updated.count", updated),
+		attribute.Int("fields.deleted.count", deleted),
+	)
+	return nil
+}
+
 func (r *EntityRepository) Patch(ctx context.Context, gid, id uuid.UUID, data EntityPatch) error {
 	ctx, span := entityTracer().Start(ctx, "repo.EntityRepository.Patch",
 		trace.WithAttributes(
@@ -2228,6 +2312,7 @@ func (r *EntityRepository) Patch(ctx context.Context, gid, id uuid.UUID, data En
 			attribute.Bool("patch.parent_id.set", data.ParentID != uuid.Nil),
 			attribute.Bool("patch.entity_type_id.set", data.EntityTypeID != uuid.Nil),
 			attribute.Bool("patch.tag_ids.set", data.TagIDs != nil),
+			attribute.Bool("patch.fields.set", data.Fields != nil),
 		))
 	defer span.End()
 
@@ -2339,6 +2424,25 @@ func (r *EntityRepository) Patch(ctx context.Context, gid, id uuid.UUID, data En
 
 	if data.TagIDs != nil {
 		if err := patchSyncTags(ctx, tx, gid, id, data.TagIDs); err != nil {
+			recordSpanError(span, err)
+			return err
+		}
+	}
+
+	if data.Fields != nil {
+		// Checked here (not in the update above) so a foreign id can't attach
+		// fields to another group's entity.
+		exists, err := tx.Entity.Query().Where(entity.ID(id), entity.HasGroupWith(group.ID(gid))).Exist(ctx)
+		if err != nil {
+			recordSpanError(span, err)
+			return err
+		}
+		if !exists {
+			err := &ent.NotFoundError{}
+			recordSpanError(span, err)
+			return err
+		}
+		if err := patchSyncFields(ctx, tx, gid, id, data.Fields); err != nil {
 			recordSpanError(span, err)
 			return err
 		}

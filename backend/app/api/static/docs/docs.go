@@ -5964,6 +5964,15 @@ const docTemplate = `{
                     "x-nullable": true,
                     "x-omitempty": true
                 },
+                "fields": {
+                    "description": "Fields replaces the custom fields when set: entries with an id are\nupdated, ones without are created, and missing ones are deleted.\nOmit (null) to leave them unchanged; [] removes them all.",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/repo.EntityFieldData"
+                    },
+                    "x-nullable": true,
+                    "x-omitempty": true
+                },
                 "id": {
                     "type": "string"
                 },

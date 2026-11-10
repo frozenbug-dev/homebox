@@ -1529,6 +1529,16 @@ definitions:
         type: string
         x-nullable: true
         x-omitempty: true
+      fields:
+        description: |-
+          Fields replaces the custom fields when set: entries with an id are
+          updated, ones without are created, and missing ones are deleted.
+          Omit (null) to leave them unchanged; [] removes them all.
+        items:
+          $ref: '#/definitions/repo.EntityFieldData'
+        type: array
+        x-nullable: true
+        x-omitempty: true
       id:
         type: string
       insured:

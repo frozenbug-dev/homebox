@@ -4008,6 +4008,16 @@ components:
           type: string
           x-omitempty: true
           nullable: true
+        fields:
+          description: |-
+            Fields replaces the custom fields when set: entries with an id are
+            updated, ones without are created, and missing ones are deleted.
+            Omit (null) to leave them unchanged; [] removes them all.
+          type: array
+          items:
+            $ref: "#/components/schemas/repo.EntityFieldData"
+          x-omitempty: true
+          nullable: true
         id:
           type: string
         insured:
