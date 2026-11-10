@@ -1,6 +1,6 @@
 import * as Haptics from 'expo-haptics'
 import { useRef, type ReactNode } from 'react'
-import { Text, View, type ColorValue } from 'react-native'
+import { Platform, Text, View, type ColorValue } from 'react-native'
 import ReanimatedSwipeable, {
   type SwipeableMethods,
 } from 'react-native-gesture-handler/ReanimatedSwipeable'
@@ -23,6 +23,13 @@ interface SwipeableRowProps {
   /** Revealed by swiping left: destructive / secondary actions. */
   trailing?: SwipeAction
 }
+
+/**
+ * How far a finger must travel sideways before a row starts swiping. Android's
+ * list only claims a drag after ~8 dp of vertical travel, so with the default
+ * 10 px a slightly diagonal flick opened a row instead of scrolling.
+ */
+const DRAG_OFFSET = Platform.OS === 'android' ? 32 : 10
 
 // Only one row is open at a time; opening another closes this one.
 let openRow: SwipeableMethods | null = null
@@ -60,6 +67,8 @@ export function SwipeableRow({ children, leading, trailing }: SwipeableRowProps)
       <ReanimatedSwipeable
         ref={ref}
         friction={2}
+        dragOffsetFromLeft={DRAG_OFFSET}
+        dragOffsetFromRight={-DRAG_OFFSET}
         leftThreshold={48}
         rightThreshold={48}
         overshootLeft={false}

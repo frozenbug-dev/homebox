@@ -1,4 +1,3 @@
-import { Image } from 'expo-image'
 import { useRouter } from 'expo-router'
 import { useState } from 'react'
 import { ScrollView, View, useWindowDimensions } from 'react-native'
@@ -10,6 +9,7 @@ import type { Session } from '@/lib/auth/storage'
 import { rememberAspect, usePhotoSlot } from '@/lib/photo-transition'
 import { useSession } from '@/lib/auth/session'
 
+import { Image } from './image'
 import { PressableFeedback } from './pressable-feedback'
 
 /** Swipeable full-width photos of an entity; tapping one opens the full-screen viewer. */
@@ -80,7 +80,7 @@ function PagerPhoto({
           style={{ width, height }}
           contentFit="cover"
           transition={150}
-          onLoad={(e) => rememberAspect(p.id!, e.source.width, e.source.height)}
+          onLoad={(size) => rememberAspect(p.id!, size.width, size.height)}
         />
       </View>
     </PressableFeedback>

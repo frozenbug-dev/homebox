@@ -1,4 +1,3 @@
-import { Image, type ImageSource } from 'expo-image'
 import { useState } from 'react'
 import { useWindowDimensions } from 'react-native'
 import {
@@ -10,6 +9,8 @@ import {
 } from 'react-native-gesture-handler'
 import Animated, { useAnimatedStyle, useReducedMotion, useSharedValue, withSpring } from 'react-native-reanimated'
 import { scheduleOnRN } from 'react-native-worklets'
+
+import { Image, type ImageSource } from './image'
 
 const MAX_SCALE = 5
 const DOUBLE_TAP_SCALE = 2.5

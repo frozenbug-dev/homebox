@@ -1,5 +1,4 @@
 import { useQuery } from '@tanstack/react-query'
-import { Image } from 'expo-image'
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import { useEffect, useRef, useState } from 'react'
 import { FlatList, Text, View, useWindowDimensions } from 'react-native'
@@ -19,6 +18,7 @@ import { scheduleOnRN, scheduleOnUI } from 'react-native-worklets'
 
 import { Icon, type IconName } from '@/components/icon'
 import { PressableFeedback } from '@/components/pressable-feedback'
+import { Image } from '@/components/image'
 import { ZoomableImage } from '@/components/zoomable-image'
 import { confirmDelete, useDeleteAttachment, useUpdateAttachment } from '@/lib/api/mutations'
 import { entityQuery } from '@/lib/api/queries'
@@ -329,9 +329,6 @@ export default function PhotosScreen() {
             placeholder={flightPhoto.thumbnail?.id ? attachmentSource(session, entityId, flightPhoto.thumbnail.id) : undefined}
             placeholderContentFit="cover"
             contentFit="cover"
-            // Its size changes every frame; downscaling would reload it each time
-            // and it would never get drawn.
-            allowDownscaling={false}
             onDisplay={onFlightDrawn}
             style={StyleSheet.absoluteFill}
           />

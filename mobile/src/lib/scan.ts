@@ -1,4 +1,5 @@
 import { queryOptions, skipToken } from '@tanstack/react-query'
+import { File, Paths } from 'expo-file-system'
 
 import { unwrap, type ApiClient, type EntitySummary, type Schemas } from '@/lib/api/api'
 
@@ -14,8 +15,60 @@ export type ScanTarget =
 /** What a scanned code turned out to be. */
 export type ScanResult =
   | { kind: 'entity'; entity: EntitySummary }
-  | { kind: 'product'; code: string; product?: BarcodeProduct; matches: EntitySummary[] }
+  | { kind: 'product'; code: string; products: ProductInfo[]; matches: EntitySummary[] }
   | { kind: 'not-found'; value: string; message: string }
+
+/**
+ * One lookup provider's answer for a barcode. Providers can disagree about
+ * what a code is, so results are kept apart rather than merged field by field.
+ */
+export interface ProductInfo {
+  /** Which database answered, e.g. `upcitemdb.com`. */
+  source?: string
+  name: string
+  description?: string
+  manufacturer?: string
+  modelNumber?: string
+  /**
+   * A cached file when the server already fetched the image (it does for
+   * some providers, and it sidesteps plain-http image hosts), else its URL.
+   */
+  image?: string
+}
+
+function toProductInfo(p: BarcodeProduct): ProductInfo | null {
+  const name = p.item?.name?.trim()
+  if (!name) return null
+  const text = (v?: string | null) => v?.trim() || undefined
+  return {
+    source: text(p.search_engine_name),
+    name,
+    description: text(p.item?.description),
+    manufacturer: text(p.manufacturer) ?? text(p.item?.manufacturer),
+    modelNumber: text(p.modelNumber) ?? text(p.item?.modelNumber),
+    // Release builds (and iOS) refuse plain-http images; most hosts serve https too.
+    image: text(p.imageBase64) ?? text(p.imageURL)?.replace(/^http:\/\//i, 'https://'),
+  }
+}
+
+/**
+ * An inline `data:` product image, written to a cache file: the image loader
+ * takes URLs and files, and route params can't carry it either. Remote URLs
+ * are passed on as is.
+ */
+export function productImageUri(image: string | undefined): string | undefined {
+  if (!image?.startsWith('data:')) return image
+  try {
+    const [header, data] = image.split(',', 2)
+    const ext = header.match(/^data:image\/(\w+)/)?.[1]?.replace('jpeg', 'jpg') ?? 'jpg'
+    const file = new File(Paths.cache, `product-${Date.now()}.${ext}`)
+    file.writeSync(data, { encoding: 'base64' })
+    return file.uri
+  } catch (e) {
+    console.warn('product image save failed', e)
+    return undefined
+  }
+}
 
 const UUID = '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}'
 const ASSET_ID = /^\d{3}-?\d{3}$/
@@ -77,7 +130,12 @@ export async function resolveScan(api: ApiClient, target: ScanTarget, signal?: A
       const matches = owned.items ?? []
       if (matches.length === 1) return { kind: 'entity', entity: matches[0] }
       // No match is a 204 with no body, so `products` can be undefined.
-      return { kind: 'product', code: target.code, product: products?.[0], matches }
+      const found = (products ?? [])
+        .map(toProductInfo)
+        .filter((p): p is ProductInfo => !!p)
+        // The image loader takes URLs and files, so inline images become files.
+        .map((p) => ({ ...p, image: productImageUri(p.image) }))
+      return { kind: 'product', code: target.code, products: found, matches }
     }
     case 'text':
       return {
