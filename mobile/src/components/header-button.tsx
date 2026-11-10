@@ -11,9 +11,12 @@ const BLANK = require('@/assets/images/blank.png')
 
 // Toolbar items render in the native header, outside the screen's React
 // tree, so a colour override has to come in as a prop (not context).
+// On iOS, buttons sit inside Liquid Glass pills, so an explicit white
+// override for full-bleed covers would make the icon unreadable against the
+// light glass background.
 function useToolbarIcon(sf: SFSymbol, md: AndroidSymbol, override?: string) {
   const { theme } = useUnistyles()
-  const tint = override ?? theme.colors.text
+  const tint = (Platform.OS === 'ios' ? undefined : override) ?? theme.colors.text
   const source = useMaterialSymbol(md, 24, tint)
   return { icon: Platform.OS === 'ios' ? sf : (source ?? undefined), tint }
 }

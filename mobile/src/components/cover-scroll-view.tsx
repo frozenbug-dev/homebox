@@ -101,7 +101,7 @@ export function useCover({ coverHeight, title }: { coverHeight: number; title: s
           headerLargeTitle: false,
           headerTitle: '',
           headerStyle: { backgroundColor: 'transparent' },
-          headerTintColor: overCover ? '#ffffff' : theme.colors.text,
+          headerTintColor: Platform.OS === 'ios' || !overCover ? theme.colors.text : '#ffffff',
         }}
       />
       <Animated.View style={[styles.header, { height: headerHeight }, headerStyle]} pointerEvents="none">
@@ -116,7 +116,7 @@ export function useCover({ coverHeight, title }: { coverHeight: number; title: s
   // when there's little below it.
   const minContentHeight = windowHeight + coverHeight - headerHeight
 
-  const tint = overCover ? '#ffffff' : theme.colors.text
+  const tint = Platform.OS === 'ios' || !overCover ? theme.colors.text : '#ffffff'
 
   return { onScroll, renderCover, chrome, sheetStyle: styles.sheet, headerHeight, minContentHeight, tint }
 }
